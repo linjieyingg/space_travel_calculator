@@ -63,10 +63,23 @@ def mock_dependencies():
 
 def test_main_function_integrates_trajectory_planner_and_calculates_correctly(mock_dependencies):
     """
-    Test the main function's orchestration logic, ensuring it correctly calls
-    its dependencies and processes inputs/outputs. This replaces the previous smoke test.
+    Test the main function's orchestration logic, ensuring it correctly:
+    1. Prompts for departure/arrival bodies and other inputs.
+    2. Calls TrajectoryPlanner.plan_hohmann_trajectory with the correct arguments.
+    3. Processes the planner's output for fuel and time calculations.
+    4. Logs travel details and prints a comprehensive summary.
     """
     main.main()
+
+    # Verify that input prompts were presented as expected
+    input_calls = [call.args[0] for call in mock_dependencies['mock_input'].call_args_list]
+    assert "Enter the source celestial body (e.g., Earth): " in input_calls
+    assert "Enter the destination celestial body (e.g., Mars): " in input_calls
+    assert "Enter spacecraft dry mass in kg (e.g., 100000): " in input_calls
+    assert "Enter engine specific impulse in seconds (e.g., 450): " in input_calls
+    assert "Enter departure date (YYYY-MM-DD): " in input_calls
+    assert "Enter your current age in years: " in input_calls
+
 
     # Verify TrajectoryPlanner was instantiated and its method called correctly
     mock_dependencies['MockTrajectoryPlanner'].assert_called_once()
