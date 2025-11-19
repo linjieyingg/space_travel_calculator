@@ -11,7 +11,7 @@ improving consistency and maintainability across the project.
 """
 
 # Universal Physical Constants
-C_LIGHT_MPS = 299792458.0  # Speed of light in a vacuum (m/s)
+C_LIGHT_MPS = 299_792_458.0  # Speed of light in a vacuum (m/s)
 G_GRAVITATIONAL = 6.67430e-11 # Gravitational Constant (m^3 kg^-1 s^-2)
 
 # For backward compatibility / alias
