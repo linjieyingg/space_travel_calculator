@@ -4,16 +4,13 @@ import os
 
 # Assume 'propulsion_system.py' and 'trajectory_planner.py' are peer modules
 # in the same project structure.
-# If they are in a different package or directory, relative imports might change.
-# For now, assuming direct imports if they are at the root level like this file.
 
-# Placeholder imports - these files are expected to be created and contain the described functions
-# For this file to be executable, these modules must exist in the Python path.
+# Import actual functions/classes from propulsion_system
 try:
-    from propulsion_system import calculate_fuel_mass_from_delta_v
+    from propulsion_system import calculate_required_fuel_mass as calculate_fuel_mass_from_delta_v
 except ImportError:
     # This block provides a mock implementation for development/testing if the file doesn't exist yet
-    print("Warning: propulsion_system.py not found. Using mock function.", file=sys.stderr)
+    print("Warning: propulsion_system.py not found. Using mock function for fuel calculation.", file=sys.stderr)
     G0_STANDARD = 9.80665  # Standard gravity in m/s^2
 
     def calculate_fuel_mass_from_delta_v(delta_v: float, spacecraft_dry_mass: float, specific_impulse: float) -> float:
@@ -36,37 +33,13 @@ except ImportError:
         fuel_mass = spacecraft_dry_mass * (math.exp(mass_ratio_exponent) - 1)
         return fuel_mass
 
+# Import TrajectoryPlanner class from trajectory_planner
 try:
-    from trajectory_planner import calculate_delta_v
-except ImportError:
-    # This block provides a mock implementation for development/testing if the file doesn't exist yet
-    print("Warning: trajectory_planner.py not found. Using mock function.", file=sys.stderr)
-
-    def calculate_delta_v(start_body: str, end_body: str, trajectory_type: str, **kwargs) -> float:
-        """
-        MOCK: Calculates the required delta-V for a given trajectory.
-        In a real implementation, this would be in trajectory_planner.py.
-        """
-        start_body = start_body.lower()
-        end_body = end_body.lower()
-        trajectory_type = trajectory_type.lower()
-
-        if start_body == 'earth' and end_body == 'mars':
-            if trajectory_type == 'hohmann':
-                return 5.7 * 1000  # Example m/s
-            elif trajectory_type == 'direct':
-                return 8.0 * 1000  # Example m/s
-        elif start_body == 'earth' and end_body == 'moon':
-            if trajectory_type == 'direct':
-                return 3.1 * 1000  # Example m/s
-        elif start_body == 'moon' and end_body == 'earth':
-            if trajectory_type == 'direct':
-                return 1.2 * 1000  # Example m/s
-        elif start_body == 'earth' and end_body == 'jupiter':
-            if trajectory_type == 'hohmann':
-                return 15.0 * 1000 # Example m/s
-        
-        raise ValueError(f"MOCK ERROR: Unsupported trajectory: {start_body} to {end_body} via {trajectory_type}")
+    from trajectory_planner import TrajectoryPlanner
+except ImportError as e:
+    # If TrajectoryPlanner cannot be imported, it's a critical error for this file's operation
+    raise ImportError(f"Error: Could not import TrajectoryPlanner from trajectory_planner.py. "
+                      f"Please ensure trajectory_planner.py is in the Python path. Details: {e}") from e
 
 
 def optimize_fuel_for_trajectory(
@@ -80,26 +53,31 @@ def optimize_fuel_for_trajectory(
     """
     Calculates the optimal fuel mass required for a planned trajectory.
 
-    This function integrates trajectory data (required delta-V) with propulsion system
-    models to determine the necessary fuel mass using the Tsiolkovsky rocket equation.
+    This function integrates trajectory data (required delta-V) from the TrajectoryPlanner
+    with propulsion system models to determine the necessary fuel mass using the
+    Tsiolkovsky rocket equation.
 
     Args:
         start_body (str): The starting celestial body (e.g., 'Earth').
         end_body (str): The target celestial body (e.g., 'Mars').
-        trajectory_type (str): The type of trajectory (e.g., 'Hohmann', 'direct').
+        trajectory_type (str): The type of trajectory (e.g., 'Hohmann').
+                               Currently, only 'Hohmann' is explicitly supported for planning.
         spacecraft_dry_mass (float): The mass of the spacecraft without fuel, in kg.
         engine_specific_impulse (float): The specific impulse (Isp) of the engine, in seconds.
                                         Isp is a measure of the efficiency of a rocket.
-        **trajectory_args: Additional keyword arguments to pass to the trajectory planner
+        **trajectory_args: Additional keyword arguments to pass to the trajectory planner.
                          (e.g., launch_date, arrival_date, intermediate_maneuvers,
-                         parking_orbit_altitude).
+                         parking_orbit_altitude). Note: TrajectoryPlanner.plan_hohmann_trajectory's
+                         actual signature might not support all arbitrary kwargs, which will raise
+                         a ValueError if passed.
 
     Returns:
         float: The calculated optimal fuel mass in kilograms.
 
     Raises:
         ValueError: If `spacecraft_dry_mass` or `engine_specific_impulse` are non-positive,
-                    or if the trajectory planner or propulsion system return invalid values.
+                    if the trajectory type is unsupported, or if the trajectory planner
+                    or propulsion system return invalid values.
         RuntimeError: If an unexpected error occurs during the calculation,
                       e.g., a dependency function fails.
     """
@@ -109,30 +87,60 @@ def optimize_fuel_for_trajectory(
         raise ValueError("End body must be a non-empty string.")
     if not isinstance(trajectory_type, str) or not trajectory_type:
         raise ValueError("Trajectory type must be a non-empty string.")
+
+    # Enforce 'Hohmann' as plan_hohmann_trajectory is the method used
+    if trajectory_type.lower() != 'hohmann':
+        raise ValueError(f"Unsupported trajectory type: '{trajectory_type}'. "
+                         "Only 'Hohmann' is supported for planning at this time via TrajectoryPlanner.")
+
     if not isinstance(spacecraft_dry_mass, (int, float)) or spacecraft_dry_mass <= 0:
         raise ValueError("Spacecraft dry mass must be a positive numeric value.")
     if not isinstance(engine_specific_impulse, (int, float)) or engine_specific_impulse <= 0:
         raise ValueError("Engine specific impulse must be a positive numeric value.")
 
     try:
-        # 1. Calculate the required Delta-V (change in velocity) for the trajectory
-        # The trajectory_planner function will perform complex orbital mechanics calculations
-        # and return the total delta-V needed for the mission.
-        required_delta_v = calculate_delta_v(
-            start_body=start_body,
-            end_body=end_body,
-            trajectory_type=trajectory_type,
-            **trajectory_args
-        )
+        # Instantiate the TrajectoryPlanner
+        planner = TrajectoryPlanner()
+
+        # 1. Plan the trajectory to get the required Delta-V
+        # The prompt explicitly states to pass **trajectory_args to plan_hohmann_trajectory.
+        # This might cause a TypeError if TrajectoryPlanner's signature doesn't match the kwargs.
+        try:
+            trajectory_result = planner.plan_hohmann_trajectory(
+                departure_body_name=start_body,
+                arrival_body_name=end_body,
+                **trajectory_args
+            )
+        except TypeError as te:
+            # Catch TypeError if plan_hohmann_trajectory's signature doesn't accept **trajectory_args
+            raise ValueError(
+                f"Trajectory planner method signature mismatch: "
+                f"plan_hohmann_trajectory may not accept all provided trajectory arguments. "
+                f"Details: {te}"
+            ) from te
+        except Exception as e:
+            # Catch other potential errors during trajectory planning
+            raise RuntimeError(f"An unexpected error occurred during trajectory planning: {e}") from e
+
+        if not isinstance(trajectory_result, dict) or not trajectory_result:
+            raise ValueError(
+                f"Trajectory planner returned an invalid or empty result: {trajectory_result}. "
+                "Expected a dictionary with trajectory details."
+            )
+
+        if not trajectory_result.get('success', False):
+            error_message = trajectory_result.get('error_message', 'Unknown error during trajectory planning.')
+            raise ValueError(f"Trajectory planning failed: {error_message}")
+
+        required_delta_v = trajectory_result.get('total_delta_v')
 
         if not isinstance(required_delta_v, (int, float)) or required_delta_v < 0:
             raise ValueError(
-                f"Trajectory planner returned an invalid or negative delta-V: {required_delta_v}. "
-                "Delta-V must be a non-negative numeric value."
+                f"Trajectory planner returned an invalid or negative 'total_delta_v': {required_delta_v}. "
+                "The 'total_delta_v' must be a non-negative numeric value."
             )
 
         # 2. Calculate the fuel mass based on the required Delta-V and engine parameters
-        # The propulsion_system function applies the Tsiolkovsky rocket equation.
         fuel_mass = calculate_fuel_mass_from_delta_v(
             delta_v=required_delta_v,
             spacecraft_dry_mass=spacecraft_dry_mass,
@@ -148,7 +156,7 @@ def optimize_fuel_for_trajectory(
         return fuel_mass
 
     except ValueError as ve:
-        # Re-raise ValueErrors with context
+        # Re-raise ValueErrors with added context
         raise ValueError(f"Fuel optimization input or calculation error: {ve}") from ve
     except Exception as e:
         # Catch any other unexpected errors from dependency calls or internal logic
