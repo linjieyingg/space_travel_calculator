@@ -14,12 +14,13 @@ def test_speed_of_light_exists():
     assert SPEED_OF_LIGHT > 0
 
 def test_get_celestial_body_data_earth():
-    """Test retrieving data for 'Earth' and verify its basic structure."""
+    """Test retrieving data for 'Earth' and verify its basic structure, including mass and gravitational parameter."""
     data = get_celestial_body_data("Earth")
     assert data is not None
     assert isinstance(data, dict)
     assert data.get("name") == "Earth"
     assert "mass" in data
+    assert data["mass"] > 0  # Added check for positive mass
     assert "radius" in data
     assert "gravitational_parameter_mu" in data
     assert "semi_major_axis_from_sun" in data
@@ -46,7 +47,7 @@ def test_get_celestial_body_data_case_insensitivity():
 
 def test_get_celestial_body_data_non_existent():
     """Test retrieving data for a non-existent celestial body returns None."""
-    data = get_celestial_body_data("NonExistentBody")
+    data = get_celestial_body_data("NonExistentBody") # Using existing test name
     assert data is None
 
 @pytest.mark.parametrize("invalid_input", [
