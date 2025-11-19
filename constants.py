@@ -1,3 +1,4 @@
+```python
 """
 constants.py
 
@@ -23,12 +24,6 @@ C_LIGHT_MPS = 299_792_458.0  # Speed of light in a vacuum in m/s
 # related to orbital mechanics or gravitational effects.
 G_GRAVITATIONAL = 6.67430e-11  # Gravitational constant in m^3 kg^-1 s^-2
 
-# Alias for gravitational constant to ensure compatibility with modules expecting 'GRAVITATIONAL_CONSTANT'
-# Some modules in the repository, such as orbital_mechanics.py, may expect
-# to import 'GRAVITATIONAL_CONSTANT' directly. This alias provides backward
-# compatibility or consistency with other parts of the codebase.
-GRAVITATIONAL_CONSTANT = G_GRAVITATIONAL
-
 # Other potentially useful constants can be added here as needed, such as:
 # # Standard Gravitational Parameter of the Sun (m^3 s^-2)
 # MU_SUN = 1.32712440018e20
@@ -41,3 +36,4 @@ GRAVITATIONAL_CONSTANT = G_GRAVITATIONAL
 #
 # # Earth's standard gravitational parameter (m^3 s^-2)
 # MU_EARTH = 3.986004418e14
+```
