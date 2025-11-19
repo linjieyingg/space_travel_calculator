@@ -9,27 +9,29 @@
 
 **Files Analyzed:** 12
 
+**Last Updated:** 2025-11-18 20:18:25
+
 ---
 
 
 ## `README.md`
 
 ```markdown
-## README.md Analysis
+## README.md Summary
 
-### 1. Purpose
-This `README.md` file serves as an auto-generated, comprehensive overview of the `linjieyingg/space_travel_calculator` repository. It provides high-level metadata about the repository and includes individual, detailed summaries for multiple files within it, outlining their specific purposes, key components, and dependencies.
+1.  **Purpose**
+    This `README.md` file is an auto-generated, comprehensive overview of the `linjieyingg/space_travel_calculator` repository. It provides high-level metadata about the repository and includes detailed, individual summaries for multiple files within it, outlining their purposes, key components, and dependencies.
 
-### 2. Key Components
-*   **Repository Meta-Summary**:
-    *   **Inputs**: None.
-    *   **Outputs/Side Effects**: Provides high-level contextual information about the repository being documented, including its name, branch, and the total number of files analyzed.
-*   **Individual File Summaries**: A series of distinct markdown sections, each dedicated to summarizing a specific file (e.g., `main.py`, `checks.py`, `fuel_calc.py`, `generated/2048_game.py`, `spacecraft_validator.py`, etc.).
-    *   **Inputs**: N/A (these are descriptive sections, not executable components).
-    *   **Outputs/Side Effects**: Each section provides structured documentation for its respective file, detailing its functional aspects (purpose, key functions/classes with inputs/outputs/side effects) and internal/external programmatic dependencies. Note that two files (`spacecraft_validator.py` and `travel_logger.py`) are mentioned with "Error during summarization" notes, indicating incomplete processing for this specific `README.md` generation.
+2.  **Key Components**
+    *   **Repository Meta-Summary**:
+        *   Inputs: None.
+        *   Outputs/Side Effects: Provides high-level contextual information about the documented repository, including its name, branch, and the total number of files analyzed.
+    *   **Individual File Summaries**:
+        *   Inputs: N/A (these are descriptive sections).
+        *   Outputs/Side Effects: Each section provides structured documentation for a specific file (e.g., `main.py`, `checks.py`, `fuel_calc.py`, `generated/2048_game.py`), detailing its functional aspects, key functions/classes with their inputs/outputs/side effects, and programmatic dependencies. Some files are noted with "Error during summarization" indicating incomplete processing.
 
-### 3. Dependencies
-This `README.md` file, being a documentation file, does not have runtime code dependencies or imports. Its content, however, conceptually relies on and documents the existence and functionality of the various Python files and data assets (e.g., `exoplanets.csv`) it describes from the `linjieyingg/space_travel_calculator` repository.
+3.  **Dependencies**
+    This `README.md` file, being a documentation file, has no runtime code dependencies or imports. Conceptually, its content relies on and documents the existence and functionality of the various Python files and data assets (e.g., `exoplanets.csv`) from the `linjieyingg/space_travel_calculator` repository.
 ```
 
 ---
@@ -37,23 +39,23 @@ This `README.md` file, being a documentation file, does not have runtime code de
 
 ## `checks.py`
 
-This Python file, `checks.py`, contains utility functions designed to validate various user inputs for a space travel calculator application.
+This Python file, `checks.py`, provides utility functions to validate various user inputs for a space travel calculator application.
 
-### Key Components:
+## Key Components
 
 *   **`is_valid_date(date_str, format_str='%Y-%m-%d')`**
-    *   **Inputs**: `date_str` (string representing a date), `format_str` (optional string specifying the expected date format, defaults to `'%Y-%m-%d'`).
-    *   **Outputs**: Returns `True` if `date_str` can be successfully parsed into a `datetime` object using the given `format_str`, `False` otherwise.
+    *   **Inputs**: `date_str` (string representing a date), `format_str` (optional string specifying the expected date format, defaults to `YYYY-MM-DD`).
+    *   **Outputs**: Returns `True` if `date_str` can be parsed successfully according to `format_str`, `False` otherwise.
 *   **`is_valid_speed(speed)`**
-    *   **Inputs**: `speed` (numeric, expected to be in km/s, as it's multiplied by `10**6` to convert to m/s).
-    *   **Outputs**: Returns `True` if the provided `speed` is positive and less than or equal to the speed of light (299,792,458 m/s), `False` otherwise.
+    *   **Inputs**: `speed` (numeric value, implicitly in km/s based on internal conversion to m/s).
+    *   **Outputs**: Returns `True` if the `speed` is positive and less than or equal to the speed of light (299,792,458 m/s), `False` otherwise.
 *   **`is_valid_age(age)`**
-    *   **Inputs**: `age` (numeric).
-    *   **Outputs**: Returns `True` if the `age` is between 18 (inclusive) and 75 (exclusive), `False` if it's less than 18 or 75 and above.
+    *   **Inputs**: `age` (numeric value representing a person's age).
+    *   **Outputs**: Returns `True` if `age` is between 18 (inclusive) and 75 (exclusive), indicating a valid age for space travel; `False` otherwise.
 
-### Dependencies:
+## Dependencies
 
-*   `datetime` (from the `datetime` standard library module)
+*   `datetime` module (specifically `datetime.strptime`)
 
 ---
 
@@ -61,23 +63,23 @@ This Python file, `checks.py`, contains utility functions designed to validate v
 ## `fuel_calc.py`
 
 ```markdown
-### Summary of `fuel_calc.py`
+## Analysis of `fuel_calc.py`
 
-1.  **Purpose**
-    This file provides a function to calculate the total fuel required and its corresponding cost for a given travel distance, fuel efficiency, and fuel price.
+### 1. Purpose
+This file provides a single function to calculate the total fuel required and the total cost for a trip, based on distance, fuel efficiency, and fuel price per unit.
 
-2.  **Key Components**
-    *   **Function: `calculate_fuel_cost(distance, fuel_efficiency, fuel_price_per_unit)`**
-        *   **Inputs**:
-            *   `distance` (numeric): The total distance to be traveled.
-            *   `fuel_efficiency` (numeric): How much distance can be covered per unit of fuel (e.g., miles per gallon, km per liter).
-            *   `fuel_price_per_unit` (numeric): The cost of a single unit of fuel.
-        *   **Outputs**:
-            *   A dictionary containing two keys: `'total_fuel_needed'` (numeric) and `'total_cost'` (numeric), representing the calculated values.
-            *   Returns `None` if `fuel_efficiency` is less than or equal to 0, indicating an invalid input.
+### 2. Key Components
+*   **Function**: `calculate_fuel_cost`
+    *   **Inputs**:
+        *   `distance` (numeric): The total distance to be covered.
+        *   `fuel_efficiency` (numeric): The distance covered per unit of fuel (e.g., miles per gallon, km per liter).
+        *   `fuel_price_per_unit` (numeric): The cost of a single unit of fuel.
+    *   **Outputs**:
+        *   A dictionary containing `'total_fuel_needed'` and `'total_cost'` if `fuel_efficiency` is valid.
+        *   `None` if `fuel_efficiency` is less than or equal to zero, indicating an invalid input.
 
-3.  **Dependencies**
-    None. This file is self-contained and does not import any external modules or libraries.
+### 3. Dependencies
+None. This file does not import any external modules or libraries.
 ```
 
 ---
@@ -86,46 +88,26 @@ This Python file, `checks.py`, contains utility functions designed to validate v
 ## `generated/2048_game.py`
 
 ```markdown
-### Analysis of `generated/2048_game.py`
+### Purpose
+This file implements the classic 2048 puzzle game, allowing a user to play it in the console. It manages the game board, score, tile movements, and game-over conditions.
 
-#### 1. Purpose
-This file implements the classic 2048 puzzle game, allowing a user to play it directly in the console. It manages game state, tile generation, movement, merging, score, and game-over conditions.
-
-#### 2. Key Components
-
+### Key Components
 *   **Class `Game2048`**: Encapsulates the entire game logic and state.
-    *   `__init__(self)`:
-        *   **Inputs**: None.
-        *   **Outputs/Side Effects**: Initializes a 4x4 `grid` with zeros, `score` to 0, adds two initial random tiles (2 or 4), sets `won` and `game_over` flags to `False`.
-    *   `add_random_tile(self)`:
-        *   **Inputs**: None.
-        *   **Outputs/Side Effects**: Finds an empty cell and places a `2` (90% chance) or `4` (10% chance). Returns `True` if a tile was added, `False` otherwise.
-    *   `display_board(self)`:
-        *   **Inputs**: None.
-        *   **Outputs/Side Effects**: Clears the console, prints the current score, and renders the 4x4 game grid with formatted cells.
-    *   `_get_row_view(self, r)`, `_set_row_view(self, r, new_row)`:
-        *   **Inputs**: Row index `r`, `new_row` list for setting.
-        *   **Outputs/Side Effects**: Gets or sets a specific row of the grid.
-    *   `_get_col_view(self, c)`, `_set_col_view(self, c, new_col)`:
-        *   **Inputs**: Column index `c`, `new_col` list for setting.
-        *   **Outputs/Side Effects**: Gets or sets a specific column of the grid.
-    *   `_shift_and_merge(self, line)`:
-        *   **Inputs**: A list representing a row or column segment (`line`).
-        *   **Outputs/Side Effects**: Returns a `final_line` (list) after shifting non-zero numbers to one end and merging identical adjacent numbers. Also returns a boolean indicating if the line changed. Updates `self.score` and sets `self.won` to `True` if 2048 is reached.
-    *   `move(self, direction)`:
-        *   **Inputs**: `direction` string ('up', 'down', 'left', 'right').
-        *   **Outputs/Side Effects**: Applies `_shift_and_merge` to all relevant rows or columns based on `direction`. If a move occurred, a new random tile is added, and `check_game_over` is called. Returns `True` if a valid move happened and changed the board, `False` otherwise.
-    *   `check_game_over(self)`:
-        *   **Inputs**: None.
-        *   **Outputs/Side Effects**: Determines if the game is over (no empty cells and no possible merges). Updates `self.game_over` flag. Returns `True` if game is over, `False` otherwise.
+    *   `__init__()`: Initializes the 4x4 game grid, score, adds two initial random tiles (2 or 4), and sets `won` and `game_over` flags.
+    *   `add_random_tile()`: Takes no input. Places a new '2' (90% chance) or '4' (10% chance) in a random empty cell. Returns `True` if successful, `False` otherwise. Side effect: Modifies `self.grid`.
+    *   `display_board()`: Takes no input. Clears the console and prints the current game board and score in a formatted way. Side effect: Outputs to console via `os.system` and `print`.
+    *   `_get_row_view(r)`, `_set_row_view(r, new_row)`: Helper methods for accessing and updating rows in `self.grid`. Inputs: row index `r`, `new_row` list for setter. Outputs: list for getter, modifies `self.grid` for setter.
+    *   `_get_col_view(c)`, `_set_col_view(c, new_col)`: Helper methods for accessing and updating columns in `self.grid`. Inputs: column index `c`, `new_col` list for setter. Outputs: list for getter, modifies `self.grid` for setter.
+    *   `_shift_and_merge(line)`: Takes a list `line` (representing a row or column). Shifts non-zero numbers to the left, merges identical adjacent numbers, and shifts again. Returns the `final_line` (list) and a boolean indicating if the line changed. Side effects: Updates `self.score` and `self.won` if 2048 is reached.
+    *   `move(direction)`: Takes a string `direction` ('up', 'down', 'left', 'right'). Applies the `_shift_and_merge` logic to all relevant rows/columns based on the direction. Returns `True` if a move occurred, `False` otherwise. Side effects: Modifies `self.grid`, `self.score`, `self.won`, and calls `add_random_tile()` and `check_game_over()` if a valid move happened.
+    *   `check_game_over()`: Takes no input. Determines if the game is over (no empty cells and no possible merges). Returns `True` if game over, `False` otherwise. Side effect: Updates `self.game_over` flag.
+*   **Function `play_2048()`**: The main entry point for playing the game.
+    *   Inputs: None.
+    *   Outputs: Prints game board, score, prompts for user input, and prints final game status (win/lose). Side effects: Manages the game loop, takes user input, calls `Game2048` methods.
 
-*   **Function `play_2048()`**:
-    *   **Inputs**: None.
-    *   **Outputs/Side Effects**: Orchestrates the main game loop. Creates a `Game2048` instance, repeatedly displays the board, prompts the user for input ('W/A/S/D' or 'q'), translates input to game directions, calls `game.move()`, and prints win/game over messages.
-
-#### 3. Dependencies
-*   `random`: Used for generating random tile values (2 or 4) and selecting random empty cells.
-*   `os`: Used for clearing the console output (`os.system('cls' if os.name == 'nt' else 'clear')`) to provide a cleaner game display.
+### Dependencies
+*   `random`: Used for generating random tile values and positions.
+*   `os`: Used to clear the console for a cleaner display of the game board.
 ```
 
 ---
@@ -133,18 +115,16 @@ This file implements the classic 2048 puzzle game, allowing a user to play it di
 
 ## `generated/change_four_to_five_in_a_row.py`
 
-```markdown
 ### Purpose
-This Python file defines a single function that updates text by replacing all occurrences of "four in a row" with "five in a row", primarily for game title or description updates.
+This file defines a single utility function designed to update text by replacing all instances of the phrase "four in a row" with "five in a row", typically used for game-related text updates.
 
 ### Key Components
-*   **Function**: `update_game_reference`
-    *   **Inputs**: Takes a single argument `text` of type `str`.
-    *   **Outputs**: Returns a new `str` with the specified phrase replaced. It has no side effects.
+*   **`update_game_reference` function**:
+    *   **Inputs**: Takes one argument, `text`, which is expected to be a string.
+    *   **Outputs**: Returns a new string where all occurrences of "four in a row" have been replaced by "five in a row". It does not modify the input string directly.
 
 ### Dependencies
-This file has no external dependencies or imports; it uses only built-in string methods.
-```
+This file has no external dependencies or imports; it relies solely on Python's built-in string methods.
 
 ---
 
@@ -154,16 +134,16 @@ This file has no external dependencies or imports; it uses only built-in string 
 ```markdown
 ## File Summary: `generated/count_vowels.py`
 
-### Purpose
-This Python script defines a function to count the occurrences of vowels (a, e, i, o, u, case-insensitive) within a given input string.
+### 1. Purpose
+This file defines a Python function designed to count the total number of vowels (a, e, i, o, u, case-insensitive) present in any given input string.
 
-### Key Components
-*   **Function: `count_vowels(text)`**
-    *   **Inputs**: `text` (str) - The string in which to count vowels.
-    *   **Outputs**: `int` - The total number of vowels found in the string.
+### 2. Key Components
+*   **Function**: `count_vowels`
+    *   **Inputs**: Takes one argument: `text` (a string).
+    *   **Outputs**: Returns an integer representing the total count of vowels found in the input string.
 
-### Dependencies
-None. This file uses only standard Python built-in types and string methods.
+### 3. Dependencies
+None. This file uses only built-in Python string methods and basic language constructs.
 ```
 
 ---
@@ -171,38 +151,41 @@ None. This file uses only standard Python built-in types and string methods.
 
 ## `generated/four_in_a_row.py`
 
-This Python file implements a command-line based Four-in-a-Row (Connect Four) game, allowing two players to take turns dropping pieces until a winning condition is met or the board is full.
+```markdown
+## File Analysis: `generated/four_in_a_row.py`
+
+### Purpose
+This file implements a command-line based Four-in-a-Row (Connect Four) game. It allows two players to take turns dropping pieces into a 6x7 grid, checking for win conditions (four in a row horizontally, vertically, or diagonally) or a tie.
 
 ### Key Components
-
-*   **`create_board()`**
+*   **`create_board()`**:
     *   **Inputs**: None
-    *   **Outputs**: Returns a 2D list representing an empty 6x7 game board, initialized with zeros.
-*   **`print_board(board)`**
-    *   **Inputs**: `board` (2D list, current game state)
-    *   **Outputs/Side Effects**: Prints the board to the console, showing 'X' for Player 1, 'O' for Player 2, and column numbers.
-*   **`is_valid_location(board, col)`**
-    *   **Inputs**: `board` (2D list), `col` (integer, 0-indexed column)
-    *   **Outputs**: Returns `True` if the column is within bounds and not full, `False` otherwise.
-*   **`get_next_open_row(board, col)`**
-    *   **Inputs**: `board` (2D list), `col` (integer, 0-indexed column)
-    *   **Outputs**: Returns the 0-indexed row of the lowest empty slot in the specified column.
-*   **`drop_piece(board, row, col, piece)`**
-    *   **Inputs**: `board` (2D list), `row` (integer), `col` (integer), `piece` (1 or 2)
-    *   **Outputs/Side Effects**: Modifies the `board` by placing `piece` at the given `row` and `col`.
-*   **`winning_move(board, piece)`**
-    *   **Inputs**: `board` (2D list), `piece` (1 or 2)
-    *   **Outputs**: Returns `True` if the given `piece` has four consecutive pieces horizontally, vertically, or diagonally; `False` otherwise.
-*   **`is_board_full(board)`**
-    *   **Inputs**: `board` (2D list)
+    *   **Outputs**: Returns a 2D list representing the game board, initialized with zeros (empty slots).
+*   **`print_board(board)`**:
+    *   **Inputs**: `board` (2D list representing the game state).
+    *   **Outputs/Side Effects**: Prints the current board to the console, using 'X' for Player 1 and 'O' for Player 2. Includes column numbers for user input.
+*   **`is_valid_location(board, col)`**:
+    *   **Inputs**: `board`, `col` (integer, 0-indexed column).
+    *   **Outputs**: Returns `True` if `col` is within bounds and the column is not full, `False` otherwise.
+*   **`get_next_open_row(board, col)`**:
+    *   **Inputs**: `board`, `col` (integer, 0-indexed column).
+    *   **Outputs**: Returns the 0-indexed row number of the lowest empty slot in `col`.
+*   **`drop_piece(board, row, col, piece)`**:
+    *   **Inputs**: `board`, `row` (integer), `col` (integer), `piece` (integer, 1 or 2).
+    *   **Outputs/Side Effects**: Modifies the `board` in place by placing `piece` at the specified `(row, col)`.
+*   **`winning_move(board, piece)`**:
+    *   **Inputs**: `board`, `piece` (integer, 1 or 2).
+    *   **Outputs**: Returns `True` if `piece` has achieved four in a row (horizontal, vertical, or diagonal), `False` otherwise.
+*   **`is_board_full(board)`**:
+    *   **Inputs**: `board`.
     *   **Outputs**: Returns `True` if all slots on the board are filled, `False` otherwise.
-*   **`four_in_a_row_game()`**
+*   **`four_in_a_row_game()`**:
     *   **Inputs**: None
-    *   **Outputs/Side Effects**: Orchestrates the entire game flow, handling player turns, input validation, board updates, win/tie checks, and console output.
+    *   **Outputs/Side Effects**: Orchestrates the entire game play, including managing turns, handling player input, validating moves, updating the board, checking win/tie conditions, and printing game messages. It contains the main game loop.
 
 ### Dependencies
-
-*   `sys`: Used for `sys.stdout.flush()` to ensure immediate display of printed output on the console.
+*   **`sys`**: Used for `sys.stdout.flush()` to ensure immediate output visibility in the console.
+```
 
 ---
 
@@ -213,15 +196,17 @@ This Python file implements a command-line based Four-in-a-Row (Connect Four) ga
 ## File Analysis: `generated/spacecraft_id_validation.py`
 
 ### 1. Purpose
-This file provides a utility function to validate spacecraft IDs against specific criteria, ensuring they meet predefined format and length requirements.
+This file defines a utility function to validate a spacecraft ID string against specific criteria, including type, non-emptiness, length constraints, and alphanumeric content.
 
 ### 2. Key Components
+
 *   **Function**: `validate_spacecraft_id`
     *   **Inputs**: `spacecraft_id` (str) - The ID string to be validated.
-    *   **Outputs**: `bool` - Returns `True` if the ID is valid according to the criteria (string, non-empty, alphanumeric, length 5-20), `False` otherwise.
+    *   **Outputs**: `bool` - Returns `True` if the `spacecraft_id` meets all validation criteria, `False` otherwise.
 
 ### 3. Dependencies
-*   **`re`**: Python's regular expression module, used for checking if the ID is alphanumeric.
+
+*   **`re`**: Used for regular expression matching to ensure the ID is alphanumeric.
 ```
 
 ---
@@ -229,26 +214,32 @@ This file provides a utility function to validate spacecraft IDs against specifi
 
 ## `generated/tictactoe.py`
 
-This file implements a two-player Tic-Tac-Toe game played on a 3x3 board. It allows players to take turns marking spaces and determines the winner or if the game is a draw.
+```markdown
+1.  **Purpose**: This file implements a command-line Tic-Tac-Toe game where two human players compete on a 3x3 board. It handles game setup, player turns, move validation, win condition checking, and draw detection.
 
-### Key Components:
+2.  **Key Components**:
+    *   `play_tic_tac_toe()`:
+        *   **Inputs**: None.
+        *   **Outputs/Side Effects**: Orchestrates the entire game, including printing instructions, displaying the board, prompting for player moves, validating input, updating the board state, and declaring the winner or a draw.
+    *   `display_board(current_board)` (nested):
+        *   **Inputs**: `current_board` (a list of 9 strings representing the Tic-Tac-Toe board state).
+        *   **Outputs/Side Effects**: Prints the current visual representation of the game board to the console.
+    *   `check_win(current_board, player)` (nested):
+        *   **Inputs**: `current_board` (list of 9 strings), `player` (a string, 'X' or 'O').
+        *   **Outputs**: Returns `True` if the given `player` has achieved a winning configuration; otherwise, returns `False`.
+    *   `check_draw(current_board)` (nested):
+        *   **Inputs**: `current_board` (list of 9 strings).
+        *   **Outputs**: Returns `True` if all spaces on the board are filled; otherwise, returns `False`.
+    *   Main game loop (`while not game_over`):
+        *   **Inputs**: User input (integers 1-9) for move selection.
+        *   **Outputs/Side Effects**: Manages player turns, prompts for valid moves, updates the board, checks for game-ending conditions (win/draw), and switches the active player.
+    *   `if __name__ == '__main__':` block:
+        *   **Inputs**: None.
+        *   **Outputs/Side Effects**: Executes the `play_tic_tac_toe()` function when the script is run directly.
 
-*   **`play_tic_tac_toe()`**:
-    *   **Inputs**: None (interacts directly with the user via console input).
-    *   **Outputs/Side Effects**: Manages the entire game flow, including displaying the board, prompting for moves, validating input, checking for wins/draws, switching players, and printing game status and results to the console.
-*   **`display_board(current_board)`** (nested in `play_tic_tac_toe`):
-    *   **Inputs**: `current_board` (a list of 9 strings representing the current state of the game board).
-    *   **Outputs/Side Effects**: Prints the visual representation of the Tic-Tac-Toe board to the console.
-*   **`check_win(current_board, player)`** (nested in `play_tic_tac_toe`):
-    *   **Inputs**: `current_board` (a list of 9 strings), `player` (the symbol of the player to check, 'X' or 'O').
-    *   **Outputs**: Returns `True` if the specified `player` has achieved a winning condition (three in a row horizontally, vertically, or diagonally), `False` otherwise.
-*   **`check_draw(current_board)`** (nested in `play_tic_tac_toe`):
-    *   **Inputs**: `current_board` (a list of 9 strings).
-    *   **Outputs**: Returns `True` if all spaces on the board are filled and no player has won (indicating a draw), `False` otherwise.
-
-### Dependencies:
-
-*   **`random`**: Used to randomly select which player (X or O) starts the game.
+3.  **Dependencies**:
+    *   `random`: Used to randomly select which player (X or O) starts the game.
+```
 
 ---
 
@@ -256,55 +247,43 @@ This file implements a two-player Tic-Tac-Toe game played on a 3x3 board. It all
 ## `main.py`
 
 ```markdown
-### Purpose
-This file implements a space travel calculator that determines the time it takes to reach a user-chosen celestial destination, considering the user's age, spacecraft speed, and relativistic effects.
+## Purpose
+This file implements a space travel calculator that determines the travel time, arrival date, and traveler's age upon reaching a user-selected exoplanet destination, considering both user and Earth's reference frames (relativistic effects).
 
-### Key Components
+## Key Components
 
-*   **`calc_max_dis(speed, age)`**
-    *   **Input**: `speed` (float, Mm/s), `age` (int, years).
-    *   **Output**: `max_distance` (float, meters).
-    *   **Description**: Calculates the maximum distance a user can travel within a 100-year lifetime.
-
-*   **`calc_time(destination, speed, planets)`**
-    *   **Input**: `destination` (str), `speed` (float, Mm/s), `planets` (list of dicts with 'name' and 'distance').
-    *   **Output**: `years` (float).
-    *   **Description**: Calculates the travel time in the user's reference frame to the specified destination.
-
-*   **`calc_time_earth(years, speed)`**
-    *   **Input**: `years` (float, user's travel time), `speed` (float, Mm/s).
-    *   **Output**: `user_years` (float).
-    *   **Description**: Calculates the equivalent time elapsed on Earth for the journey, applying relativistic time dilation.
-
-*   **`gen_planets(max_distance)`**
+*   **`calc_max_dis(speed, age)`**:
+    *   **Input**: `speed` (float, Mm/s), `age` (int, current age).
+    *   **Output**: `max_distance` (float, meters) - the maximum distance a user can travel within a 100-year lifespan.
+*   **`calc_time(destination, speed, planets)`**:
+    *   **Input**: `destination` (str, planet name), `speed` (float, Mm/s), `planets` (list of dictionaries containing planet names and distances).
+    *   **Output**: `years` (float) - the non-relativistic travel time in years for the user.
+*   **`calc_time_earth(years, speed)`**:
+    *   **Input**: `years` (float, travel time from user's perspective), `speed` (float, Mm/s).
+    *   **Output**: `user_years` (float) - the relativistic travel time in years as observed from Earth. Includes error handling for speeds approaching or exceeding the speed of light.
+*   **`gen_planets(max_distance)`**:
     *   **Input**: `max_distance` (float, meters).
-    *   **Output**: `planets` (list of dictionaries with 'name' and 'distance').
-    *   **Description**: Reads `exoplanets.csv`, filters planets reachable within `max_distance`, and converts their stellar distances from parsecs to meters.
+    *   **Output**: `planets` (list of dictionaries, `{'name': str, 'distance': float}`) - a filtered list of exoplanets from `exoplanets.csv` that are reachable within the given `max_distance`.
+*   **`calc_age(years, age)`**:
+    *   **Input**: `years` (float, travel time), `age` (int, current age).
+    *   **Output**: `new_age` (int) - the user's age upon arrival at the destination.
+*   **`calc_arrival(date, years)`**:
+    *   **Input**: `date` (datetime object, departure date), `years` (float, travel time).
+    *   **Output**: `new_date` (datetime object) - the calculated arrival date. Returns `None` if calculation results in an overflow or other error.
+*   **`convert_date(date_str)`**:
+    *   **Input**: `date_str` (str, 'YYYY-MM-DD' format).
+    *   **Output**: `date` (datetime object) - the parsed date.
+*   **`main()`**:
+    *   **Input**: User input for spacecraft speed, departure date, age, and destination planet.
+    *   **Output**: Prints the travel duration (user's and Earth's frame), arrival date, and new age to the console. Orchestrates the program flow, handles user input validation, and manages file/runtime errors.
 
-*   **`calc_age(years, age)`**
-    *   **Input**: `years` (float), `age` (int).
-    *   **Output**: `new_age` (int).
-    *   **Description**: Calculates the user's age upon arrival at the destination.
+## Dependencies
 
-*   **`calc_arrival(date, years)`**
-    *   **Input**: `date` (datetime object), `years` (float).
-    *   **Output**: `new_date` (datetime object) or `None`.
-    *   **Description**: Determines the exact arrival date based on the departure date and travel time.
-
-*   **`convert_date(date_str)`**
-    *   **Input**: `date_str` (string in YYYY-MM-DD format).
-    *   **Output**: `date` (datetime object).
-    *   **Description**: Converts a date string into a `datetime` object.
-
-*   **`main()`**
-    *   **Input**: User input from console (speed, departure date, age, chosen destination).
-    *   **Output/Side Effect**: Prints travel calculations, arrival date, and relative time passage to the console.
-    *   **Description**: Orchestrates the program flow, handles user input validation, calls other functions for calculations, and displays the final travel itinerary.
-
-### Dependencies
-*   **Standard Library**: `datetime` (specifically `datetime`, `timedelta`), `math`.
-*   **Third-party Libraries**: `pandas`.
-*   **Local Modules**: `checks` (imported as `c`), presumed to contain validation functions like `is_valid_speed`, `is_valid_date`, and `is_valid_age`.
+*   **`datetime`**: For handling dates and time differences (`datetime`, `timedelta`).
+*   **`pandas`**: For reading and processing the `exoplanets.csv` file (`pd`).
+*   **`checks`**: A local module (`c`) presumed to contain validation functions (`is_valid_speed`, `is_valid_date`, `is_valid_age`).
+*   **`math`**: For mathematical operations (`math.floor`, `math.sqrt`).
+*   **`exoplanets.csv`**: An external CSV file containing exoplanet data (name, stellar distance).
 ```
 
 ---
@@ -312,46 +291,46 @@ This file implements a space travel calculator that determines the time it takes
 
 ## `spacecraft_validator.py`
 
-## Summary of `spacecraft_validator.py`
+```markdown
+## spacecraft_validator.py
 
-This file provides a utility function for validating spacecraft names against specific length and character-type rules.
+### 1. Purpose
+This file provides a utility function for validating spacecraft names according to specific length and character set rules.
 
-### Key Components
-
-*   **Function: `validate_spacecraft_name`**
+### 2. Key Components
+*   **`validate_spacecraft_name(name)` function**:
     *   **Inputs**: `name` (str) - The spacecraft name to be validated.
-    *   **Outputs**: `bool` - Returns `True` if the name is between 3 and 20 alphanumeric characters (inclusive), and `False` otherwise.
+    *   **Outputs**: `bool` - Returns `True` if the name is between 3 and 20 alphanumeric characters long (inclusive), and `False` otherwise. It also returns `False` if the input is not a string.
 
-### Dependencies
-
-None. This file does not import any external modules or libraries.
+### 3. Dependencies
+None.
+```
 
 ---
 
 
 ## `travel_logger.py`
 
-## File Analysis: travel_logger.py
+```markdown
+## File Analysis: `travel_logger.py`
 
-### Purpose
-This file provides a utility function to log travel calculation details (destination, speed, travel time) along with a timestamp to a persistent JSON file named `travel_log.json`.
+### 1. Purpose
+This file provides a utility function to persistently log travel calculation details (destination, speed, and time) into a JSON file named `travel_log.json`. It handles file creation, appending to existing logs, and gracefully recovers from empty or malformed log files.
 
-### Key Components
-
-*   **Function: `save_travel_log`**
+### 2. Key Components
+*   **`save_travel_log` function**:
     *   **Inputs**:
         *   `destination` (str): The name of the travel destination.
         *   `speed` (float): The calculated or estimated travel speed.
         *   `travel_time` (float): The calculated or estimated travel time.
-    *   **Outputs/Side Effects**:
-        *   Appends a new entry containing the timestamp, destination, speed, and travel time to `travel_log.json`.
-        *   Creates `travel_log.json` if it doesn't exist.
-        *   Handles malformed or empty `travel_log.json` by initializing or overwriting it to ensure new data can be appended, printing a warning to `stdout` in such cases.
-        *   Writes the updated list of log entries back to `travel_log.json` in a human-readable, indented format.
+    *   **Outputs or Side Effects**:
+        *   Creates or appends a new entry to `travel_log.json`. Each entry includes a timestamp, destination, speed, and travel time.
+        *   Prints warnings to console if the log file is corrupted, malformed, or its content is not a list.
 
-### Dependencies
-*   `json`: Used for encoding and decoding JSON data to/from the log file.
+### 3. Dependencies
+*   `json`: Used for encoding and decoding JSON data to and from the log file.
 *   `datetime`: Used to generate current timestamps for log entries.
 *   `os`: Used to check for the existence of the log file.
+```
 
 ---
