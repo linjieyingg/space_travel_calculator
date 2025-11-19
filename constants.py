@@ -1,3 +1,4 @@
+```python
 """
 constants.py
 
@@ -36,3 +37,4 @@ G_GRAVITATIONAL = 6.67430e-11  # N(m/kg)^2 or m^3 kg^-1 s^-2
 # # Earth's standard gravitational parameter (m^3 s^-2)
 # MU_EARTH = 3.986004418e14
 """
+```
