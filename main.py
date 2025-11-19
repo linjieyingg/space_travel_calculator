@@ -39,7 +39,7 @@ import checks as c
 import celestial_data
 from orbital_mechanics import calculate_circular_orbital_velocity # Not directly used in main, but good to have if needed
 from trajectory_planner import TrajectoryPlanner
-import propulsion_system
+import propulsion_system # Imported but not directly called in main after fuel_optimizer was added
 import fuel_calc
 import travel_logger
 from constants import C_LIGHT_MPS # Import directly from constants for clarity
@@ -291,14 +291,27 @@ def main():
         print(f"An unexpected error occurred during trajectory planning: {e}. Please review your inputs or contact support if the issue persists.")
         return
 
+    # Ensure trajectory_result is valid before parsing
     if not trajectory_result or not trajectory_result.get('success', False):
         print(f"Error planning trajectory: {trajectory_result.get('error_message', 'Unknown error')}. Please verify your selected celestial bodies.")
         return
 
-    # Extract delta-V and travel time from the trajectory planning result
-    delta_v_required = trajectory_result['total_delta_v_mps']
-    travel_time_seconds = trajectory_result['total_travel_time_seconds']
-    transfer_type = trajectory_result['transfer_type'] # This will now reflect the chosen type or fallback
+    # Extract delta-V and travel time from the trajectory planning result using .get() for robustness
+    delta_v_required = trajectory_result.get('total_delta_v_mps', 0.0)
+    travel_time_seconds = trajectory_result.get('total_travel_time_seconds', 0.0)
+    transfer_type = trajectory_result.get('transfer_type', 'Unknown Transfer')
+
+    # Add explicit check for critical values being non-positive, as they lead to issues downstream
+    if delta_v_required <= 0 and travel_time_seconds <= 0:
+        print("Critical error: Trajectory planning failed to provide valid Delta-V and travel time. Exiting.")
+        return
+    elif delta_v_required <= 0:
+        print("Warning: Calculated Delta-V is non-positive. This might indicate an error in trajectory planning or no required burn.")
+        # Continue as fuel_optimizer might handle zero delta-v
+    elif travel_time_seconds <= 0:
+        print("Warning: Calculated travel time is non-positive. This might indicate an error in trajectory planning. Using a default small positive time for further calculations.")
+        travel_time_seconds = 1.0 # Avoid division by zero or other issues downstream if 0 or negative.
+
 
     # --- Fuel Calculation (using fuel_optimizer) ---
     fuel_mass_needed = 0.0
