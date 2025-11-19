@@ -306,7 +306,7 @@ def main():
         fuel_mass_needed = fuel_optimizer.optimize_fuel_for_trajectory(
             start_body=source_planet,
             end_body=destination_planet,
-            trajectory_type=transfer_type, # Use the transfer type from trajectory planning result
+            trajectory_type=selected_trajectory_type, # Pass the user's selected trajectory type
             spacecraft_dry_mass=spacecraft_dry_mass,
             engine_specific_impulse=engine_specific_impulse,
             departure_date=departure_date # Pass the departure date to fuel optimizer for trajectory planning
