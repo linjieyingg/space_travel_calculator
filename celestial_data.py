@@ -2,19 +2,29 @@
 celestial_data.py
 
 Purpose:
-To store constant values and parameters for celestial bodies (e.g., masses, gravitational parameters,
-orbital radii for planets in our solar system) required for orbital calculations.
-This centralizes astrophysical data.
+This module serves as the centralized and definitive source for astrophysical data within the
+space_travel_calculator application. It stores detailed parameters for celestial bodies in our
+solar system and provides functions to retrieve this data and list potential destinations.
+It also re-exports universal physical constants from the `constants` module for convenience
+and consistency, resolving redundancy with previous definitions.
 
-Dependencies: None
+This file consolidates the functionality previously found in `celestial_bodies.py` and
+`celestial_data.py` into a single, comprehensive module.
+
+Dependencies:
+    - constants: For universal physical constants like GRAVITATIONAL_CONSTANT and SPEED_OF_LIGHT.
 """
 
-# Universal Constants
+import math # Used for abs() in distance calculation
+from constants import G_GRAVITATIONAL, C_LIGHT_MPS
+
+# Re-export Universal Constants, maintaining original names for backward compatibility
+# if other modules explicitly imported these from an earlier version of celestial_data.py.
 # Gravitational Constant (G) in cubic meters per kilogram per square second (m^3 kg^-1 s^-2)
-GRAVITATIONAL_CONSTANT = 6.67430e-11
+GRAVITATIONAL_CONSTANT = G_GRAVITATIONAL
 
 # Speed of Light in vacuum (c) in meters per second (m/s)
-SPEED_OF_LIGHT = 299792458.0
+SPEED_OF_LIGHT = C_LIGHT_MPS
 
 # Dictionary containing astrophysical data for solar system bodies.
 # Keys are the celestial body names (uppercase for consistent lookup).
@@ -108,6 +118,52 @@ def get_celestial_body_data(body_name: str) -> dict | None:
         dict | None: A dictionary containing the body's data if found, otherwise None.
     """
     if not isinstance(body_name, str):
-        # Or raise a TypeError, depending on desired strictness for API usage.
         return None
     return CELESTIAL_BODIES_DATA.get(body_name.upper())
+
+
+def get_all_solar_system_destinations() -> list[dict] | None:
+    """
+    Retrieves a list of all celestial bodies in the solar system suitable as travel destinations,
+    excluding Earth, and including their estimated average distance from Earth.
+
+    Returns:
+        list[dict] | None: A list of dictionaries, where each dictionary has 'name' (str)
+                           and 'distance' (float, average distance from Earth in meters).
+                           Returns None if Earth's data is critically missing from
+                           CELESTIAL_BODIES_DATA. The list is sorted by distance in ascending order.
+    """
+    destinations = []
+    earth_data = get_celestial_body_data("EARTH")
+    if earth_data is None:
+        # This indicates a critical error in the data source itself.
+        print("Error: Earth's data not found in CELESTIAL_BODIES_DATA. Cannot calculate destinations.")
+        return None
+
+    earth_orbital_radius_from_sun = earth_data["orbital_radius_avg"]
+
+    for body_name, data in CELESTIAL_BODIES_DATA.items():
+        # Exclude Earth itself as a destination
+        if body_name == "EARTH":
+            continue
+
+        distance_from_earth = 0.0
+        if body_name == "MOON":
+            # For the Moon, 'orbital_radius_avg' is its average distance from Earth
+            distance_from_earth = data["orbital_radius_avg"]
+        else:
+            # For other planets, calculate the approximate average distance from Earth
+            # by taking the absolute difference of their average orbital radii from the Sun.
+            # This is a simplification and does not account for specific orbital phases
+            # or elliptical orbits for precise travel planning, but serves for average distance.
+            distance_from_earth = math.fabs(data["orbital_radius_avg"] - earth_orbital_radius_from_sun)
+
+        destinations.append({
+            "name": body_name.capitalize(), # Capitalize for consistent display
+            "distance": distance_from_earth
+        })
+
+    # Sort destinations by distance from Earth
+    destinations.sort(key=lambda x: x["distance"])
+
+    return destinations
