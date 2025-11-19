@@ -1,7 +1,7 @@
 # orbital_mechanics.py
 
 import math
-from datetime import datetime, timedelta
+# from datetime import datetime, timedelta # Not directly used in this module after refactoring
 from constants import G_GRAVITATIONAL  # Importing G_GRAVITATIONAL directly
 from celestial_data import get_celestial_body_data  # Importing the specific function from celestial_data
 
@@ -64,7 +64,7 @@ def vector_add(vec1: tuple, vec2: tuple) -> tuple:
     """
     _validate_vector(vec1, "vec1")
     _validate_vector(vec2, "vec2")
-    return (vec1[0] + vec2[0], vec1[1] + vec2[1], vec2[2] + vec2[2])
+    return (vec1[0] + vec2[0], vec1[1] + vec2[1], vec1[2] + vec2[2])
 
 def vector_scale(vec: tuple, scalar: float) -> tuple:
     """
@@ -323,100 +323,75 @@ def calculate_escape_velocity(mu: float, radius: float) -> float:
 
     return math.sqrt(2 * mu / radius)
 
-# --- New Lambert Transfer Function ---
+# --- Universal Variable Lambert Solver Helper Functions ---
 
-def _get_body_orbital_velocity_vector(body_name: str, date: datetime, central_body_mu: float) -> tuple:
+def _stumpff_c(z: float) -> float:
+    """Calculates the Stumpff function C(z)."""
+    if z > 1e-6:
+        return (1 - math.cos(math.sqrt(z))) / z
+    elif z < -1e-6:
+        return (math.cosh(math.sqrt(-z)) - 1) / (-z)
+    else: # z is close to 0
+        return 0.5 # Taylor expansion for z=0
+
+def _stumpff_s(z: float) -> float:
+    """Calculates the Stumpff function S(z)."""
+    if z > 1e-6:
+        return (math.sqrt(z) - math.sin(math.sqrt(z))) / (z * math.sqrt(z))
+    elif z < -1e-6:
+        return (math.sinh(math.sqrt(-z)) - math.sqrt(-z)) / (-z * math.sqrt(-z))
+    else: # z is close to 0
+        return 1/6 # Taylor expansion for z=0
+
+def _calc_time_from_psi(psi: float, A_param: float, mu: float) -> float:
     """
-    Approximates a celestial body's velocity vector assuming a circular orbit around the central body.
-    This is a simplification for a basic calculator and does not account for elliptical orbits,
-    inclinations, or perturbations.
-
-    Args:
-        body_name (str): The name of the celestial body.
-        date (datetime): The date for which to get the velocity.
-        central_body_mu (float): Gravitational parameter of the central body (e.g., Sun).
-
-    Returns:
-        tuple: A 3-element tuple (vx, vy, vz) representing the approximate velocity vector in m/s.
-
-    Raises:
-        ValueError: If body data is missing or required orbital parameters are non-positive.
-        NotImplementedError: If `ephemeris.get_heliocentric_state` is not available or
-                             if the central body (Sun) cannot be processed by ephemeris.
+    Calculates the time of flight for Lambert's problem given psi (universal anomaly squared).
+    This function implements the time equation (F(psi) in a Newton-Raphson context).
+    Based on Vallado's Algorithm 50, `tof_func`.
     """
-    try:
-        from ephemeris import get_heliocentric_state
-        # ephemeris.get_heliocentric_state returns distance and angular position.
-        # It does not return cartesian position vectors directly,
-        # so we'll approximate the velocity from the angular position.
-        
-        # NOTE: This uses ephemeris to get radial distance and angular position.
-        # The ephemeris module itself might be simplified and might not provide full 3D vectors.
-        # Assuming get_heliocentric_state returns a dictionary with 'distance_from_sun_m'
-        # and 'angular_position_rad' (angle in XY plane from some reference).
-        # We need to turn this into a 3D position vector and then a velocity vector.
-        
-        state = get_heliocentric_state(body_name, date)
-        r_mag = state['distance_from_sun_m']
-        angular_pos_rad = state['angular_position_rad']
+    sqrt_mu = math.sqrt(mu)
+    x_val = math.sqrt(abs(psi)) # Universal anomaly (x in Vallado)
 
-        # Approximate circular orbital velocity magnitude
-        v_mag = calculate_circular_orbital_velocity(central_body_mu, r_mag)
+    C = _stumpff_c(psi)
+    S = _stumpff_s(psi)
 
-        # Approximate velocity vector direction (tangential to circular path in XY plane)
-        # Position vector: (r_mag * cos(angular_pos_rad), r_mag * sin(angular_pos_rad), 0)
-        # Velocity vector is perpendicular to position vector, and in the direction of increasing angle
-        vx = -v_mag * math.sin(angular_pos_rad)
-        vy = v_mag * math.cos(angular_pos_rad)
-        vz = 0 # Assuming planar orbit for simplicity
+    # Vallado's Algorithm 50, tof_func (p. 288)
+    time_val = (x_val**3 * S + A_param * x_val * (1 - C)) / sqrt_mu
+    
+    return time_val
 
-        return (vx, vy, vz)
+def _calc_d_time_d_psi(psi: float, A_param: float, mu: float) -> float:
+    """
+    Calculates the derivative of time of flight with respect to psi (universal anomaly squared).
+    Used in Newton-Raphson iteration.
+    Based on Vallado's Algorithm 50, `d_tof_d_x` transformed to `d_tof_d_psi`.
+    """
+    sqrt_mu = math.sqrt(mu)
+    x_val = math.sqrt(abs(psi))
 
-    except ImportError:
-        # Fallback if ephemeris is not available or mock is not set
-        body_data = get_celestial_body_data(body_name)
-        if body_data is None:
-            raise ValueError(f"Celestial body '{body_name}' data not found for velocity approximation.")
+    C = _stumpff_c(psi)
+    S = _stumpff_s(psi)
+
+    # Vallado's Algorithm 50, d_tof_d_x (derivative w.r.t. `x`, universal anomaly)
+    d_tof_d_x = (x_val**2 * S + A_param * (1 - C)) / sqrt_mu
+
+    # Using the chain rule: dt/d_psi = (dt/d_x) * (dx/d_psi)
+    # where x = sqrt(psi), so dx/d_psi = 1 / (2 * sqrt(psi)) = 1 / (2*x_val)
+    if x_val < 1e-10: # If x_val is practically zero, derivative is infinite.
+        return float('inf')
         
-        semi_major_axis = body_data.get('semi_major_axis_from_sun')
-        if not semi_major_axis or semi_major_axis <= 0:
-             raise ValueError(f"Semi-major axis for '{body_name}' is missing or non-positive, cannot approximate velocity.")
-        
-        # For a truly 'simplified' orbital velocity vector without ephemeris,
-        # we can only give a magnitude.
-        # Returning a magnitude, not a vector, or raising an error due to insufficient data.
-        raise NotImplementedError(
-            f"Insufficient data to approximate a velocity vector for '{body_name}' "
-            "without ephemeris or full orbital elements. A full Lambert solution requires these."
-        )
+    return d_tof_d_x / (2 * x_val)
 
 
 def calculate_lambert_transfer(mu: float, r1_vec: tuple, r2_vec: tuple, delta_t: float) -> tuple[float, float, float, float]:
     """
     Calculates the Delta-V for a Lambert transfer between two position vectors in a given time of flight.
-    
-    This function implements a **simplified analytical approximation** for Lambert's problem.
-    It **does NOT** implement a full iterative Lambert solver (e.g., using universal variables
-    or methods like Battin's), which is typically required for arbitrary initial/final positions
-    and time of flight.
+    This function implements a full iterative Lambert solver using the universal variable formulation
+    and Newton-Raphson iteration to determine the transfer orbit.
 
-    **Simplifications/Assumptions for this context:**
-    1.  The transfer trajectory is assumed to be an ellipse whose semi-major axis (`a_transfer`)
-        is derived from the given `delta_t` as if `delta_t` is exactly half of the orbital
-        period of that ellipse (i.e., `delta_t = pi * sqrt(a_transfer^3 / mu)`).
-        This implicitly assumes that `r1_vec` and `r2_vec` are located at the periapsis and apoapsis
-        (or vice-versa) of this transfer ellipse, and are collinear with the central body.
-        This is a strong simplification and only valid for very specific alignments and transfers.
-    2.  The initial and final velocity vectors (`v1_transfer_vec`, `v2_transfer_vec`) for the transfer
-        are computed using the Vis-Viva equation (for magnitudes) and assumed to be tangential
-        to a circular orbit at `r1_mag` and `r2_mag` for direction. This is a further simplification
-        of the actual elliptical velocities.
-    3.  The velocities of the departure and arrival celestial bodies (`v1_initial_body_vec`, `v2_final_body_vec`)
-        are approximated assuming circular orbits around the central body.
-
-    For a general Lambert's problem, an iterative numerical solver is required. This function
-    provides an approximation suitable for high-level calculations where a full solver is
-    beyond the project scope or "simplified manner" requirement.
+    The solver finds the initial and final velocity vectors (v1_transfer_vec, v2_transfer_vec)
+    required to traverse from r1_vec to r2_vec in delta_t seconds. The returned Delta-V magnitudes
+    are the magnitudes of these transfer velocities relative to the central body.
 
     Args:
         mu (float): Gravitational parameter of the central body (m^3/s^2).
@@ -429,10 +404,11 @@ def calculate_lambert_transfer(mu: float, r1_vec: tuple, r2_vec: tuple, delta_t:
             - delta_v1_mag (float): Magnitude of Delta-V for the first burn (m/s).
             - delta_v2_mag (float): Magnitude of Delta-V for the second burn (m/s).
             - total_delta_v (float): Total Delta-V (sum of magnitudes) for both burns (m/s).
-            - calculated_time_of_flight (float): The actual delta_t used for calculations (will be the input delta_t).
+            - calculated_time_of_flight (float): The actual delta_t used for calculations (will be the input delta_t if successful).
 
     Raises:
-        ValueError: If inputs are invalid (e.g., non-positive mu/delta_t, invalid vectors).
+        ValueError: If inputs are invalid (e.g., non-positive mu/delta_t, invalid vectors,
+                    transfer impossible, or solver fails to converge).
     """
     if mu <= 0:
         raise ValueError("Gravitational parameter (mu) must be positive.")
@@ -449,118 +425,84 @@ def calculate_lambert_transfer(mu: float, r1_vec: tuple, r2_vec: tuple, delta_t:
     if r1_vec == r2_vec:
         return 0.0, 0.0, 0.0, delta_t # No transfer needed
 
-    # --- Lambert's Problem Simplified Approximation ---
-    # Step 1: Calculate semi-major axis 'a' of the transfer ellipse
-    # This is a strong simplification: Assumes delta_t is half period of transfer ellipse
-    # For a general Lambert solution, 'a' (or other orbital elements) would be iteratively solved.
-    try:
-        a_transfer = (mu * (delta_t / math.pi)**2)**(1/3)
-    except Exception as e:
-        raise ValueError(f"Could not calculate transfer ellipse semi-major axis from delta_t: {e}")
-
-    if a_transfer <= 0:
-        raise ValueError(f"Calculated transfer semi-major axis is non-positive: {a_transfer}.")
-
-    # Step 2: Calculate magnitudes of transfer velocities at r1 and r2 using Vis-Viva equation
-    try:
-        v1_transfer_mag = math.sqrt(mu * ((2 / r1_mag) - (1 / a_transfer)))
-        v2_transfer_mag = math.sqrt(mu * ((2 / r2_mag) - (1 / a_transfer)))
-    except ValueError:
-        # This occurs if (2/r - 1/a) is negative, meaning the chosen 'a_transfer' is too small
-        # for the given r, implying the points are not reachable on this type of ellipse.
-        raise ValueError(
-            f"Transfer impossible with given delta_t and positions under simplification. "
-            f"Calculated semi-major axis ({a_transfer:.2f}m) does not support positions. "
-            f"A full Lambert solver is required for more general cases."
-        )
-
-    # Step 3: Approximate transfer velocity vectors
-    # For simplified calculation, we approximate the direction as tangential to the orbit.
-    # This is highly simplified and assumes the velocities are in the plane of r1_vec and r2_vec.
-    # The actual vector directions in a true Lambert solution are more complex.
+    # Calculate geometrical parameters
+    cos_nu = vector_dot(r1_vec, r2_vec) / (r1_mag * r2_mag)
     
-    # Calculate unit vectors for directions
-    r1_unit = vector_scale(r1_vec, 1/r1_mag)
-    r2_unit = vector_scale(r2_vec, 1/r2_mag)
+    # Handle floating point inaccuracies
+    cos_nu = max(-1.0, min(1.0, cos_nu))
     
-    # For a simplified tangent, we can think of the direction perpendicular to the radius vector
-    # and in the direction of motion (cross product with orbital normal).
-    # Since we assume a collinear setup for 'a_transfer' simplicity, this is further simplified.
-    # A true vector solution for v1_transfer and v2_transfer from r1, r2, delta_t, mu requires iterative solving for f and g functions.
-    # Here, we will use a *conceptual* tangent based on average direction for simple Delta-V,
-    # acknowledging this is not a rigorous Lambert vector solution.
+    nu = math.acos(cos_nu) # Angle between r1 and r2
+    
+    # A parameter (constant for a given geometry, for prograde short-way transfer)
+    # This `A_param` is Vallado's `A` (Alg 50, p 287), which is `sqrt(r1*r2)*cos(nu/2)`
+    A_param = math.sqrt(r1_mag * r2_mag) * math.cos(nu / 2)
+    
+    # --- Newton-Raphson Iteration to find psi (universal anomaly squared) ---
+    # `psi` (universal anomaly squared, `z` in Vallado)
+    
+    # Initial guess for psi (z). A small positive value often works for typical transfers.
+    psi_k = 0.1 
 
-    # Approximating direction for v1_transfer_vec and v2_transfer_vec
-    # In a true Lambert, v1 and v2 are found. Here we're using the assumption for delta_V.
-    # For consistency with Hohmann-like transfers (where r1, r2 are peri/apoapsis),
-    # the velocity vector is perpendicular to the radius at those points.
-    
-    # If r1_vec and r2_vec are (r1_mag, 0, 0) and (r2_mag, 0, 0) for example,
-    # v1_transfer_vec would be (0, v1_transfer_mag, 0) and v2_transfer_vec would be (0, v2_transfer_mag, 0)
-    # assuming a prograde transfer in the XY plane.
-    
-    # Given we have arbitrary r1_vec and r2_vec, and delta_t defines 'a',
-    # getting the *exact* v1_transfer_vec and v2_transfer_vec from f and g functions
-    # (which depend on the iterative solution for the universal variable) is the hard part of Lambert.
-    # For 'simplified manner', we will use the magnitudes from vis-viva and
-    # assume the direction is generally aligned with the angular momentum vector.
+    max_iterations = 100
+    tolerance = 1e-8 # Tolerance for time difference
 
-    # Define a normal vector to the plane of transfer (assuming r1_vec and r2_vec define the plane)
-    normal_vec = vector_cross(r1_vec, r2_vec)
-    normal_mag = vector_magnitude(normal_vec)
-    if normal_mag == 0: # Collinear, transfer could be straight line or impossible to define plane
-        # For collinear r1 and r2, we can assume transfer is in the "x-y" plane for simplification
-        normal_vec = (0,0,1) # Z-axis normal for collinear case
+    for _ in range(max_iterations):
+        time_k = _calc_time_from_psi(psi_k, A_param, mu)
+        
+        if time_k < 0 and psi_k > 0: # If time is negative for elliptic solutions, means psi_k is too high
+            psi_k = psi_k * 0.5 # Try a smaller psi
+            continue
+        elif time_k > delta_t and psi_k < 0: # If time is too large for hyperbolic, means psi_k is too low
+            psi_k = psi_k * 2.0 # Try a larger psi
+            continue
+
+        time_prime_k = _calc_d_time_d_psi(psi_k, A_param, mu)
+        
+        if time_prime_k == 0 or math.isinf(time_prime_k) or math.isnan(time_prime_k):
+            raise ValueError("Lambert solver: Derivative of time is invalid, cannot converge with Newton-Raphson.")
+
+        # Check for convergence
+        if abs(time_k - delta_t) < tolerance:
+            break
+
+        # Newton-Raphson step
+        psi_k_new = psi_k - (time_k - delta_t) / time_prime_k
+        
+        # Simple clamping/adjustment to prevent wild jumps and ensure progress towards convergence
+        if abs(psi_k_new) > 1e10: 
+            psi_k = psi_k * 0.5 # Reduce step if it's too large
+        else:
+            psi_k = psi_k_new
     else:
-        normal_vec = vector_scale(normal_vec, 1/normal_mag) # Normalize
+        raise ValueError(f"Lambert solver failed to converge within {max_iterations} iterations for delta_t={delta_t:.2f}s.")
 
-    # Create a vector tangential to r1_vec in the direction of motion
-    # This is a very rough estimate. Actual v1_transfer_vec direction is complex.
-    # For a prograde orbit, the velocity vector at r is in the plane (r, normal) and perpendicular to r.
-    v1_direction_temp = vector_cross(normal_vec, r1_unit)
-    v1_transfer_vec = vector_scale(v1_direction_temp, v1_transfer_mag)
+    final_psi = psi_k
+    chi_final = math.sqrt(abs(final_psi)) # Universal anomaly (x in Vallado)
     
-    # Create a vector tangential to r2_vec in the direction of motion
-    v2_direction_temp = vector_cross(normal_vec, r2_unit)
-    v2_transfer_vec = vector_scale(v2_direction_temp, v2_transfer_mag)
+    calculated_delta_t = _calc_time_from_psi(final_psi, A_param, mu)
+    if abs(calculated_delta_t - delta_t) > tolerance:
+         raise ValueError(f"Lambert solver converged but time error {abs(calculated_delta_t - delta_t):.2e}s exceeds tolerance.")
 
-
-    # Step 4: Calculate initial/final velocities of the planets at departure/arrival points
-    # This requires knowing the orbital velocities of the bodies themselves at the departure date
-    # (and arrival date, for v2).
-    # This implementation assumes the `_get_body_orbital_velocity_vector` is available and
-    # can approximate the planetary velocities at their respective positions/dates.
-    # To get departure_date and arrival_date, we need to pass them to this function,
-    # or the calling function (TrajectoryPlanner) should determine the exact dates for r1_vec/r2_vec.
-    # For this function, let's assume r1_vec and r2_vec implicitly correspond to positions
-    # at departure_date and (departure_date + delta_t) respectively.
-    # However, this function `calculate_lambert_transfer` doesn't know the body names.
-    # So, we cannot calculate `v_initial_body` and `v_final_body` here.
-    # For the context of this function, which solely solves the "two-point boundary value problem" (Lambert),
-    # it only needs to provide `v1_transfer_vec` and `v2_transfer_vec`.
-    # The Delta-V calculation (difference from planet's velocity) should happen in the calling function
-    # (e.g., `TrajectoryPlanner`), which has access to the planet names and dates.
-
-    # For the purpose of *this function* returning Delta-V, we will assume the initial and final
-    # spacecraft velocities are zero *relative to a fixed frame at r1 and r2* just to provide
-    # a conceptual Delta-V based on the transfer velocities.
-    # In a real scenario, this would be v_transfer - v_planet.
-    # As the prompt *requires* returning Delta-V, we'll return the transfer velocities as Delta-V
-    # to maintain consistency for the placeholder.
-
-    # This is a critical point of simplification for the delta-V returned by THIS function.
-    # A true delta-V calculation requires the initial velocity of the *spacecraft relative to the planet*
-    # and the final velocity of the *planet*.
+    # --- Calculate transfer velocities (v1_transfer_vec, v2_transfer_vec) ---
+    sqrt_mu = math.sqrt(mu)
+    C_final = _stumpff_c(final_psi)
+    S_final = _stumpff_s(final_psi)
     
-    # For the "simplified manner" and the requested output:
-    # We return the magnitude of the transfer velocities directly, acknowledging that in `main.py`
-    # or `trajectory_planner.py` these would be adjusted by the planetary velocities.
-    delta_v1_mag = v1_transfer_mag
-    delta_v2_mag = v2_transfer_mag
+    # Using the standard F, G, F_dot, G_dot coefficients (from Bate, Mueller, White Eq 5.4.10 and 5.4.11, p 195)
+    # and relation: v = (r_final - F*r_initial) / G, v_final = (G_dot*r_final - r_initial) / G
+    
+    f_val = 1 - (final_psi * C_final) / r1_mag
+    g_val = delta_t - (chi_final**3 * S_final) / sqrt_mu
+    g_dot_val = 1 - (final_psi * C_final) / r2_mag
+    
+    if g_val == 0:
+        raise ValueError("Denominator `g` for Lambert transfer velocity calculation is zero. Transfer is physically impossible (e.g., singular case).")
+    
+    v1_transfer_vec = vector_scale(vector_subtract(r2_vec, vector_scale(r1_vec, f_val)), 1/g_val)
+    v2_transfer_vec = vector_scale(vector_subtract(vector_scale(r2_vec, g_dot_val), r1_vec), 1/g_val)
+
+    delta_v1_mag = vector_magnitude(v1_transfer_vec)
+    delta_v2_mag = vector_magnitude(v2_transfer_vec)
     total_delta_v = delta_v1_mag + delta_v2_mag
-
-    # The function found v1_transfer_vec and v2_transfer_vec conceptually/approximately.
-    # They are not explicitly returned, but used to determine the delta_V magnitudes.
-    # The current prompt asks to return `tuple[float, float, float, float]`, which are delta-V's.
 
     return delta_v1_mag, delta_v2_mag, total_delta_v, delta_t
