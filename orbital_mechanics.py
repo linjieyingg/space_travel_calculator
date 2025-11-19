@@ -1,36 +1,39 @@
 import math
-# Assuming constants.py and celestial_bodies.py are available in the Python path
-# or within the same directory as this file, following the project's import patterns.
-import constants
-import celestial_bodies
+# Update imports as requested
+from constants import G_GRAVITATIONAL # Importing G_GRAVITATIONAL directly
+import celestial_data # Importing the new consolidated celestial_data module
 
-# Gravitational Constant (G) in m^3 kg^-1 s^-2, assumed to be defined in constants.py
-# e.g., constants.GRAVITATIONAL_CONSTANT = 6.67430e-11
-G = constants.GRAVITATIONAL_CONSTANT
+# G_GRAVITATIONAL is now imported, but not used directly in this file
+# as gravitational parameter 'mu' will be retrieved pre-calculated.
+# The previous global G variable is removed.
 
 def calculate_gravitational_parameter(central_body_name: str) -> float:
     """
-    Calculates the standard gravitational parameter (mu) for a given central celestial body.
-    The gravitational parameter is a constant for a given body, equal to the product of
-    the gravitational constant (G) and the body's mass (M).
+    Retrieves the standard gravitational parameter (mu) for a given central celestial body
+    from the celestial_data module. This function no longer calculates mu but fetches it
+    directly from the pre-defined data.
 
     Args:
         central_body_name (str): The name of the central body (e.g., "Sun", "Earth", "Mars").
-                                 The mass of this body is retrieved from the `celestial_bodies` module.
 
     Returns:
         float: The gravitational parameter (mu) in m^3/s^2.
 
     Raises:
-        ValueError: If the central body's mass cannot be found in the `celestial_bodies` data,
-                    or if the mass is non-positive.
+        ValueError: If the central body's data cannot be found in the `celestial_data` module,
+                    or if the 'gravitational_parameter_mu' is missing or non-positive.
     """
-    body_mass = celestial_bodies.get_body_mass(central_body_name)
-    if body_mass is None:
-        raise ValueError(f"Mass for central body '{central_body_name}' not found in celestial_bodies data.")
-    if body_mass <= 0:
-        raise ValueError(f"Mass for central body '{central_body_name}' must be positive.")
-    return G * body_mass
+    body_data = celestial_data.get_celestial_body_data(central_body_name)
+    if body_data is None:
+        raise ValueError(f"Data for central body '{central_body_name}' not found in celestial_data.")
+
+    mu = body_data.get('gravitational_parameter_mu')
+    if mu is None:
+        raise ValueError(f"Gravitational parameter 'gravitational_parameter_mu' for '{central_body_name}' is missing in celestial_data.")
+    if not isinstance(mu, (int, float)) or mu <= 0:
+        raise ValueError(f"Gravitational parameter for '{central_body_name}' must be a positive number, got {mu}.")
+        
+    return float(mu)
 
 def calculate_circular_orbital_velocity(mu: float, radius: float) -> float:
     """
