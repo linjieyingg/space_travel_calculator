@@ -36,11 +36,10 @@ Academic Integrity Statement:
 from datetime import datetime, timedelta
 import checks as c
 import math
-import celestial_data
-import orbital_mechanics # While not directly called here, it's a foundational dependency for trajectory_planner
-import trajectory_planner
-import propulsion_system
-import fuel_optimizer # Not explicitly called, but part of the conceptual integration
+import celestial_data # Provides celestial body data
+import orbital_mechanics # Foundational for trajectory_planner
+import trajectory_planner # Calculates orbital trajectories
+import propulsion_system # Calculates fuel requirements
 import fuel_calc # For fuel cost calculation (if needed, or direct calculation will be used)
 import travel_logger # For logging travel details
 
@@ -53,7 +52,6 @@ SOLAR_SYSTEM_BODIES = [
     "Sun", "Mercury", "Venus", "Earth", "Mars", "Jupiter", "Saturn", "Uranus", "Neptune"
 ]
 
-## calculate how long it would take for user to reach destination in respect to the Earth's reference frame
 def calc_time_earth(years_traveler_frame, average_speed_ms):
     """
     Calculates the travel time in Earth's reference frame, considering relativistic
@@ -62,37 +60,41 @@ def calc_time_earth(years_traveler_frame, average_speed_ms):
     Args:
         years_traveler_frame (float): Travel time in the traveler's (proper) frame in years.
         average_speed_ms (float): The average effective speed of the spacecraft relative to Earth in m/s.
+                                  This speed is used to calculate the Lorentz factor.
 
     Returns:
         float: Travel time in Earth's reference frame in years.
     """
-    if average_speed_ms <= 0 or average_speed_ms >= C_LIGHT_MS:
-        # If speed is non-positive or at/above speed of light, relativistic effects
-        # as calculated by the Lorentz factor become problematic or undefined.
-        # Fallback to non-relativistic time for practical purposes in such edge cases.
+    if average_speed_ms <= 0:
+        # If speed is non-positive, no relativistic effect, or conceptually impossible travel.
+        # Return traveler's time as a fallback.
         return years_traveler_frame
+    
+    # Avoid division by zero or negative square root if speed is too close or exceeds light speed
+    if average_speed_ms >= C_LIGHT_MS:
+        print("Warning: Speed is at or above the speed of light. Relativistic time dilation calculation may be invalid or undefined.")
+        # In a theoretical scenario, if v=c, Lorentz factor is undefined. If v>c, sqrt is imaginary.
+        # For practical purposes, we might cap or return a large value, or the traveler's time.
+        return years_traveler_frame # Fallback
 
     try:
-        # Convert traveler's years to seconds
-        secs_traveler_frame = years_traveler_frame * 365.25 * 24 * 60 * 60
-
         # Calculate the Lorentz factor term (1 - v^2/c^2)
-        sqrt_term_arg = 1 - ((average_speed_ms**2) / (C_LIGHT_MS**2))
+        v_c_squared = (average_speed_ms / C_LIGHT_MS)**2
+        sqrt_term_arg = 1 - v_c_squared
 
-        if sqrt_term_arg <= 0:
-            # Should be caught by the initial check, but defensive check
+        if sqrt_term_arg <= 0: # Should be caught by the average_speed_ms >= C_LIGHT_MS check, but good defensive programming
+            print("Warning: Relativistic term argument is non-positive. Returning traveler's time.")
             return years_traveler_frame
         
         # Calculate time in Earth's reference frame (coordinate time)
-        secs_earth_frame = secs_traveler_frame / math.sqrt(sqrt_term_arg)
-        years_earth_frame = secs_earth_frame / (365.25 * 24 * 60 * 60)
+        # Delta_t_prime = Delta_t / sqrt(1 - v^2/c^2)
+        years_earth_frame = years_traveler_frame / math.sqrt(sqrt_term_arg)
         
         return years_earth_frame
     except Exception as e:
         print(f"Warning: Error during relativistic time calculation: {e}. Falling back to traveler's time.")
         return years_traveler_frame
 
-##  Calculate age of user when they reach destination
 def calc_age(years, age):
     """
     Calculates the user's age upon arrival.
@@ -107,7 +109,6 @@ def calc_age(years, age):
     new_age = math.floor(age + years)
     return new_age
 
-## Calculate the date of when user reaches their destination
 def calc_arrival(date, years_earth_frame):
     """
     Calculates the estimated arrival date on Earth's calendar.
@@ -131,7 +132,6 @@ def calc_arrival(date, years_earth_frame):
         print(f"Warning: An unexpected error occurred calculating arrival date: {e}")
         return None
 
-## converts date string into datetime object
 def convert_date(date_str):
     """
     Converts a date string in 'YYYY-MM-DD' format to a datetime object.
@@ -158,7 +158,7 @@ def main():
                 source_data = celestial_data.get_planet_data(source_planet)
                 break
             except KeyError:
-                print(f"Error: Data for {source_planet} not found. Please try again.")
+                print(f"Error: Data for {source_planet} not found in celestial_data. Please try again.")
             except Exception as e:
                 print(f"An unexpected error occurred retrieving data for {source_planet}: {e}. Please try again.")
         else:
@@ -175,7 +175,7 @@ def main():
                 destination_data = celestial_data.get_planet_data(destination_planet)
                 break
             except KeyError:
-                print(f"Error: Data for {destination_planet} not found. Please try again.")
+                print(f"Error: Data for {destination_planet} not found in celestial_data. Please try again.")
             except Exception as e:
                 print(f"An unexpected error occurred retrieving data for {destination_planet}: {e}. Please try again.")
         else:
@@ -209,7 +209,7 @@ def main():
 
     # Departure Date Input
     while True:
-        date_str = input("Date of departure from Earth in ISO format (YYYY-MM-DD): ")
+        date_str = input("Date of departure (YYYY-MM-DD): ")
         if c.is_valid_date(date_str):
             try:
                 departure_date = convert_date(date_str)
@@ -237,38 +237,47 @@ def main():
     print("\n--- Calculating Trajectory and Fuel Requirements ---")
 
     # --- Trajectory Planning ---
+    delta_v = 0.0
+    travel_time_traveler_frame_years = 0.0
+    average_hohmann_speed_ms = 0.0
+    transfer_type = "Hohmann Transfer" # Default transfer type
+
     try:
-        # Assuming trajectory_planner.calculate_hohmann_transfer returns delta_v, travel_time_traveler_frame_years, average_hohmann_speed_ms
+        # Assuming trajectory_planner.calculate_hohmann_transfer returns a dictionary
+        # with 'delta_v', 'travel_time_traveler_frame_years', 'average_hohmann_speed_ms'
         hohmann_result = trajectory_planner.calculate_hohmann_transfer(source_data, destination_data)
         
-        delta_v = hohmann_result['delta_v']
-        travel_time_traveler_frame_years = hohmann_result['travel_time_traveler_frame_years']
-        average_hohmann_speed_ms = hohmann_result['average_hohmann_speed_ms'] # This is an effective speed for relativistic calculations
-        transfer_type = "Hohmann Transfer" # Explicitly define transfer type
+        delta_v = hohmann_result.get('delta_v', 0.0)
+        travel_time_traveler_frame_years = hohmann_result.get('travel_time_traveler_frame_years', 0.0)
+        average_hohmann_speed_ms = hohmann_result.get('average_hohmann_speed_ms', 0.0) # Effective speed for relativistic calculations
 
         print(f"Calculated Delta-V for {source_planet} to {destination_planet} {transfer_type}: {delta_v:.3f} m/s")
 
     except ValueError as e:
         print(f"Error during trajectory planning: {e}. Cannot proceed with calculations.")
         return # Exit if trajectory planning fails
+    except KeyError as e:
+        print(f"Error: Missing expected data key from trajectory planner: {e}. Cannot proceed.")
+        return
     except Exception as e:
         print(f"An unexpected error occurred during trajectory planning: {e}. Cannot proceed.")
         return
 
     # --- Fuel Calculation ---
-    try:
-        fuel_mass_kg = propulsion_system.calculate_fuel_mass(spacecraft_dry_mass, delta_v, engine_isp)
-        total_fuel_cost = fuel_mass_kg * FUEL_PRICE_PER_UNIT # Direct calculation
-        print(f"Required Fuel Mass: {fuel_mass_kg:.3f} kg")
-        print(f"Estimated Fuel Cost: ${total_fuel_cost:,.2f}")
-    except ValueError as e:
-        print(f"Error calculating fuel mass: {e}. Cannot determine cost.")
-        fuel_mass_kg = 0.0 # Set to 0 if calculation fails
-        total_fuel_cost = 0.0
-    except Exception as e:
-        print(f"An unexpected error occurred during fuel calculation: {e}. Cannot determine cost.")
-        fuel_mass_kg = 0.0
-        total_fuel_cost = 0.0
+    fuel_mass_kg = 0.0
+    total_fuel_cost = 0.0
+    if delta_v > 0 and spacecraft_dry_mass > 0 and engine_isp > 0:
+        try:
+            fuel_mass_kg = propulsion_system.calculate_fuel_mass(spacecraft_dry_mass, delta_v, engine_isp)
+            total_fuel_cost = fuel_mass_kg * FUEL_PRICE_PER_UNIT # Direct calculation
+            print(f"Required Fuel Mass: {fuel_mass_kg:.3f} kg")
+            print(f"Estimated Fuel Cost: ${total_fuel_cost:,.2f}")
+        except ValueError as e:
+            print(f"Error calculating fuel mass: {e}. Cannot determine cost.")
+        except Exception as e:
+            print(f"An unexpected error occurred during fuel calculation: {e}. Cannot determine cost.")
+    else:
+        print("Skipping fuel calculation due to invalid Delta-V, spacecraft mass, or engine ISP.")
 
     # --- Time and Age Calculations ---
     years_earth_frame = calc_time_earth(travel_time_traveler_frame_years, average_hohmann_speed_ms)
@@ -277,6 +286,7 @@ def main():
 
     # --- Output Results ---
     print("\n--- Travel Summary ---")
+    print(f"Source Planet: {source_planet}")
     print(f"Destination: {destination_planet}")
     print(f"Transfer Type: {transfer_type}")
     print(f"Required Delta-V: {delta_v:.3f} m/s")
@@ -293,13 +303,15 @@ def main():
     # --- Log Travel Details ---
     try:
         # Assuming travel_logger.save_travel_log has been updated to accept these new parameters
+        # If the signature hasn't been updated in travel_logger.py, this will raise an AttributeError
         travel_logger.save_travel_log(
             destination=destination_planet,
             speed=average_hohmann_speed_ms, # Using average speed for logging
             travel_time=travel_time_traveler_frame_years,
             delta_v=delta_v,
             fuel_mass=fuel_mass_kg,
-            transfer_type=transfer_type
+            transfer_type=transfer_type,
+            source_planet=source_planet
         )
         print("\nTravel details successfully logged.")
     except AttributeError:
