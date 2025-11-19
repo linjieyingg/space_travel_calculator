@@ -2,21 +2,27 @@ import json
 import datetime
 import os
 
-def save_travel_log(destination: str, speed: float, travel_time: float):
+def save_travel_log(source_planet: str, destination_planet: str, speed: float, travel_time: float,
+                    delta_v_required: float, fuel_mass_needed: float, transfer_type: str):
     """
-    Saves travel calculation details to a JSON log file.
+    Saves detailed space travel calculation details to a JSON log file.
 
     The log file 'travel_log.json' will store a list of dictionaries,
-    each containing a timestamp, destination, speed, and travel time.
+    each containing a timestamp, source planet, destination planet, speed,
+    travel time, required delta-v, fuel mass needed, and transfer type.
 
     If the log file does not exist, it will be created.
     If it exists but is empty or malformed, it will be initialized or overwritten
     in a way that new data can be appended.
 
     Args:
-        destination (str): The name of the travel destination.
-        speed (float): The calculated or estimated travel speed.
-        travel_time (float): The calculated or estimated travel time.
+        source_planet (str): The name of the starting celestial body (e.g., 'Earth').
+        destination_planet (str): The name of the target celestial body.
+        speed (float): The calculated or estimated travel speed (e.g., in Mm/s).
+        travel_time (float): The calculated or estimated travel time (e.g., in years).
+        delta_v_required (float): The total change in velocity (delta-v) required for the mission (e.g., in km/s).
+        fuel_mass_needed (float): The estimated mass of fuel required for the mission (e.g., in kg).
+        transfer_type (str): The type of orbital transfer used (e.g., 'Hohmann Transfer', 'Ballistic Capture').
     """
     log_file = 'travel_log.json'
     log_data = []
@@ -24,12 +30,16 @@ def save_travel_log(destination: str, speed: float, travel_time: float):
     # Get current timestamp
     timestamp = datetime.datetime.now().isoformat()
 
-    # Create the new entry
+    # Create the new entry with additional details
     new_entry = {
         'timestamp': timestamp,
-        'destination': destination,
-        'speed': speed,
-        'travel_time': travel_time
+        'source_planet': source_planet,
+        'destination_planet': destination_planet,
+        'speed_Mm_s': speed, # Assuming speed is in Megameters/second based on main.py context
+        'travel_time_years': travel_time, # Assuming travel_time is in years
+        'delta_v_required_km_s': delta_v_required, # Assuming delta-v is in km/s
+        'fuel_mass_needed_kg': fuel_mass_needed, # Assuming fuel mass is in kg
+        'transfer_type': transfer_type
     }
 
     # Load existing data if the file exists and is valid JSON
@@ -43,8 +53,7 @@ def save_travel_log(destination: str, speed: float, travel_time: float):
                     log_data = [] # File is empty, start with an empty list
         except json.JSONDecodeError:
             # Handle cases where the file might be corrupted or malformed JSON
-            # We can log a warning here if needed, but for simplicity,
-            # we'll just start with an empty list for new data.
+            # We'll log a warning and start with an empty list for new data.
             print(f"Warning: {log_file} is corrupted or not valid JSON. Starting a new log.")
             log_data = []
         except Exception as e:
