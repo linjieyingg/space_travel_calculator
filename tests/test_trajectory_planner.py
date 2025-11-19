@@ -6,7 +6,7 @@ import math
 # Import the module under test and its dependencies for patching
 from trajectory_planner import TrajectoryPlanner
 import celestial_data
-import orbital_mechanics
+import orbital_mechanics # Ensure vector_magnitude is available
 import ephemeris
 import constants
 
@@ -57,10 +57,10 @@ def mock_orbital_mechanics():
             if delta_t <= 0:
                 raise ValueError("Time of flight must be positive for Lambert transfer.")
 
-            # Assume r1_vec and r2_vec are (r_mag, angle_rad, z_pos) or (x,y,z)
-            # For simplicity in mock, we primarily vary total_dv with delta_t.
-            # However, for Earth-to-Earth (r1_vec == r2_vec), return 0 delta_v.
-            if r1_vec == r2_vec:
+            # Check for identical position vectors (e.g., Earth to Earth)
+            if all(math.isclose(a, b, abs_tol=1e-9) for a, b in zip(r1_vec, r2_vec)):
+                # If departure and arrival positions are the same, no transfer needed.
+                # The planner should catch this *before* calling lambert, but this mock acts as a safeguard.
                 return 0.0, 0.0, 0.0, delta_t
 
             # Optimal time of flight for a plausible Earth-Mars transfer (approx 200 days)
@@ -104,21 +104,70 @@ def mock_orbital_mechanics():
 def mock_ephemeris_get_heliocentric_state():
     """
     Fixture to mock ephemeris.get_heliocentric_state.
-    Provides illustrative heliocentric positions (distance and angular position) for
-    Earth and Mars on specific dates.
+    Provides illustrative heliocentric states (position and velocity vectors) for
+    Earth and Mars on specific dates, representing a simplified 3D elliptical orbit model.
     """
     with patch('trajectory_planner.ephemeris.get_heliocentric_state') as mock_get_state:
-        # Define some illustrative positions. Planner converts these to 3D vectors.
-        # We assume a simple 2D conversion: (r*cos(theta), r*sin(theta), 0)
-        earth_pos_2024_01_01 = {'distance_from_sun_m': 1.496e11, 'angular_position_rad': 0.0}
-        mars_pos_2024_01_01 = {'distance_from_sun_m': 2.279e11, 'angular_position_rad': math.pi} # Opposition
+        # Define some illustrative states (position_vector_m, velocity_vector_mps)
+        # Assuming simplified 2D planar orbits for mock, z components are 0.
+        # Earth at ~1 AU, velocity ~29.8 km/s
+        earth_r = 1.496e11 # m
+        earth_v = 29800.0 # m/s (approx circular orbital velocity)
 
-        mock_get_state.side_effect = lambda body_name, date: {
-            ('earth', _parse_date_string('2024-01-01')): earth_pos_2024_01_01,
-            ('mars', _parse_date_string('2024-01-01')): mars_pos_2024_01_01,
-            ('earth', _parse_date_string('2025-01-01')): {'distance_from_sun_m': 1.496e11, 'angular_position_rad': 0.5}, # Example different angle
-            ('mars', _parse_date_string('2025-01-01')): {'distance_from_sun_m': 2.279e11, 'angular_position_rad': 0.1}, # Example different angle
-        }.get((body_name.lower(), date))
+        # Mars at ~1.52 AU, velocity ~24.1 km/s
+        mars_r = 2.279e11 # m
+        mars_v = 24100.0 # m/s (approx circular orbital velocity)
+
+        def get_mock_state_effect(body_name, date):
+            # Define specific positions/velocities for certain dates
+            if body_name.lower() == 'earth':
+                if date == _parse_date_string('2024-01-01'):
+                    # Earth at (r, 0, 0), velocity (0, v, 0) - start of year
+                    return {
+                        'position_vector_m': (earth_r, 0.0, 0.0),
+                        'velocity_vector_mps': (0.0, earth_v, 0.0)
+                    }
+                elif date == _parse_date_string('2025-01-01'):
+                    # Earth moved ~0.5 rad (~28.6 degrees)
+                    angle = 0.5 # radians
+                    return {
+                        'position_vector_m': (earth_r * math.cos(angle), earth_r * math.sin(angle), 0.0),
+                        'velocity_vector_mps': (-earth_v * math.sin(angle), earth_v * math.cos(angle), 0.0)
+                    }
+                # Add a state for Earth to Earth transfer test, where it should ideally not be called
+                elif date == _parse_date_string('2024-01-01') + timedelta(seconds=17_280_000):
+                    # Earth's position after ~200 days, for potential r2_vec in Lambert
+                    # Simple rotation for mock
+                    earth_angle_at_tof = (17_280_000 / 31557600) * 2 * math.pi
+                    return {
+                        'position_vector_m': (earth_r * math.cos(earth_angle_at_tof), earth_r * math.sin(earth_angle_at_tof), 0.0),
+                        'velocity_vector_mps': (-earth_v * math.sin(earth_angle_at_tof), earth_v * math.cos(earth_angle_at_tof), 0.0)
+                    }
+
+            elif body_name.lower() == 'mars':
+                if date == _parse_date_string('2024-01-01'):
+                    # Mars in opposition (pi rad from Earth), velocity (0, -v, 0)
+                    return {
+                        'position_vector_m': (-mars_r, 0.0, 0.0),
+                        'velocity_vector_mps': (0.0, -mars_v, 0.0)
+                    }
+                elif date == _parse_date_string('2025-01-01'):
+                    # Mars moved ~0.1 rad from its initial pi position
+                    angle = math.pi + 0.1 # radians
+                    return {
+                        'position_vector_m': (mars_r * math.cos(angle), mars_r * math.sin(angle), 0.0),
+                        'velocity_vector_mps': (-mars_v * math.sin(angle), mars_v * math.cos(angle), 0.0)
+                    }
+                # Add a state for Mars after optimal transfer time from Earth from 2024-01-01
+                elif date == _parse_date_string('2024-01-01') + timedelta(seconds=17_280_000):
+                    mars_tof_angle = math.pi + (17_280_000 / 59354240) * 2 * math.pi
+                    return {
+                        'position_vector_m': (mars_r * math.cos(mars_tof_angle), mars_r * math.sin(mars_tof_angle), 0.0),
+                        'velocity_vector_mps': (-mars_v * math.sin(mars_tof_angle), mars_v * math.cos(mars_tof_angle), 0.0)
+                    }
+            return None # Or raise ValueError if not found, depending on ephemeris behavior
+
+        mock_get_state.side_effect = get_mock_state_effect
         yield mock_get_state
 
 # --- Test TrajectoryPlanner.__init__ ---
@@ -156,22 +205,22 @@ def test_plan_hohmann_trajectory_success_ephemeris(
     mock_ephemeris_get_heliocentric_state: MagicMock
 ):
     """
-    Tests successful Hohmann transfer planning, verifying that ephemeris data is
+    Tests successful Hohmann transfer planning, verifying that ephemeris data (position vector magnitude) is
     prioritized for calculating radii and that orbital mechanics functions are called.
     """
     planner = TrajectoryPlanner()
     departure_date = _parse_date_string('2024-01-01')
 
-    # Configure ephemeris mock specifically for this test to return distinct values
-    earth_pos = {'distance_from_sun_m': 1.496e11, 'angular_position_rad': 0.0}
-    mars_pos = {'distance_from_sun_m': 2.279e11, 'angular_position_rad': math.pi}
-    mock_ephemeris_get_heliocentric_state.side_effect = lambda body, date: {
-        ('earth', departure_date): earth_pos,
-        ('mars', departure_date): mars_pos
-    }.get((body.lower(), date))
+    # Get specific mock states for assertion. The side_effect function is defined
+    # so we can call it here to get the expected outputs.
+    earth_state = mock_ephemeris_get_heliocentric_state.side_effect('Earth', departure_date)
+    mars_state = mock_ephemeris_get_heliocentric_state.side_effect('Mars', departure_date)
+    
+    earth_r_mag = orbital_mechanics.vector_magnitude(earth_state['position_vector_m'])
+    mars_r_mag = orbital_mechanics.vector_magnitude(mars_state['position_vector_m'])
 
     # Re-initialize planner for fresh mocks and ensure specific calls
-    planner = TrajectoryPlanner()
+    planner = TrajectoryPlanner() # Ensure a fresh planner instance for clean call counts
     result = planner.plan_trajectory(
         departure_body_name='Earth',
         arrival_body_name='Mars',
@@ -190,10 +239,10 @@ def test_plan_hohmann_trajectory_success_ephemeris(
     ], any_order=True)
 
     mock_orbital_mechanics['hohmann_dv'].assert_called_once_with(
-        planner.mu_sun, earth_pos['distance_from_sun_m'], mars_pos['distance_from_sun_m']
+        planner.mu_sun, earth_r_mag, mars_r_mag
     )
     mock_orbital_mechanics['hohmann_tof'].assert_called_once_with(
-        planner.mu_sun, earth_pos['distance_from_sun_m'], mars_pos['distance_from_sun_m']
+        planner.mu_sun, earth_r_mag, mars_r_mag
     )
 
 def test_plan_hohmann_trajectory_missing_ephemeris_data_fallback_to_static(
@@ -205,7 +254,8 @@ def test_plan_hohmann_trajectory_missing_ephemeris_data_fallback_to_static(
     Tests Hohmann transfer planning gracefully falls back to static celestial data
     if ephemeris data retrieval fails.
     """
-    mock_ephemeris_get_heliocentric_state.side_effect = ValueError("Ephemeris system offline")
+    # Configure ephemeris mock to raise error for ALL bodies and dates
+    mock_ephemeris_get_heliocentric_state.side_effect = lambda body, date: None # Simulate not found
 
     planner = TrajectoryPlanner()
     departure_date = _parse_date_string('2024-01-01')
@@ -220,9 +270,25 @@ def test_plan_hohmann_trajectory_missing_ephemeris_data_fallback_to_static(
     assert result['total_delta_v'] == 1500.0
     assert result['travel_time_seconds'] == 100 * 24 * 3600
     assert result['trajectory_type'] == 'Hohmann'
-    mock_ephemeris_get_heliocentric_state.assert_called() # Should still attempt to call ephemeris
-    # Ensure static data was used as fallback
-    mock_celestial_data_for_planner.assert_has_calls([call('earth'), call('mars')], any_order=True)
+    # Should attempt to call ephemeris for Earth and Mars
+    mock_ephemeris_get_heliocentric_state.assert_has_calls([
+        call('earth', departure_date),
+        call('mars', departure_date)
+    ], any_order=True)
+    # Ensure static data was used as fallback (by checking calls to mock_celestial_data_for_planner)
+    mock_celestial_data_for_planner.assert_has_calls([
+        call('earth'),
+        call('mars')
+    ], any_order=True)
+    # And specifically, that it called for the semi_major_axis_from_sun
+    # These values are (1.496e11, 2.279e11) from the mock_celestial_data_for_planner fixture
+    mock_orbital_mechanics['hohmann_dv'].assert_called_once_with(
+        planner.mu_sun, 1.496e11, 2.279e11
+    )
+    mock_orbital_mechanics['hohmann_tof'].assert_called_once_with(
+        planner.mu_sun, 1.496e11, 2.279e11
+    )
+
 
 def test_plan_hohmann_trajectory_unsupported_body(mock_celestial_data_for_planner: MagicMock):
     """
@@ -276,14 +342,9 @@ def test_plan_direct_transfer_success(
     planner = TrajectoryPlanner()
     departure_date = _parse_date_string('2024-01-01')
 
-    # Configure ephemeris mock to return distinct positions for Earth and Mars
-    earth_pos = {'distance_from_sun_m': 1.496e11, 'angular_position_rad': 0.0}
-    mars_pos = {'distance_from_sun_m': 2.279e11, 'angular_position_rad': math.pi}
-    mock_ephemeris_get_heliocentric_state.side_effect = lambda body, date: {
-        ('earth', departure_date): earth_pos,
-        ('mars', departure_date): mars_pos
-    }.get((body.lower(), date))
-
+    # Get specific mock states for assertion of r1_vec arguments
+    earth_state_dep = mock_ephemeris_get_heliocentric_state.side_effect('Earth', departure_date)
+    
     # Expected optimal values from the mock_lambert_solver_effect (around 200 days / 17.28M seconds)
     expected_travel_time_seconds = 17_280_000 # Optimal point in the mock
     expected_total_dv = 15_000.0 # Minimum total_dv from the mock
@@ -302,13 +363,24 @@ def test_plan_direct_transfer_success(
 
     # Verify that calculate_lambert_transfer was called multiple times, indicating iteration
     assert mock_orbital_mechanics['lambert_transfer'].call_count > 1
+    
     # Check that calls were made with relevant arguments (e.g., mu, 3D position vectors, delta_t)
+    # The r1_vec should be fixed (Earth position at departure_date)
+    # The r2_vec will be Mars position at departure_date + delta_t (iterated)
+    # We can check the first call's r1_vec, and that r2_vec changes over calls.
     first_call_args = mock_orbital_mechanics['lambert_transfer'].call_args_list[0].args
     assert first_call_args[0] == planner.mu_sun # mu
-    # Planner converts ephemeris (distance, angle) to (x,y,z) 3-tuples
-    assert isinstance(first_call_args[1], tuple) and len(first_call_args[1]) == 3 # r1_vec
-    assert isinstance(first_call_args[2], tuple) and len(first_call_args[2]) == 3 # r2_vec
+    assert first_call_args[1] == earth_state_dep['position_vector_m'] # r1_vec
+    assert isinstance(first_call_args[2], tuple) and len(first_call_args[2]) == 3 # r2_vec (Mars pos at dep_date + delta_t)
     assert isinstance(first_call_args[3], (int, float)) # delta_t
+
+    # Verify that ephemeris was called for both bodies, including for the iterated target date
+    mock_ephemeris_get_heliocentric_state.assert_any_call('earth', departure_date)
+    # It should call Mars multiple times for different dates (departure_date + delta_t)
+    # Let's check a call for Mars at the optimal TOF from the mock
+    optimal_arrival_date = departure_date + timedelta(seconds=expected_travel_time_seconds)
+    mock_ephemeris_get_heliocentric_state.assert_any_call('mars', optimal_arrival_date)
+
 
 def test_plan_direct_transfer_no_viable_solution_found(
     mock_celestial_data_for_planner: MagicMock,
@@ -323,19 +395,17 @@ def test_plan_direct_transfer_no_viable_solution_found(
     planner = TrajectoryPlanner()
     departure_date = _parse_date_string('2024-01-01')
 
-    # Configure ephemeris mock
-    earth_pos = {'distance_from_sun_m': 1.496e11, 'angular_position_rad': 0.0}
-    mars_pos = {'distance_from_sun_m': 2.279e11, 'angular_position_rad': 0.1} # Positions making transfer difficult
-    mock_ephemeris_get_heliocentric_state.side_effect = lambda body, date: {
-        ('earth', departure_date): earth_pos,
-        ('mars', departure_date): mars_pos
-    }.get((body.lower(), date))
+    # Ensure ephemeris can provide data for position vectors
+    mock_ephemeris_get_heliocentric_state.side_effect('Earth', departure_date)
+    mock_ephemeris_get_heliocentric_state.side_effect('Mars', departure_date) # For initial r2_vec in search loop
 
     # Make mock Lambert solver always return a very high delta_v for any valid input,
     # to simulate a situation where no "optimal" solution is found by the planner.
     def consistently_high_dv_solver(mu, r1_vec, r2_vec, delta_t):
         if delta_t <= 0:
             raise ValueError("Time of flight must be positive for Lambert transfer.")
+        if all(math.isclose(a, b, abs_tol=1e-9) for a, b in zip(r1_vec, r2_vec)):
+            return 0.0, 0.0, 0.0, delta_t
         # Returns a dv that's always considered 'suboptimal' by the planner's thresholds
         return 100_000.0, 100_000.0, 200_000.0, delta_t
     mock_orbital_mechanics['lambert_transfer'].side_effect = consistently_high_dv_solver
@@ -363,13 +433,10 @@ def test_plan_direct_transfer_lambert_solver_error_propagation(
     planner = TrajectoryPlanner()
     departure_date = _parse_date_string('2024-01-01')
 
-    # Configure ephemeris mock
-    earth_pos = {'distance_from_sun_m': 1.496e11, 'angular_position_rad': 0.0}
-    mars_pos = {'distance_from_sun_m': 2.279e11, 'angular_position_rad': math.pi}
-    mock_ephemeris_get_heliocentric_state.side_effect = lambda body, date: {
-        ('earth', departure_date): earth_pos,
-        ('mars', departure_date): mars_pos
-    }.get((body.lower(), date))
+    # Ensure ephemeris can provide data for position vectors
+    mock_ephemeris_get_heliocentric_state.side_effect('Earth', departure_date)
+    mock_ephemeris_get_heliocentric_state.side_effect('Mars', departure_date)
+
 
     # Make mock Lambert solver always raise an error
     mock_orbital_mechanics['lambert_transfer'].side_effect = ValueError("Lambert calculation failed catastrophically due to bad geometry.")
@@ -397,10 +464,11 @@ def test_plan_direct_transfer_identical_bodies_earth_to_earth(
     planner = TrajectoryPlanner()
     departure_date = _parse_date_string('2024-01-01')
 
-    # Ephemeris will be called for 'Earth' twice, returning identical positions.
-    earth_pos = {'distance_from_sun_m': 1.496e11, 'angular_position_rad': 0.0}
-    mock_ephemeris_get_heliocentric_state.side_effect = lambda body, date: \
-        earth_pos if body.lower() == 'earth' and date == departure_date else None
+    # The ephemeris will be called for 'Earth' twice with the same date IF the planner
+    # doesn't short-circuit. Let's ensure the mock can handle this, but the test
+    # expects the planner to be smart.
+    # We call it here to ensure the side_effect is defined/initialized for later assertion.
+    mock_ephemeris_get_heliocentric_state.side_effect('Earth', departure_date) 
 
     result = planner.plan_trajectory(
         departure_body_name='Earth',
@@ -415,7 +483,8 @@ def test_plan_direct_transfer_identical_bodies_earth_to_earth(
     assert result['trajectory_type'] == 'Direct'
     assert "already at destination" in result['message'].lower()
 
-    # The planner should recognize identical bodies before calling ephemeris or orbital mechanics
+    # The planner *should* recognize identical bodies BEFORE calling ephemeris or orbital mechanics
+    # for positions or Lambert calculations.
     mock_ephemeris_get_heliocentric_state.assert_not_called()
     mock_orbital_mechanics['lambert_transfer'].assert_not_called()
 
