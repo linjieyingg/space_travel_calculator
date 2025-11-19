@@ -1,4 +1,3 @@
-```python
 """
 constants.py
 
@@ -15,14 +14,20 @@ improving consistency and maintainability across the project.
 # Speed of light in a vacuum (meters per second)
 # This value is based on the exact definition of the meter.
 # It is used for relativistic calculations and speed validation.
-C_LIGHT_MPS = 299_792_458.0  # meters/second
+C_LIGHT_MPS = 299_792_458.0  # Speed of light in a vacuum in m/s
 
 # Gravitational Constant (m^3 kg^-1 s^-2)
 # This is the CODATA 2018 recommended value.
 # While not directly used in all current calculations, it's a fundamental
 # constant for space mechanics and included for completeness and future expansion
 # related to orbital mechanics or gravitational effects.
-G_GRAVITATIONAL = 6.67430e-11  # N(m/kg)^2 or m^3 kg^-1 s^-2
+G_GRAVITATIONAL = 6.67430e-11  # Gravitational constant in m^3 kg^-1 s^-2
+
+# Alias for gravitational constant to ensure compatibility with modules expecting 'GRAVITATIONAL_CONSTANT'
+# Some modules in the repository, such as orbital_mechanics.py, may expect
+# to import 'GRAVITATIONAL_CONSTANT' directly. This alias provides backward
+# compatibility or consistency with other parts of the codebase.
+GRAVITATIONAL_CONSTANT = G_GRAVITATIONAL
 
 # Other potentially useful constants can be added here as needed, such as:
 # # Standard Gravitational Parameter of the Sun (m^3 s^-2)
@@ -36,6 +41,3 @@ G_GRAVITATIONAL = 6.67430e-11  # N(m/kg)^2 or m^3 kg^-1 s^-2
 #
 # # Earth's standard gravitational parameter (m^3 s^-2)
 # MU_EARTH = 3.986004418e14
-"""
-"""
-```
