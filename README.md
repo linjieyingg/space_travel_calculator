@@ -9,15 +9,14 @@
 
 **Files Analyzed:** 12
 
-**Last Updated:** 2025-11-18 20:19:08
+**Last Updated:** 2025-11-18 20:19:22
 
 ---
 
 
 ## `README.md`
 
-```markdown
-## README.md
+## `README.md`
 
 ### 1. Purpose
 This `README.md` file is an auto-generated, comprehensive overview of the `linjieyingg/space_travel_calculator` repository. It provides high-level metadata about the repository and detailed summaries for individual files within it, outlining their purposes, key components, and dependencies.
@@ -32,7 +31,6 @@ This `README.md` file is an auto-generated, comprehensive overview of the `linji
 
 ### 3. Dependencies
 This `README.md` file, being a documentation file, has no runtime code dependencies or imports. Its content conceptually relies on the existence and functionality of the various documented files within the `linjieyingg/space_travel_calculator` repository.
-```
 
 ---
 
