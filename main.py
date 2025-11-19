@@ -258,17 +258,17 @@ def main():
             arrival_body_name=destination_planet
         )
     except ValueError as e:
-        print(f"Error during trajectory planning: {e}.")
+        print(f"Error during trajectory planning: {e}. Please ensure valid departure and arrival bodies are selected and their data is complete.")
         return
     except KeyError as e:
-        print(f"Error: Missing expected data key during trajectory planning: {e}.")
+        print(f"Error: Essential data (like Sun's gravitational parameter) is missing for trajectory planning: {e}. Please check the celestial data configuration.")
         return
     except Exception as e:
-        print(f"An unexpected error occurred during trajectory planning: {e}.")
+        print(f"An unexpected error occurred during trajectory planning: {e}. Please review your inputs or contact support if the issue persists.")
         return
 
     if not trajectory_result or not trajectory_result.get('success', False):
-        print(f"Error planning trajectory: {trajectory_result.get('error_message', 'Unknown error')}")
+        print(f"Error planning trajectory: {trajectory_result.get('error_message', 'Unknown error')}. Please verify your selected celestial bodies.")
         return
 
     # Extract delta-V and travel time from the trajectory planning result
@@ -287,17 +287,17 @@ def main():
             engine_specific_impulse=engine_specific_impulse
         )
     except ValueError as e:
-        print(f"Error optimizing fuel mass: {e}. Fuel calculation skipped.")
+        print(f"Input error during fuel optimization: {e}. Please ensure spacecraft dry mass and engine specific impulse are positive numbers. Fuel calculation skipped.")
         return
     except RuntimeError as e: # Catch RuntimeError as per fuel_optimizer summary
-        print(f"Runtime error during fuel optimization: {e}. Fuel calculation skipped.")
+        print(f"Operational error during fuel optimization: {e}. This might indicate an issue with internal calculations or mock components. Fuel calculation skipped.")
         return
     except Exception as e:
-        print(f"An unexpected error occurred during fuel optimization: {e}.")
+        print(f"An unexpected error occurred during fuel optimization: {e}. Fuel calculation could not be completed. Please review your inputs.")
         return
 
     if fuel_mass_needed is None or fuel_mass_needed < 0:
-        print("Error calculating fuel mass or received invalid value from optimizer. Check input parameters.")
+        print("Fuel mass calculation failed or resulted in an invalid value. This might occur if the required Delta-V is non-positive or other parameters are out of range. Please review your spacecraft and engine inputs.")
         return
 
     fuel_cost_data = None
@@ -314,7 +314,7 @@ def main():
     if fuel_cost_data and 'total_cost' in fuel_cost_data:
         total_fuel_cost = fuel_cost_data['total_cost']
     else:
-        print("Error calculating fuel cost. Check input parameters.")
+        print("Error calculating fuel cost. Check input parameters or the result from fuel mass calculation.")
         return
 
     # --- Time and Age Calculations ---
