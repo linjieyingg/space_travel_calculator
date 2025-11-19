@@ -236,7 +236,7 @@ def test_plan_trajectory_hohmann_ephemeris_fails_departure_fallback_succeeds(
     
     # Check if a warning was printed for Earth
     mock_print.assert_any_call(
-        call("Warning: Could not retrieve dynamic distance for Earth from ephemeris on 2025-01-01. Falling back to average semi-major axis from static data. This might impact accuracy.")
+        "Warning: Could not retrieve dynamic distance for Earth from ephemeris on 2025-01-01. Falling back to average semi-major axis from static data. This might impact accuracy."
     )
 
     # Verify ephemeris was called for both, and orbital mechanics used mixed data
@@ -278,7 +278,7 @@ def test_plan_trajectory_hohmann_ephemeris_fails_arrival_fallback_succeeds(
     assert result["success"] is True
     # Check if a warning was printed for Mars
     mock_print.assert_any_call(
-        call("Warning: Could not retrieve dynamic distance for Mars from ephemeris on 2025-01-01. Falling back to average semi-major axis from static data. This might impact accuracy.")
+        "Warning: Could not retrieve dynamic distance for Mars from ephemeris on 2025-01-01. Falling back to average semi-major axis from static data. This might impact accuracy."
     )
     
     # Verify ephemeris was called for both, and orbital mechanics used mixed data
@@ -330,7 +330,7 @@ def test_plan_trajectory_hohmann_ephemeris_and_static_fail_departure(
     assert "Could not find sufficient ephemeris data for departure body 'Earth' on 2025-01-01. Falling back to average semi-major axis from static data. This might impact accuracy. Invalid or missing 'semi_major_axis_from_sun' for Earth." in result["error"]
     mock_ephemeris_get_body_orbital_state.assert_called_once_with('Earth', departure_date)
     mock_print.assert_any_call(
-        call("Warning: Could not retrieve dynamic distance for Earth from ephemeris on 2025-01-01. Falling back to average semi-major axis from static data. This might impact accuracy.")
+        "Warning: Could not retrieve dynamic distance for Earth from ephemeris on 2025-01-01. Falling back to average semi-major axis from static data. This might impact accuracy."
     )
 
 
@@ -366,7 +366,7 @@ def test_plan_trajectory_hohmann_ephemeris_and_static_fail_arrival(
         call('Mars', departure_date)
     ], any_order=True)
     mock_print.assert_any_call(
-        call("Warning: Could not retrieve dynamic distance for Mars from ephemeris on 2025-01-01. Falling back to average semi-major axis from static data. This might impact accuracy.")
+        "Warning: Could not retrieve dynamic distance for Mars from ephemeris on 2025-01-01. Falling back to average semi-major axis from static data. This might impact accuracy."
     )
 
 
@@ -389,7 +389,7 @@ def test_plan_trajectory_hohmann_ephemeris_missing_distance_key_fallback_succeed
     assert result["success"] is True
     # Check if a warning was printed for Earth
     mock_print.assert_any_call(
-        call("Warning: Could not retrieve dynamic distance for Earth from ephemeris on 2025-01-01. Falling back to average semi-major axis from static data. This might impact accuracy.")
+        "Warning: Could not retrieve dynamic distance for Earth from ephemeris on 2025-01-01. Falling back to average semi-major axis from static data. This might impact accuracy."
     )
     mock_ephemeris_get_body_orbital_state.assert_has_calls([
         call('Earth', departure_date),
@@ -421,7 +421,7 @@ def test_plan_trajectory_hohmann_ephemeris_invalid_distance_value_fallback_succe
     assert result["success"] is True
     # Check if a warning was printed for Mars
     mock_print.assert_any_call(
-        call("Warning: Could not retrieve dynamic distance for Mars from ephemeris on 2025-01-01. Falling back to average semi-major axis from static data. This might impact accuracy.")
+        "Warning: Could not retrieve dynamic distance for Mars from ephemeris on 2025-01-01. Falling back to average semi-major axis from static data. This might impact accuracy."
     )
 
     mock_ephemeris_get_body_orbital_state.assert_has_calls([
@@ -595,3 +595,23 @@ def test_plan_trajectory_invalid_type_non_string_with_date(mock_celestial_data_f
     assert result["success"] is False
     assert "Trajectory type must be a non-empty string." in result["error"]
     mock_ephemeris_get_body_orbital_state.assert_not_called() # No ephemeris calls for invalid types
+
+def test_plan_trajectory_direct_transfer_not_implemented(
+    mock_celestial_data_for_planner, mock_orbital_mechanics, mock_ephemeris_get_body_orbital_state
+):
+    """
+    Test plan_trajectory with a 'Direct Transfer' trajectory type, which is currently not implemented.
+    Expected: Failure with an "Unsupported" error message.
+    """
+    planner = TrajectoryPlanner()
+    departure_date = datetime(2025, 1, 1)
+    result = planner.plan_trajectory("Earth", "Mars", trajectory_type="Direct Transfer", departure_date=departure_date)
+
+    assert result["success"] is False
+    assert "Unsupported trajectory type: 'Direct Transfer'" in result["error"]
+    assert "transfer_type" not in result
+
+    # Ensure no orbital mechanics or ephemeris functions were called as it should fail early
+    mock_ephemeris_get_body_orbital_state.assert_not_called()
+    mock_orbital_mechanics[0].assert_not_called()
+    mock_orbital_mechanics[1].assert_not_called()
