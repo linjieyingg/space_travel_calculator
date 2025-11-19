@@ -255,7 +255,8 @@ def main():
         trajectory_result = planner.plan_trajectory(
             departure_body_name=source_planet, 
             arrival_body_name=destination_planet,
-            trajectory_type='Hohmann' # Hardcoded for now, ready for future user selection
+            trajectory_type='Hohmann', # Hardcoded for now, ready for future user selection
+            departure_date=departure_date # Pass the departure date
         )
     except ValueError as e:
         print(f"Error during trajectory planning: {e}. Please ensure valid departure and arrival bodies are selected and their data is complete.")
@@ -284,7 +285,8 @@ def main():
             end_body=destination_planet,
             trajectory_type=transfer_type, # Use the transfer type from trajectory planning
             spacecraft_dry_mass=spacecraft_dry_mass,
-            engine_specific_impulse=engine_specific_impulse
+            engine_specific_impulse=engine_specific_impulse,
+            departure_date=departure_date # Pass the departure date to fuel optimizer for trajectory planning
         )
     except ValueError as e:
         print(f"Input error during fuel optimization: {e}. Please ensure spacecraft dry mass and engine specific impulse are positive numbers. Fuel calculation skipped.")
