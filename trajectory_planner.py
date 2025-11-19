@@ -22,10 +22,15 @@ class TrajectoryPlanner:
         sun_data = celestial_data.get_celestial_body_data('Sun')
         if not sun_data:
             raise ValueError("Data for 'Sun' not found in celestial_data module. Cannot initialize TrajectoryPlanner.")
-        
+
         self.mu_sun = sun_data.get('gravitational_parameter_mu')
         if self.mu_sun is None:
             raise AttributeError("'gravitational_parameter_mu' not found for 'Sun' in celestial_data. Please check celestial_data.py.")
+        if not isinstance(self.mu_sun, (int, float)) or self.mu_sun <= 0:
+            raise ValueError(
+                f"Invalid or non-positive 'gravitational_parameter_mu' ({self.mu_sun}) found for 'Sun' in celestial_data. "
+                "Cannot initialize TrajectoryPlanner."
+            )
 
     def plan_hohmann_trajectory(self, departure_body_name: str, arrival_body_name: str) -> dict:
         """
@@ -54,7 +59,9 @@ class TrajectoryPlanner:
             return {"success": False, "error": "Departure body name must be a non-empty string."}
         if not isinstance(arrival_body_name, str) or not arrival_body_name.strip():
             return {"success": False, "error": "Arrival body name must be a non-empty string."}
-        if departure_body_name.lower() == arrival_body_name.lower():
+        
+        # Normalize names for comparison (case-insensitive and strip whitespace)
+        if departure_body_name.strip().lower() == arrival_body_name.strip().lower():
             return {"success": False, "error": "Departure and arrival bodies cannot be the same."}
 
         departure_body_data = celestial_data.get_celestial_body_data(departure_body_name)
@@ -63,32 +70,38 @@ class TrajectoryPlanner:
         if not departure_body_data:
             return {
                 "success": False,
-                "error": f"Could not find data for departure body: '{departure_body_name}' in celestial_data."
+                "error": f"Could not find data for departure body: '{departure_body_name}' in celestial_data. Please ensure it's defined and correctly spelled."
             }
         if not arrival_body_data:
             return {
                 "success": False,
-                "error": f"Could not find data for arrival body: '{arrival_body_name}' in celestial_data."
+                "error": f"Could not find data for arrival body: '{arrival_body_name}' in celestial_data. Please ensure it's defined and correctly spelled."
             }
 
-        # Use 'average_orbital_radius_m' from celestial_data
-        r1 = departure_body_data.get("average_orbital_radius_m")
-        r2 = arrival_body_data.get("average_orbital_radius_m")
+        # Use 'semi_major_axis_from_sun' for Hohmann transfer radii (r1, r2)
+        r1 = departure_body_data.get("semi_major_axis_from_sun")
+        r2 = arrival_body_data.get("semi_major_axis_from_sun")
 
         if r1 is None or not isinstance(r1, (int, float)) or r1 <= 0:
             return {
                 "success": False,
-                "error": f"Invalid or missing 'average_orbital_radius_m' for {departure_body_data['name']} in celestial_data."
+                "error": f"Invalid or missing 'semi_major_axis_from_sun' for {departure_body_data.get('name', departure_body_name)} in celestial_data. Expected a positive numeric value."
             }
         if r2 is None or not isinstance(r2, (int, float)) or r2 <= 0:
             return {
                 "success": False,
-                "error": f"Invalid or missing 'average_orbital_radius_m' for {arrival_body_data['name']} in celestial_data."
+                "error": f"Invalid or missing 'semi_major_axis_from_sun' for {arrival_body_data.get('name', arrival_body_name)} in celestial_data. Expected a positive numeric value."
+            }
+        
+        # Ensure that the central body's gravitational parameter is valid before proceeding
+        if self.mu_sun is None or not isinstance(self.mu_sun, (int, float)) or self.mu_sun <= 0:
+             return {
+                "success": False,
+                "error": "Central body's (Sun's) gravitational parameter (mu_sun) is invalid. Cannot perform orbital calculations."
             }
 
         try:
-            # Use specific orbital_mechanics functions for delta-v and time of flight
-            # calculate_hohmann_transfer_delta_v returns (delta_v1, delta_v2, total_delta_v)
+            # orbital_mechanics.calculate_hohmann_transfer_delta_v returns (delta_v1, delta_v2, total_delta_v)
             _, _, total_delta_v = orbital_mechanics.calculate_hohmann_transfer_delta_v(
                 self.mu_sun, r1, r2
             )
@@ -96,12 +109,13 @@ class TrajectoryPlanner:
                 self.mu_sun, r1, r2
             )
         except ValueError as ve:
+            # Specific error from orbital_mechanics module functions
             return {
                 "success": False,
                 "error": f"Orbital mechanics calculation error: {ve}"
             }
         except Exception as e:
-            # Catch any unexpected errors from orbital_mechanics module
+            # Catch any unexpected errors from orbital_mechanics module or other calculations
             return {
                 "success": False,
                 "error": f"An unexpected error occurred during Hohmann transfer calculation: {e}"
@@ -110,7 +124,8 @@ class TrajectoryPlanner:
         # Convert travel time to more readable formats
         travel_time_days = travel_time_s / (24 * 3600)
         
-        td = timedelta(seconds=int(travel_time_s)) # Use int to avoid float precision issues with timedelta
+        # Use int() to avoid float precision issues with timedelta if travel_time_s is not a perfect integer
+        td = timedelta(seconds=int(travel_time_s)) 
         days = td.days
         hours, remainder = divmod(td.seconds, 3600)
         minutes, seconds = divmod(remainder, 60)
@@ -119,8 +134,8 @@ class TrajectoryPlanner:
 
 
         return {
-            "departure_body": departure_body_data["name"],
-            "arrival_body": arrival_body_data["name"],
+            "departure_body": departure_body_data.get("name", departure_body_name),
+            "arrival_body": arrival_body_data.get("name", arrival_body_name),
             "transfer_type": "Hohmann Transfer",
             "total_delta_v_mps": total_delta_v,
             "travel_time_days": travel_time_days,
@@ -177,5 +192,10 @@ if __name__ == '__main__':
         print("\n--- Planning Invalid Trajectory (empty body name) ---")
         empty_name_plan = planner.plan_hohmann_trajectory("  ", "Mars")
         print(f"Result: {empty_name_plan['success']}, Error: {empty_name_plan['error']}")
+        
+        print("\n--- Planning Invalid Trajectory (non-string body name) ---")
+        non_string_plan = planner.plan_hohmann_trajectory(123, "Mars")
+        print(f"Result: {non_string_plan['success']}, Error: {non_string_plan['error']}")
+
     except (ValueError, AttributeError) as e:
         print(f"Initialization Error: {e}")
