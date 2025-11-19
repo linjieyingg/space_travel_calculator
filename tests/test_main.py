@@ -37,7 +37,8 @@ def mock_dependencies():
 
         # Mock TrajectoryPlanner
         mock_planner_instance = MockTrajectoryPlanner.return_value
-        mock_planner_instance.plan_hohmann_trajectory.return_value = {
+        # Updated to use plan_trajectory with trajectory_type
+        mock_planner_instance.plan_trajectory.return_value = {
             'success': True,
             'total_delta_v_mps': 10000.0,
             'total_travel_time_seconds': 100 * 24 * 3600, # 100 days
@@ -96,9 +97,11 @@ def test_main_function_integrates_all_components_correctly(mock_dependencies):
     mocks["mock_get_celestial_body_data"].assert_any_call("Earth")
     mocks["mock_get_celestial_body_data"].assert_any_call("Mars")
     mocks["MockTrajectoryPlanner"].assert_called_once()
-    mocks["mock_planner_instance"].plan_hohmann_trajectory.assert_called_once_with(
+    # Updated to assert plan_trajectory call
+    mocks["mock_planner_instance"].plan_trajectory.assert_called_once_with(
         departure_body_name="Earth",
-        arrival_body_name="Mars"
+        arrival_body_name="Mars",
+        trajectory_type="Hohmann" # Added argument
     )
     mocks["mock_optimize_fuel_for_trajectory"].assert_called_once_with(
         start_body="Earth",
@@ -149,7 +152,8 @@ def test_main_function_integrates_all_components_correctly(mock_dependencies):
 
 def test_main_function_trajectory_planner_fails(mock_dependencies):
     mocks = mock_dependencies
-    mocks["mock_planner_instance"].plan_hohmann_trajectory.return_value = {
+    # Updated to mock plan_trajectory
+    mocks["mock_planner_instance"].plan_trajectory.return_value = {
         'success': False,
         'error_message': 'Departure body data missing'
     }
@@ -287,7 +291,8 @@ def test_convert_date_invalid_format():
 def test_main_function_average_speed_fallback(mock_dependencies):
     mocks = mock_dependencies
     # Simulate trajectory planner returning 0 for average_hohmann_speed_ms
-    mocks["mock_planner_instance"].plan_hohmann_trajectory.return_value = {
+    # Updated to mock plan_trajectory
+    mocks["mock_planner_instance"].plan_trajectory.return_value = {
         'success': True,
         'total_delta_v_mps': 10000.0,
         'total_travel_time_seconds': 100 * 24 * 3600, # 100 days
