@@ -9,7 +9,7 @@
 
 **Files Analyzed:** 18
 
-**Last Updated:** 2025-11-18 21:38:07
+**Last Updated:** 2025-11-18 21:44:47
 
 ---
 
@@ -40,26 +40,28 @@ None. This file is self-contained and does not use any external imports.
 
 ## `celestial_data.py`
 
-This file centralizes astrophysical data by storing universal constants and a detailed dictionary of properties for various celestial bodies within our solar system. It provides a function to easily retrieve this data.
+```markdown
+## celestial_data.py Summary
+
+This module serves as the central data repository for astrophysical data within the `space_travel_calculator` application, providing detailed parameters for solar system bodies and functions to retrieve this information and list potential travel destinations. It also re-exports universal physical constants for consistency.
 
 ### Key Components:
 
-*   **`GRAVITATIONAL_CONSTANT`**: A global float constant representing the universal gravitational constant.
-    *   Inputs: None
-    *   Outputs: N/A (a constant value)
-*   **`SPEED_OF_LIGHT`**: A global float constant representing the speed of light in vacuum.
-    *   Inputs: None
-    *   Outputs: N/A (a constant value)
-*   **`CELESTIAL_BODIES_DATA`**: A global dictionary storing astrophysical data (mass, radius, gravitational parameter, average orbital radius) for celestial bodies, keyed by their uppercase names.
-    *   Inputs: None
-    *   Outputs: N/A (a data structure)
-*   **`get_celestial_body_data(body_name: str)`**: A function that retrieves the data for a specified celestial body.
-    *   Inputs: `body_name` (string, case-insensitive).
-    *   Outputs: A dictionary of the celestial body's data if found, otherwise `None`.
+*   **`GRAVITATIONAL_CONSTANT`**: Global constant (float) re-exported from `constants`.
+*   **`SPEED_OF_LIGHT`**: Global constant (float) re-exported from `constants`.
+*   **`CELESTIAL_BODIES_DATA`**: A dictionary storing astrophysical data (mass, radius, gravitational parameter, average orbital radius) for various celestial bodies in the solar system.
+*   **`get_celestial_body_data(body_name: str)`**:
+    *   **Inputs**: `body_name` (string, case-insensitive name of a celestial body).
+    *   **Outputs**: A dictionary containing the body's data if found, otherwise `None`.
+*   **`get_all_solar_system_destinations()`**:
+    *   **Inputs**: None.
+    *   **Outputs**: A list of dictionaries, each with a celestial body's `name` (string) and its calculated average `distance` (float) from Earth in meters, sorted by distance. Returns `None` if Earth's data is missing.
 
 ### Dependencies:
 
-*   None
+*   `math`: Used for `math.fabs()` in distance calculations.
+*   `constants`: Imports `G_GRAVITATIONAL` and `C_LIGHT_MPS` for re-export.
+```
 
 ---
 
@@ -90,30 +92,19 @@ This file contains utility functions to validate user-provided data such as date
 
 ## `constants.py`
 
-```markdown
-## constants.py Summary
+This module, `constants.py`, serves as a central repository for universal physical and scientific constants relevant to space travel calculations within the `space_travel_calculator` application, ensuring consistency and maintainability.
 
-### 1. Purpose
-This module defines universal physical constants and other scientific constants relevant to space travel calculations within the `space_travel_calculator` application. It serves as a single source of truth for critical values, ensuring consistency and maintainability.
-
-### 2. Key Components
-This file primarily consists of variable definitions (constants).
+### Key Components:
 
 *   **Universal Physical Constants Section**:
-    *   **`C_LIGHT_MPS`**:
-        *   **Description**: Represents the speed of light in a vacuum.
-        *   **Inputs**: None (a literal numeric value).
-        *   **Outputs/Side Effects**: Provides the exact value `299_792_458.0` meters per second for use in relativistic calculations and speed validation.
-    *   **`G_GRAVITATIONAL`**:
-        *   **Description**: Represents the gravitational constant.
-        *   **Inputs**: None (a literal numeric value).
-        *   **Outputs/Side Effects**: Provides the CODATA 2018 recommended value `6.67430e-11` m^3 kg^-1 s^-2 for fundamental space mechanics and future orbital calculations.
-*   **Commented-out Examples**:
-    *   The file includes commented-out examples (`MU_SUN`, `AU_TO_METERS`, `EARTH_RADIUS_METERS`, `MU_EARTH`) to illustrate other potentially useful constants that could be added.
+    *   `C_LIGHT_MPS`: Defines the speed of light in a vacuum (299,792,458.0 m/s). It takes no input but provides a constant value for relativistic calculations and speed validation.
+    *   `G_GRAVITATIONAL`: Defines the Gravitational Constant (6.67430e-11 m³ kg⁻¹ s⁻²). It takes no input but provides a fundamental constant for space mechanics and future orbital calculations.
+    *   `GRAVITATIONAL_CONSTANT`: An alias for `G_GRAVITATIONAL`. It takes `G_GRAVITATIONAL` as its value and provides backward compatibility for modules expecting this specific name.
+*   **Commented-out Examples**: Includes examples of other potential constants (e.g., `MU_SUN`, `AU_TO_METERS`, `EARTH_RADIUS_METERS`) that can be added for future expansion.
 
-### 3. Dependencies
-This file has no external dependencies or imports. It solely defines literal constant values.
-```
+### Dependencies:
+
+*   None. This file does not import any external modules or libraries.
 
 ---
 
@@ -325,37 +316,40 @@ This Python script implements a command-line Tic-Tac-Toe game for two players. I
 ## `main.py`
 
 ```markdown
-This `main.py` file implements a space travel calculator that computes the time, fuel, and cost required for a user to reach a chosen celestial destination, incorporating relativistic effects and orbital mechanics.
+### Purpose
+This file implements a space travel calculator that determines the time, fuel, and cost required for a user to travel between chosen celestial bodies, incorporating relativistic effects and orbital mechanics.
 
-### Key Components:
-
-*   **`main()` function**:
-    *   **Inputs**: Gathers user inputs for source/destination planets, spacecraft dry mass, engine specific impulse (ISP), departure date, and user age via console prompts.
-    *   **Outputs/Side Effects**: Orchestrates the entire calculation flow, prints a comprehensive travel summary (Delta-V, fuel mass/cost, travel times in traveler's and Earth's frames, arrival age, estimated arrival date) to the console, and logs travel details using the `travel_logger` module.
+### Key Components
 *   **`calc_time_earth(years_traveler_frame, average_speed_ms)`**:
-    *   **Inputs**: `years_traveler_frame` (float), `average_speed_ms` (float).
-    *   **Outputs**: Returns the travel time in Earth's reference frame (float), accounting for relativistic time dilation.
+    *   **Inputs**: Travel time in the traveler's frame (years), average spacecraft speed (m/s).
+    *   **Outputs**: Travel time in Earth's reference frame (years).
 *   **`calc_age(years, age)`**:
-    *   **Inputs**: `years` (float), `age` (int).
-    *   **Outputs**: Returns the user's estimated age upon arrival (int).
+    *   **Inputs**: Travel time (years), user's starting age (int).
+    *   **Outputs**: User's age upon arrival (int).
 *   **`calc_arrival(date, years_earth_frame)`**:
-    *   **Inputs**: `date` (datetime.datetime), `years_earth_frame` (float).
-    *   **Outputs**: Returns the estimated arrival date as a `datetime.datetime` object, or `None` if the calculation fails due to extreme durations.
+    *   **Inputs**: Departure date (`datetime`), travel time in Earth's frame (years).
+    *   **Outputs**: Estimated arrival date (`datetime`) or `None` if calculation fails.
 *   **`convert_date(date_str)`**:
-    *   **Inputs**: `date_str` (string in 'YYYY-MM-DD' format).
-    *   **Outputs**: Returns a `datetime.datetime` object parsed from the input string.
+    *   **Inputs**: Date string in 'YYYY-MM-DD' format.
+    *   **Outputs**: `datetime` object.
+*   **`main()` function**:
+    *   **Inputs**: Interactive user inputs for source/destination planets, spacecraft dry mass, engine specific impulse, departure date, and user age.
+    *   **Outputs/Side Effects**:
+        *   Orchestrates the entire calculation process: gathers user input, calls external modules for trajectory planning, fuel calculation, and logging.
+        *   Prints a detailed travel summary including required Delta-V, fuel mass, cost, travel times (traveler's and Earth's frames), user's age upon arrival, and estimated arrival date to the console.
+        *   Logs travel details using the `travel_logger` module.
 
-### Dependencies:
-
-*   `datetime` (standard library): For date and time manipulations (`datetime`, `timedelta`).
-*   `math` (standard library): For mathematical operations, particularly `sqrt` and `floor`.
-*   `checks` (local module, aliased as `c`): Provides utility functions for input validation (e.g., `is_valid_date`, `is_valid_age`).
-*   `celestial_data` (local module): Supplies data for celestial bodies via `get_planet_data`.
-*   `orbital_mechanics` (local module): Referenced as foundational but not directly called in `main`.
-*   `trajectory_planner` (local module): Calculates orbital trajectories, specifically `calculate_hohmann_transfer`.
-*   `propulsion_system` (local module): Calculates fuel requirements via `calculate_fuel_mass`.
-*   `fuel_calc` (local module): Imported but not explicitly used for calculations in `main`; fuel cost is directly computed.
-*   `travel_logger` (local module): Logs travel details using `save_travel_log`.
+### Dependencies
+*   `datetime` (standard library)
+*   `math` (standard library)
+*   `checks` (local module aliased as `c`)
+*   `celestial_data` (local module)
+*   `orbital_mechanics` (local module)
+*   `trajectory_planner` (local module)
+*   `propulsion_system` (local module)
+*   `fuel_calc` (local module)
+*   `travel_logger` (local module)
+*   `constants` (local module)
 ```
 
 ---
@@ -363,37 +357,34 @@ This `main.py` file implements a space travel calculator that computes the time,
 
 ## `orbital_mechanics.py`
 
-```markdown
-## Analysis of `orbital_mechanics.py`
+This file, `orbital_mechanics.py`, provides a suite of functions for calculating fundamental parameters and maneuvers in orbital mechanics. It covers calculations for gravitational parameters, orbital velocities, Hohmann transfer specifics, orbital periods, and escape velocity.
 
-### Purpose
-This file provides a collection of functions for performing fundamental calculations in orbital mechanics, enabling the computation of parameters such as gravitational properties, orbital velocities, transfer maneuvers, and escape velocities for celestial bodies.
+### Key Components:
 
-### Key Components
 *   **`calculate_gravitational_parameter(central_body_name: str)`**:
-    *   **Inputs**: The name of a central celestial body.
-    *   **Outputs**: The standard gravitational parameter (mu) for that body.
+    *   **Inputs**: The name of a central celestial body (e.g., "Earth").
+    *   **Outputs**: The standard gravitational parameter (mu) for the specified body in m^3/s^2.
 *   **`calculate_circular_orbital_velocity(mu: float, radius: float)`**:
-    *   **Inputs**: A central body's gravitational parameter and an orbital radius.
-    *   **Outputs**: The velocity required for a stable circular orbit.
+    *   **Inputs**: A central body's gravitational parameter (mu) and the radius of a circular orbit.
+    *   **Outputs**: The velocity required for a stable circular orbit in m/s.
 *   **`calculate_hohmann_transfer_delta_v(mu: float, r1: float, r2: float)`**:
-    *   **Inputs**: A central body's gravitational parameter, and the radii of initial and final circular orbits.
-    *   **Outputs**: A tuple containing the Delta-V for the first burn, the second burn, and the total absolute Delta-V for a Hohmann transfer.
+    *   **Inputs**: A central body's gravitational parameter (mu), and the radii of the initial (r1) and final (r2) circular orbits.
+    *   **Outputs**: A tuple containing the Delta-V for the first burn, the second burn, and the total absolute Delta-V for a Hohmann transfer in m/s.
 *   **`calculate_hohmann_transfer_time_of_flight(mu: float, r1: float, r2: float)`**:
-    *   **Inputs**: A central body's gravitational parameter, and the radii of initial and final circular orbits.
-    *   **Outputs**: The time taken for a Hohmann transfer.
+    *   **Inputs**: A central body's gravitational parameter (mu), and the radii of the initial (r1) and final (r2) circular orbits.
+    *   **Outputs**: The time taken for a Hohmann transfer in seconds.
 *   **`calculate_elliptical_orbital_period(mu: float, semi_major_axis: float)`**:
-    *   **Inputs**: A central body's gravitational parameter and the semi-major axis of an orbit.
-    *   **Outputs**: The orbital period using Kepler's Third Law.
+    *   **Inputs**: A central body's gravitational parameter (mu) and the semi-major axis of an elliptical orbit.
+    *   **Outputs**: The orbital period in seconds.
 *   **`calculate_escape_velocity(mu: float, radius: float)`**:
-    *   **Inputs**: A central body's gravitational parameter and a distance from its center.
-    *   **Outputs**: The escape velocity from that point.
+    *   **Inputs**: A central body's gravitational parameter (mu) and the distance from its center.
+    *   **Outputs**: The escape velocity from that radius in m/s.
 
-### Dependencies
-*   **`math`**: Used for mathematical operations like square roots (`math.sqrt`) and pi (`math.pi`).
-*   **`constants`**: Expected to provide physical constants, specifically `constants.GRAVITATIONAL_CONSTANT`.
-*   **`celestial_bodies`**: Expected to provide data on celestial bodies, specifically `celestial_bodies.get_body_mass()` to retrieve body masses.
-```
+### Dependencies:
+
+*   `math`: For mathematical functions like `sqrt` and `pi`.
+*   `constants.G_GRAVITATIONAL`: Imports the universal gravitational constant.
+*   `celestial_data.get_celestial_body_data`: Imports a function to retrieve data about celestial bodies.
 
 ---
 
@@ -443,37 +434,30 @@ This file defines a utility for calculating the required fuel mass for a spacecr
 ## `trajectory_planner.py`
 
 ```markdown
-## Trajectory Planner Analysis
+## File Analysis: `trajectory_planner.py`
 
 ### Purpose
-This file provides a high-level interface for planning interplanetary Hohmann transfer trajectories between celestial bodies orbiting the Sun. It orchestrates calculations to determine parameters like total delta-v and travel time.
+This file defines the `TrajectoryPlanner` class, which serves as a high-level interface for planning interplanetary trajectories. It orchestrates calls to underlying orbital mechanics functions to calculate optimal paths, specifically focusing on Hohmann transfers for minimum energy.
 
 ### Key Components
-*   **Mock Imports Section**: Provides mock implementations for `orbital_mechanics`, `celestial_bodies`, and `constants` modules if they are not found, allowing standalone execution and testing.
-    *   `MockOrbitalMechanics.calculate_hohmann_transfer(mu_central: float, r1: float, r2: float)`:
-        *   **Inputs**: Standard gravitational parameter of the central body (`mu_central`), initial orbit radius (`r1`), final orbit radius (`r2`).
-        *   **Outputs**: A tuple `(total_delta_v_mps, travel_time_s)`.
-    *   `MockCelestialBodies.get_celestial_body_data(body_name: str)`:
-        *   **Inputs**: Name of the celestial body.
-        *   **Outputs**: A dictionary of body data or `None`.
-    *   `MockConstants`: Provides `GRAVITATIONAL_CONSTANT` and `SUN_STANDARD_GRAVITATIONAL_PARAMETER`.
-*   **`TrajectoryPlanner` Class**: The main class for planning trajectories.
-    *   `__init__(self)`:
-        *   **Inputs**: None.
-        *   **Outputs/Side Effects**: Initializes `self.mu_sun` with the Sun's standard gravitational parameter.
-    *   `plan_hohmann_trajectory(self, departure_body_name: str, arrival_body_name: str)`:
-        *   **Inputs**: Names of the departure and arrival celestial bodies (strings).
-        *   **Outputs**: A dictionary containing trajectory details, including departure/arrival bodies, transfer type, `total_delta_v_mps`, `travel_time_days`, `travel_time_h_m_s`, `success` status, and an `error` message if applicable.
-*   **`if __name__ == '__main__':` Block**:
-    *   **Inputs**: None (uses hardcoded body names for examples).
-    *   **Outputs/Side Effects**: Demonstrates the usage of `TrajectoryPlanner` by printing planning results and error messages to the console for various scenarios.
+*   **Class: `TrajectoryPlanner`**
+    *   **`__init__(self)`**
+        *   **Inputs:** None (initializes `self` object).
+        *   **Outputs/Side Effects:** Fetches the Sun's gravitational parameter (`mu_sun`) from the `celestial_data` module and stores it. Raises `ValueError` or `AttributeError` if Sun data is missing or incomplete.
+    *   **`plan_hohmann_trajectory(self, departure_body_name: str, arrival_body_name: str) -> dict`**
+        *   **Inputs:** `departure_body_name` (string) and `arrival_body_name` (string) representing celestial bodies.
+        *   **Outputs:** A dictionary containing detailed trajectory information, including departure/arrival bodies, transfer type ("Hohmann Transfer"), total delta-v in m/s, total travel time in days and a formatted string, a success flag, and an error message if applicable.
+        *   **Side Effects:** Retrieves orbital data from `celestial_data`, calls `orbital_mechanics` functions to calculate delta-v and time of flight, and formats the results. Includes extensive input validation.
+*   **Main Execution Block (`if __name__ == '__main__':`)**
+    *   **Inputs:** Hardcoded string names for celestial bodies (e.g., "Earth", "Mars", "Jupiter", "Pluto").
+    *   **Outputs/Side Effects:** Demonstrates the `TrajectoryPlanner`'s functionality by planning example trajectories and printing the results or any encountered errors to the console.
 
 ### Dependencies
-*   `math` (standard library)
-*   `datetime.timedelta` (standard library)
-*   `orbital_mechanics` (external, mocked internally if not found)
-*   `celestial_bodies` (external, mocked internally if not found)
-*   `constants` (external, mocked internally if not found)
+*   `math`
+*   `datetime.timedelta`
+*   `orbital_mechanics` (local module)
+*   `celestial_data` (local module)
+*   `constants.G_GRAVITATIONAL` (imported from `constants`, though `mu_sun` is sourced from `celestial_data` directly in this file's implementation).
 ```
 
 ---
