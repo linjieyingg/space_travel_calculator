@@ -43,6 +43,7 @@ import propulsion_system
 import fuel_calc
 import travel_logger
 from constants import C_LIGHT_MPS # Import directly from constants for clarity
+import fuel_optimizer # Added import for fuel_optimizer
 
 # Constants
 # Conversion factor from years to seconds
@@ -270,27 +271,33 @@ def main():
         print(f"Error planning trajectory: {trajectory_result.get('error_message', 'Unknown error')}")
         return
 
-    delta_v_required = trajectory_result['total_delta_v_mps'] # Adjusted key name from summary to match actual implementation
+    # Extract delta-V and travel time from the trajectory planning result
+    delta_v_required = trajectory_result['total_delta_v_mps']
     travel_time_seconds = trajectory_result['total_travel_time_seconds']
     transfer_type = trajectory_result['transfer_type']
 
-    # --- Fuel Calculation ---
+    # --- Fuel Calculation (using fuel_optimizer) ---
     fuel_mass_needed = 0.0
     try:
-        fuel_mass_needed = propulsion_system.calculate_required_fuel_mass(
-            delta_v=delta_v_required, 
-            dry_mass=spacecraft_dry_mass, 
-            specific_impulse=engine_specific_impulse
+        fuel_mass_needed = fuel_optimizer.optimize_fuel_for_trajectory(
+            start_body=source_planet,
+            end_body=destination_planet,
+            trajectory_type=transfer_type, # Use the transfer type from trajectory planning
+            spacecraft_dry_mass=spacecraft_dry_mass,
+            engine_specific_impulse=engine_specific_impulse
         )
     except ValueError as e:
-        print(f"Error calculating fuel mass: {e}. Fuel calculation skipped.")
+        print(f"Error optimizing fuel mass: {e}. Fuel calculation skipped.")
+        return
+    except RuntimeError as e: # Catch RuntimeError as per fuel_optimizer summary
+        print(f"Runtime error during fuel optimization: {e}. Fuel calculation skipped.")
         return
     except Exception as e:
-        print(f"An unexpected error occurred during fuel mass calculation: {e}.")
+        print(f"An unexpected error occurred during fuel optimization: {e}.")
         return
 
     if fuel_mass_needed is None or fuel_mass_needed < 0:
-        print("Error calculating fuel mass or received invalid value. Check input parameters.")
+        print("Error calculating fuel mass or received invalid value from optimizer. Check input parameters.")
         return
 
     fuel_cost_data = None
