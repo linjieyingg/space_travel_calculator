@@ -12,7 +12,8 @@ def mock_dependencies_for_fuel_optimizer():
         
         # Configure TrajectoryPlanner mock
         mock_planner_instance = MockTrajectoryPlanner.return_value
-        mock_planner_instance.plan_hohmann_trajectory.return_value = {
+        # Updated to plan_trajectory as per requirements
+        mock_planner_instance.plan_trajectory.return_value = {
             'success': True,
             'total_delta_v': 10000.0, # meters/second
             'travel_time_days': 100.0,
@@ -48,9 +49,11 @@ def test_optimize_fuel_for_trajectory_success(mock_dependencies_for_fuel_optimiz
 
     assert fuel_mass == 50000.0
     mocks["MockTrajectoryPlanner"].assert_called_once()
-    mocks["mock_planner_instance"].plan_hohmann_trajectory.assert_called_once_with(
+    # Updated assertion to plan_trajectory and including trajectory_type
+    mocks["mock_planner_instance"].plan_trajectory.assert_called_once_with(
         departure_body_name=start_body,
-        arrival_body_name=end_body
+        arrival_body_name=end_body,
+        trajectory_type=trajectory_type
     )
     mocks["MockCalculateFuelMass"].assert_called_once_with(
         delta_v=10000.0,
@@ -91,7 +94,8 @@ def test_optimize_fuel_for_trajectory_invalid_inputs(dry_mass, specific_impulse,
 
 def test_optimize_fuel_for_trajectory_planner_returns_unsuccessful(mock_dependencies_for_fuel_optimizer):
     mocks = mock_dependencies_for_fuel_optimizer
-    mocks["mock_planner_instance"].plan_hohmann_trajectory.return_value = {
+    # Updated to plan_trajectory
+    mocks["mock_planner_instance"].plan_trajectory.return_value = {
         'success': False,
         'error_message': 'Departure body data missing'
     }
@@ -108,7 +112,8 @@ def test_optimize_fuel_for_trajectory_planner_returns_unsuccessful(mock_dependen
 
 def test_optimize_fuel_for_trajectory_planner_returns_invalid_delta_v(mock_dependencies_for_fuel_optimizer):
     mocks = mock_dependencies_for_fuel_optimizer
-    mocks["mock_planner_instance"].plan_hohmann_trajectory.return_value = {
+    # Updated to plan_trajectory
+    mocks["mock_planner_instance"].plan_trajectory.return_value = {
         'success': True,
         'total_delta_v': -500.0, # Invalid delta_v
         'transfer_type': 'Hohmann'
@@ -152,7 +157,8 @@ def test_optimize_fuel_for_trajectory_propulsion_returns_negative_fuel(mock_depe
 
 def test_optimize_fuel_for_trajectory_planner_raises_runtime_error(mock_dependencies_for_fuel_optimizer):
     mocks = mock_dependencies_for_fuel_optimizer
-    mocks["mock_planner_instance"].plan_hohmann_trajectory.side_effect = RuntimeError("Something went wrong internally")
+    # Updated to plan_trajectory
+    mocks["mock_planner_instance"].plan_trajectory.side_effect = RuntimeError("Something went wrong internally")
 
     with pytest.raises(RuntimeError, match="An unexpected error occurred during trajectory planning: Something went wrong internally"):
         optimize_fuel_for_trajectory(
@@ -166,8 +172,8 @@ def test_optimize_fuel_for_trajectory_planner_raises_runtime_error(mock_dependen
 
 def test_optimize_fuel_for_trajectory_planner_raises_type_error_with_kwargs(mock_dependencies_for_fuel_optimizer):
     mocks = mock_dependencies_for_fuel_optimizer
-    # Simulate TrajectoryPlanner.plan_hohmann_trajectory not accepting extra kwargs
-    mocks["mock_planner_instance"].plan_hohmann_trajectory.side_effect = TypeError("plan_hohmann_trajectory() got an unexpected keyword argument 'extra_arg'")
+    # Simulate TrajectoryPlanner.plan_trajectory not accepting extra kwargs
+    mocks["mock_planner_instance"].plan_trajectory.side_effect = TypeError("plan_trajectory() got an unexpected keyword argument 'extra_arg'")
 
     with pytest.raises(ValueError, match="Trajectory planner method signature mismatch"):
         optimize_fuel_for_trajectory(
