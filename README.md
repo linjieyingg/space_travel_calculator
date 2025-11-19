@@ -7,9 +7,9 @@
 
 **Branch:** main
 
-**Files Analyzed:** 22
+**Files Analyzed:** 23
 
-**Last Updated:** 2025-11-18 23:53:43
+**Last Updated:** 2025-11-19 16:35:20
 
 ---
 
@@ -91,19 +91,21 @@ This file contains utility functions to validate user-provided data such as date
 
 ## `constants.py`
 
-This module, `constants.py`, serves as a central repository for universal physical and scientific constants relevant to space travel calculations within the `space_travel_calculator` application, ensuring consistency and maintainability.
+This module, `constants.py`, serves as a central repository for defining universal physical and scientific constants pertinent to space travel calculations within the `space_travel_calculator` application. Its primary goal is to provide a single, consistent source of truth for these critical values, enhancing maintainability and accuracy across the project.
 
-### Key Components:
+### Key Components
 
-*   **Universal Physical Constants Section**:
-    *   `C_LIGHT_MPS`: Defines the speed of light in a vacuum (299,792,458.0 m/s). It takes no input but provides a constant value for relativistic calculations and speed validation.
-    *   `G_GRAVITATIONAL`: Defines the Gravitational Constant (6.67430e-11 m³ kg⁻¹ s⁻²). It takes no input but provides a fundamental constant for space mechanics and future orbital calculations.
-    *   `GRAVITATIONAL_CONSTANT`: An alias for `G_GRAVITATIONAL`. It takes `G_GRAVITATIONAL` as its value and provides backward compatibility for modules expecting this specific name.
-*   **Commented-out Examples**: Includes examples of other potential constants (e.g., `MU_SUN`, `AU_TO_METERS`, `EARTH_RADIUS_METERS`) that can be added for future expansion.
+*   **Universal physical constants**:
+    *   `C_LIGHT_MPS`: Defines the speed of light in a vacuum (meters per second). It's a float representing a fixed physical value.
+    *   `G_GRAVITATIONAL`: Defines the Gravitational Constant (m^3 kg^-1 s^-2). It's a float representing a fixed physical value.
+*   **Alias for backward compatibility**:
+    *   `GRAVITATIONAL_CONSTANT`: An alias that points to `G_GRAVITATIONAL`, ensuring compatibility with older code that might expect this specific variable name. It's a float referencing an existing constant.
+*   **Commented-out examples for future expansion**:
+    *   This section includes examples like `MU_SUN`, `AU_TO_METERS`, and `EARTH_RADIUS_METERS`, indicating placeholders for potential future additions of other relevant constants.
 
-### Dependencies:
+### Dependencies
 
-*   None. This file does not import any external modules or libraries.
+This file has no external dependencies or imports.
 
 ---
 
@@ -519,32 +521,70 @@ This file defines a utility for calculating the required fuel mass for a spacecr
 
 ## `tests/test_celestial_data.py`
 
-This file, `tests/test_celestial_data.py`, is a test suite for the `celestial_data` Python module.
+This file contains unit tests for the `celestial_data` module, verifying the correctness of its re-exported constants, data retrieval functions, and the integrity of its internal celestial body data.
 
-### Purpose
-This file's primary purpose is to rigorously test the functionalities of the `celestial_data` module, ensuring that celestial body information and related utilities are correctly handled, retrieved, and presented.
+### Key Components:
 
-### Key Components
+*   **Test Constants Re-exported from `celestial_data`**:
+    *   `test_gravitational_constant_re_export_value()`: Verifies `GRAVITATIONAL_CONSTANT` from `celestial_data` matches `G_GRAVITATIONAL` from `constants`.
+        *   *Inputs*: None.
+        *   *Outputs*: Asserts equality within a relative tolerance.
+    *   `test_speed_of_light_re_export_value()`: Verifies `SPEED_OF_LIGHT` from `celestial_data` matches `C_LIGHT_MPS` from `constants`.
+        *   *Inputs*: None.
+        *   *Outputs*: Asserts equality within a relative tolerance.
 
-*   **Test Constants**:
-    *   `test_gravitational_constant_value()`: Verifies that `GRAVITATIONAL_CONSTANT` is correctly re-exported as a float and matches `G_GRAVITATIONAL`.
-    *   `test_speed_of_light_value()`: Verifies that `SPEED_OF_LIGHT` is correctly re-exported as a float and matches `C_LIGHT_MPS`.
-*   **Test `get_celestial_body_data` Function**:
-    *   `test_get_celestial_body_data_valid_body()`: Inputs a valid body name (e.g., 'Earth') and asserts data is returned, including orbital elements, with correct values and types.
-    *   `test_get_celestial_body_data_case_insensitivity()`: Inputs body names with different casing (e.g., 'mars', 'MARS') and asserts that data is retrieved identically.
-    *   `test_get_celestial_body_data_non_existent_body()`: Inputs a non-existent body name (e.g., 'Pluto') and asserts `None` is returned.
-    *   `test_get_celestial_body_data_invalid_input_type()`: Inputs non-string types (e.g., integer, `None`) and asserts `None` is returned.
-    *   `test_get_celestial_body_data_sun_orbital_elements()`: Inputs 'Sun' and asserts its orbital elements are `None`.
-    *   `test_get_celestial_body_data_moon_geocentric_elements()`: Inputs 'Moon' and asserts its specific geocentric orbital elements are present and have correct values.
-*   **Test `get_all_solar_system_destinations` Function**:
-    *   `test_get_all_solar_system_destinations_valid_output()`: Inputs nothing and asserts the output is a sorted list of dictionaries with 'name' (string) and 'distance' (float), ensuring Earth is not included, and verifying the closest (Moon) and furthest (Neptune) bodies.
-    *   `test_get_all_solar_system_destinations_earth_data_missing()`: Uses `monkeypatch` to simulate missing Earth data and asserts that `None` is returned, then restores the data.
+*   **Test `get_celestial_body_data` function**:
+    *   Includes tests for valid body retrieval, case-insensitivity, non-existent bodies (expecting `None`), invalid input types (expecting `None`), and specific checks for 'Sun' data structure.
+        *   *Inputs*: A string representing a celestial body name (e.g., 'Earth', 'mars', 'Pluto') or invalid types.
+        *   *Outputs*: Asserts the returned dictionary's structure, types, values, or that `None` is returned in error cases.
 
-### Dependencies
-*   `pytest`: The testing framework used for test discovery, execution, and assertions.
-*   `math`: Used for mathematical operations like `math.fabs`.
-*   `celestial_data`: The module under test, from which constants (`GRAVITATIONAL_CONSTANT`, `SPEED_OF_LIGHT`, `CELESTIAL_BODIES_DATA`) and functions (`get_celestial_body_data`, `get_all_solar_system_destinations`) are imported.
-*   `constants`: Used to import reference constant values (`G_GRAVITATIONAL`, `C_LIGHT_MPS`) for comparison with the re-exported constants from `celestial_data`.
+*   **Test `get_all_solar_system_destinations` function**:
+    *   `test_get_all_solar_system_destinations_valid_output()`: Checks if the function returns a sorted list of destinations (excluding Earth) with correct structure and non-negative distances.
+        *   *Inputs*: None.
+        *   *Outputs*: Asserts the structure, sorting, and content of the returned list.
+    *   `test_get_all_solar_system_destinations_earth_data_missing()`: Uses a mock to simulate `get_celestial_body_data` failing for 'Earth', expecting `None` to be returned.
+        *   *Inputs*: None (mocked internal calls).
+        *   *Outputs*: Asserts `None` is returned.
+
+*   **`test_celestial_bodies_data_integrity()`**:
+    *   Iterates through `CELESTIAL_BODIES_DATA` to ensure each entry has the expected keys, types (e.g., `str`, `float`, `int`), and non-negative values for properties like 'mass', 'radius', and orbital elements.
+        *   *Inputs*: None (implicitly uses `CELESTIAL_BODIES_DATA`).
+        *   *Outputs*: Asserts data consistency and integrity.
+
+### Dependencies:
+
+*   `pytest`: Test framework.
+*   `math`: Standard library (imported but not explicitly used in the provided snippets).
+*   `unittest.mock.patch`, `MagicMock`: For mocking functions and objects in tests.
+*   `celestial_data`: The module under test, providing constants (`GRAVITATIONAL_CONSTANT`, `SPEED_OF_LIGHT`, `CELESTIAL_BODIES_DATA`) and functions (`get_celestial_body_data`, `get_all_solar_system_destinations`).
+*   `constants`: Provides definitive constant values (`G_GRAVITATIONAL`, `C_LIGHT_MPS`) for comparison.
+
+---
+
+
+## `tests/test_constants.py`
+
+### File Analysis: `tests/test_constants.py`
+
+#### 1. Purpose
+This file contains unit tests to verify the values, types, and correct naming conventions of fundamental physical constants defined in the `constants` module. It ensures that the constants adhere to expected standards and that deprecated aliases are no longer present.
+
+#### 2. Key Components
+
+*   **`test_gravitational_constant_value_and_type()`**
+    *   **Inputs**: None (implicitly accesses `G_GRAVITATIONAL` from the `constants` module).
+    *   **Outputs/Side Effects**: Asserts that `G_GRAVITATIONAL` is a float and its value is approximately `6.67430e-11`.
+*   **`test_speed_of_light_value_and_type()`**
+    *   **Inputs**: None (implicitly accesses `C_LIGHT_MPS` from the `constants` module).
+    *   **Outputs/Side Effects**: Asserts that `C_LIGHT_MPS` is a float and its value is approximately `299_792_458.0`.
+*   **`test_no_deprecated_gravitational_constant_alias()`**
+    *   **Inputs**: None.
+    *   **Outputs/Side Effects**: Verifies that attempting to access a deprecated constant alias (`GRAVITATIONAL_CONSTANT`) from the `constants` module raises an `AttributeError`, confirming its removal. Includes logic to ensure the `constants` module is reloaded for a fresh state if necessary.
+
+#### 3. Dependencies
+*   `pytest`: The testing framework used for writing assertions and handling expected exceptions.
+*   `constants`: The module under test, from which `G_GRAVITATIONAL` and `C_LIGHT_MPS` are imported.
+*   `sys` (within one test function): Used to manage Python's module cache for testing module reloading behavior.
 
 ---
 
