@@ -40,12 +40,11 @@ import celestial_data # Provides celestial body data
 import orbital_mechanics # Foundational for trajectory_planner
 import trajectory_planner # Calculates orbital trajectories
 import propulsion_system # Calculates fuel requirements
-import fuel_calc # For fuel cost calculation (if needed, or direct calculation will be used)
+import fuel_calc # For fuel cost calculation
 import travel_logger # For logging travel details
 import constants # Provides universal physical constants
 
 # Constants
-# C_LIGHT_MS = 299792458 # Removed, now using constants.C_LIGHT_MPS
 FUEL_PRICE_PER_UNIT = 1000000.0 # Example high price for space fuel per kg/unit
 
 # List of solar system bodies for user selection (simplified for example)
@@ -72,7 +71,7 @@ def calc_time_earth(years_traveler_frame, average_speed_ms):
         return years_traveler_frame
     
     # Avoid division by zero or negative square root if speed is too close or exceeds light speed
-    if average_speed_ms >= constants.C_LIGHT_MPS: # Using constant from constants.py
+    if average_speed_ms >= constants.C_LIGHT_MPS:
         print("Warning: Speed is at or above the speed of light. Relativistic time dilation calculation may be invalid or undefined.")
         # In a theoretical scenario, if v=c, Lorentz factor is undefined. If v>c, sqrt is imaginary.
         # For practical purposes, we might cap or return a large value, or the traveler's time.
@@ -80,7 +79,7 @@ def calc_time_earth(years_traveler_frame, average_speed_ms):
 
     try:
         # Calculate the Lorentz factor term (1 - v^2/c^2)
-        v_c_squared = (average_speed_ms / constants.C_LIGHT_MPS)**2 # Using constant from constants.py
+        v_c_squared = (average_speed_ms / constants.C_LIGHT_MPS)**2
         sqrt_term_arg = 1 - v_c_squared
 
         if sqrt_term_arg <= 0: # Should be caught by the average_speed_ms >= C_LIGHT_MPS check, but good defensive programming
@@ -157,7 +156,6 @@ def main():
         source_planet = input(f"Enter your source planet ({', '.join(SOLAR_SYSTEM_BODIES)}): ").strip().title()
         if source_planet in SOLAR_SYSTEM_BODIES:
             try:
-                # UPDATED: Call get_celestial_body_data
                 source_data = celestial_data.get_celestial_body_data(source_planet)
                 if source_data: # Ensure data was successfully retrieved
                     break
@@ -177,7 +175,6 @@ def main():
             continue
         if destination_planet in SOLAR_SYSTEM_BODIES:
             try:
-                # UPDATED: Call get_celestial_body_data
                 destination_data = celestial_data.get_celestial_body_data(destination_planet)
                 if destination_data: # Ensure data was successfully retrieved
                     break
@@ -250,16 +247,13 @@ def main():
     transfer_type = "Hohmann Transfer" # Default transfer type
 
     try:
-        # UPDATED: Instantiate TrajectoryPlanner
         planner = trajectory_planner.TrajectoryPlanner()
-        # UPDATED: Call plan_hohmann_trajectory on the instance with planet names
         hohmann_result = planner.plan_hohmann_trajectory(source_planet, destination_planet)
         
         # Check if planning was successful
         if hohmann_result and hohmann_result.get('success', False):
             delta_v = hohmann_result.get('total_delta_v_mps', 0.0)
-            # Assuming 'travel_time_traveler_frame_years' and 'average_hohmann_speed_ms'
-            # are provided by the trajectory planner as per original main.py logic.
+            # These are expected to be returned by the trajectory planner as per main.py's existing logic
             travel_time_traveler_frame_years = hohmann_result.get('travel_time_traveler_frame_years', 0.0)
             average_hohmann_speed_ms = hohmann_result.get('average_hohmann_speed_ms', 0.0)
 
@@ -284,10 +278,8 @@ def main():
     total_fuel_cost = 0.0
     if delta_v > 0 and spacecraft_dry_mass > 0 and engine_isp > 0:
         try:
-            # UPDATED: Use calculate_required_fuel_mass with correct argument order (delta_v, dry_mass, specific_impulse)
             fuel_mass_kg = propulsion_system.calculate_required_fuel_mass(delta_v, spacecraft_dry_mass, engine_isp)
             
-            # UPDATED: Use fuel_calc.calculate_fuel_cost
             fuel_cost_result = fuel_calc.calculate_fuel_cost(total_fuel_mass_needed=fuel_mass_kg, fuel_price_per_unit=FUEL_PRICE_PER_UNIT)
             if fuel_cost_result and 'total_cost' in fuel_cost_result:
                 total_fuel_cost = fuel_cost_result['total_cost']
@@ -327,12 +319,11 @@ def main():
 
     # --- Log Travel Details ---
     try:
-        # Corrected parameter names based on travel_logger.py summary
         travel_logger.save_travel_log(
             source_planet=source_planet,
             destination_planet=destination_planet,
             speed=average_hohmann_speed_ms, # Using average speed for logging
-            travel_time=travel_time_traveler_frame_years,
+            travel_time=travel_time_traveler_frame_years, # Travel time in traveler's frame (years) for logging
             delta_v_required=delta_v,
             fuel_mass_needed=fuel_mass_kg,
             transfer_type=transfer_type
