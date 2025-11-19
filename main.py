@@ -165,23 +165,23 @@ def main():
     
     source_planet_data = None
     while True:
-        source_planet_input = input("Enter your source celestial body (e.g., Earth): ").strip()
+        source_planet_input = input("Enter your Departure Body (e.g., Earth): ").strip()
         source_planet_data = celestial_data.get_celestial_body_data(source_planet_input)
         if source_planet_data:
             source_planet = source_planet_data['name']
             break
         else:
-            print("Invalid source planet. Please choose from available bodies (case-insensitive).")
+            print("Invalid departure body. Please choose from available bodies (case-insensitive).")
     
     destination_planet_data = None
     while True:
-        destination_planet_input = input("Enter your destination celestial body (e.g., Mars): ").strip()
+        destination_planet_input = input("Enter your Arrival Body (e.g., Mars): ").strip()
         destination_planet_data = celestial_data.get_celestial_body_data(destination_planet_input)
         if destination_planet_data and destination_planet_data['name'].lower() != source_planet.lower():
             destination_planet = destination_planet_data['name']
             break
         else:
-            print("Invalid destination planet or same as source. Please choose a different body (case-insensitive).")
+            print("Invalid arrival body or same as departure. Please choose a different body (case-insensitive).")
 
     spacecraft_dry_mass = 0.0
     while True:
@@ -347,8 +347,8 @@ def main():
 
     # --- Output Summary ---
     print("\n--- Travel Summary ---")
-    print(f"Source: {source_planet}")
-    print(f"Destination: {destination_planet}")
+    print(f"Departure Body: {source_planet}")
+    print(f"Arrival Body: {destination_planet}")
     print(f"Transfer Type: {transfer_type}")
     print(f"Delta-V Required: {delta_v_required:.2f} m/s")
     print(f"Estimated Fuel Mass Needed: {fuel_mass_needed:.2f} kg")
