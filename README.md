@@ -7,9 +7,9 @@
 
 **Branch:** main
 
-**Files Analyzed:** 21
+**Files Analyzed:** 22
 
-**Last Updated:** 2025-11-18 23:40:42
+**Last Updated:** 2025-11-18 23:53:43
 
 ---
 
@@ -40,27 +40,27 @@ None. This file is self-contained and does not use any external imports.
 
 ## `celestial_data.py`
 
-```markdown
-## Analysis of `celestial_data.py`
+This module `celestial_data.py` acts as a central repository for astrophysical data on solar system bodies, including physical parameters and classical orbital elements. It also re-exports universal physical constants for consistent use across the `space_travel_calculator` application.
 
-### Purpose
-This module serves as the definitive source for astrophysical data within the `space_travel_calculator` application, centralizing detailed parameters for solar system celestial bodies. It provides functions to retrieve this data and list potential destinations, while also re-exporting universal physical constants for consistency.
+### Key Components:
 
-### Key Components
-*   **`GRAVITATIONAL_CONSTANT`**: Global constant re-exported from `constants`, representing the Gravitational Constant (m³ kg⁻¹ s⁻²).
-*   **`SPEED_OF_LIGHT`**: Global constant re-exported from `constants`, representing the Speed of Light (m/s).
-*   **`CELESTIAL_BODIES_DATA`**: A dictionary containing detailed astrophysical data for various celestial bodies (e.g., mass, radius, gravitational parameter, semi-major axis from Sun, orbital period).
-*   **`get_celestial_body_data(body_name: str)`**:
-    *   **Inputs**: `body_name` (string, case-insensitive name of a celestial body).
+*   **`GRAVITATIONAL_CONSTANT` & `SPEED_OF_LIGHT`**: Re-exported universal physical constants.
+    *   **Inputs**: None (derived from `constants` module).
+    *   **Outputs**: Numerical constant values.
+*   **`CELESTIAL_BODIES_DATA`**: A dictionary storing detailed astrophysical parameters for various celestial bodies (e.g., mass, radius, gravitational parameter, orbital period, heliocentric/geocentric orbital elements like eccentricity, inclination, mean anomaly).
+    *   **Inputs**: None (static data).
+    *   **Outputs**: Structured dictionary data.
+*   **`get_celestial_body_data(body_name: str)`**: Retrieves the complete data dictionary for a specified celestial body.
+    *   **Inputs**: `body_name` (string, case-insensitive).
     *   **Outputs**: A dictionary containing the body's data if found, otherwise `None`.
-*   **`get_all_solar_system_destinations()`**:
+*   **`get_all_solar_system_destinations()`**: Generates a sorted list of potential solar system destinations from Earth, based on their average distance.
     *   **Inputs**: None.
-    *   **Outputs**: A list of dictionaries, each with 'name' and calculated 'distance' from Earth (in meters), sorted by distance. Returns `None` if Earth's data is missing.
+    *   **Outputs**: A list of dictionaries, each containing a celestial body's 'name' and its 'distance' from Earth in meters, sorted by distance. Returns `None` if Earth's data is missing.
 
-### Dependencies
-*   **`math`**: Used for `math.fabs()` in distance calculations.
-*   **`constants`**: Imports `G_GRAVITATIONAL` (as `GRAVITATIONAL_CONSTANT`) and `C_LIGHT_MPS` (as `SPEED_OF_LIGHT`).
-```
+### Dependencies:
+
+*   `math`: Used for `math.fabs()` in distance calculations.
+*   `constants`: Imports `G_GRAVITATIONAL` and `C_LIGHT_MPS` for re-exporting universal constants.
 
 ---
 
@@ -110,31 +110,44 @@ This module, `constants.py`, serves as a central repository for universal physic
 
 ## `ephemeris.py`
 
-This Python file, `ephemeris.py`, calculates the approximate heliocentric (Sun-centered) orbital state (distance and angular position) for celestial bodies using a simplified circular orbit model based on Kepler's laws. It provides a foundational mechanism for basic astronomical position estimations for planets.
+This file, `ephemeris.py`, provides functionality to calculate the approximate heliocentric orbital state (position and velocity vectors) for various celestial bodies at a specified date and time, using a 3D elliptical orbit model. It supports calculating states for planets but explicitly excludes the Sun (as it's the central body) and Earth's Moon (due to its complex barycentric orbit).
 
-### Key Components:
+### Key Components
 
-*   **`J2000_EPOCH`**: A `datetime.datetime` constant representing the J2000.0 epoch in UTC, used as a reference for time difference calculations.
-*   **`_get_mu_sun()`**:
+*   **`_MU_SUN_CACHE`**: A module-level variable to cache the Sun's gravitational parameter, initialized as `None`.
+*   **`_get_mu_sun()`**: A helper function that retrieves the Sun's gravitational parameter (mu) using `orbital_mechanics` or `celestial_data` and caches it.
     *   **Inputs**: None.
-    *   **Outputs**: Returns the Sun's gravitational parameter (mu) as a float (m^3/s^2), internally caching the result for efficiency. Raises `ValueError` if the parameter cannot be retrieved or is invalid.
-*   **`get_heliocentric_state(body_name: str, date: datetime.datetime)`**:
-    *   **Inputs**:
-        *   `body_name` (str): The case-insensitive name of a celestial body (e.g., 'Mars').
-        *   `date` (datetime.datetime): The specific date and time (timezone-aware recommended, naive dates are converted to UTC).
-    *   **Outputs**: A dictionary containing:
-        *   `"distance_from_sun_m"` (float): Approximate distance from the Sun in meters.
-        *   `"angular_position_rad"` (float): Approximate angular position in radians (0 to 2*pi).
-    *   **Side Effects**: Raises `ValueError` for invalid inputs, missing celestial data, or if the calculation is requested for the Sun or Moon (which are explicitly not supported by this simplified model).
-*   **`if __name__ == '__main__':`**:
-    *   **Purpose**: Contains a comprehensive self-test suite demonstrating the `get_heliocentric_state` function with valid inputs, invalid inputs, edge cases (past dates, naive datetimes), and unsupported bodies, printing results and caught errors.
+    *   **Outputs**: `float` representing the Sun's gravitational parameter in m^3/s^2.
+*   **`_normalize_angle(angle_rad)`**: Normalizes an angle to the range `[0, 2*pi)`.
+    *   **Inputs**: `float` angle in radians.
+    *   **Outputs**: `float` normalized angle in radians.
+*   **`_calculate_mean_anomaly(M0_rad, mean_motion_rad_s, delta_t_s)`**: Calculates the mean anomaly at a given time.
+    *   **Inputs**: `float` initial mean anomaly, `float` mean motion, `float` time difference.
+    *   **Outputs**: `float` mean anomaly in radians.
+*   **`_solve_keplers_equation(M_rad, e, tolerance, max_iterations)`**: Solves Kepler's Equation using Newton-Raphson iteration to find the eccentric anomaly.
+    *   **Inputs**: `float` mean anomaly, `float` eccentricity, optional `float` tolerance, optional `int` max iterations.
+    *   **Outputs**: `float` eccentric anomaly in radians.
+*   **`_calculate_true_anomaly_and_radius(a, e, E_rad)`**: Derives true anomaly and orbital radius from semi-major axis, eccentricity, and eccentric anomaly.
+    *   **Inputs**: `float` semi-major axis, `float` eccentricity, `float` eccentric anomaly.
+    *   **Outputs**: `tuple[float, float]` (true anomaly in radians, orbital radius in meters).
+*   **`_elements_to_cartesian(mu, a, e, i_rad, Omega_rad, omega_rad, nu_rad, r_m)`**: Converts classical orbital elements to heliocentric Cartesian position and velocity vectors.
+    *   **Inputs**: `float` central body mu, `float` semi-major axis, `float` eccentricity, `float` inclination, `float` longitude of ascending node, `float` argument of periapsis, `float` true anomaly, `float` orbital radius.
+    *   **Outputs**: `tuple[tuple[float, float, float], tuple[float, float, float]]` containing position and velocity vectors in meters and m/s, respectively.
+*   **`get_heliocentric_state(body_name, date)`**: The primary public function for calculating the heliocentric orbital state of a celestial body at a specific time.
+    *   **Inputs**: `str` `body_name`, `datetime.datetime` `date` (preferably timezone-aware UTC).
+    *   **Outputs**: `tuple[tuple[float, float, float], tuple[float, float, float]]` representing position (x, y, z) and velocity (vx, vy, vz) vectors in meters and m/s relative to the Sun.
+*   **`if __name__ == '__main__':` block**: Contains a self-test suite that mocks `celestial_data` to run various tests, including valid body calculations, invalid inputs, and timezone handling.
+    *   **Inputs**: None (uses hardcoded test values and mock data).
+    *   **Outputs**: Prints test results and calculated states to the console.
+    *   **Side Effects**: Temporarily patches `sys.modules` to mock `celestial_data` for testing.
 
-### Dependencies:
+### Dependencies
 
 *   `math`
 *   `datetime`
-*   `celestial_data` (specifically `get_celestial_body_data`)
-*   `orbital_mechanics` (specifically `calculate_gravitational_parameter`, `calculate_elliptical_orbital_period`)
+*   `celestial_data` (for `get_celestial_body_data`)
+*   `orbital_mechanics` (for `calculate_gravitational_parameter`)
+*   `sys` (used for mocking in the self-test block)
 
 ---
 
@@ -353,51 +366,39 @@ This Python script implements a command-line Tic-Tac-Toe game for two players. I
 
 ## `main.py`
 
-```markdown
-## Purpose
-This file implements a space travel calculator that determines the time, fuel requirements, and cost for a user to reach a chosen celestial destination, factoring in relativistic effects and orbital mechanics.
+This file implements a space travel calculator that determines travel time, age upon arrival, fuel requirements, and cost for a user-chosen celestial destination. It accounts for orbital mechanics, relativistic effects, and specific propulsion system characteristics.
 
-## Key Components
-*   **`calc_time_earth(years_traveler_frame, average_speed_ms)`**:
-    *   **Inputs**: Travel time in the traveler's frame (years), average spacecraft speed (m/s).
-    *   **Outputs**: Travel time in Earth's reference frame (years).
-    *   **Side Effects**: Prints warnings for invalid speeds or calculation errors.
-*   **`calc_age(years_travel_time, starting_age)`**:
-    *   **Inputs**: Total travel time (years), user's starting age (int).
-    *   **Outputs**: User's age upon arrival (float).
-    *   **Side Effects**: Raises `ValueError` for non-positive or non-numeric inputs.
-*   **`calc_arrival(departure_date, years_earth_frame)`**:
-    *   **Inputs**: Departure date (`datetime`), travel time in Earth's frame (years).
-    *   **Outputs**: Estimated arrival date (`datetime`) or `None` if calculation fails.
-    *   **Side Effects**: Prints warnings/errors for date calculation issues.
-*   **`convert_date(date_str)`**:
-    *   **Inputs**: Date string in 'YYYY-MM-DD' format.
-    *   **Outputs**: Converted `datetime` object.
-*   **`main()`**:
-    *   **Inputs**: None (gathers user input interactively from the console).
-    *   **Outputs**: Prints a comprehensive travel summary to the console.
-    *   **Side Effects**:
-        *   Initializes `TrajectoryPlanner`.
-        *   Retrieves celestial body data using `celestial_data`.
-        *   Plans trajectory using `TrajectoryPlanner`.
-        *   Optimizes fuel and calculates mass needed using `fuel_optimizer`.
-        *   Calculates fuel cost using `fuel_calc`.
-        *   Performs time dilation (`calc_time_earth`), age (`calc_age`), and arrival date (`calc_arrival`) calculations.
-        *   Logs travel details using `travel_logger`.
+### Key Components:
 
-## Dependencies
-*   `math` (for mathematical operations like `sqrt`)
-*   `datetime`, `timedelta` (for date and time manipulations)
-*   `checks` (imported as `c`, likely for input validation)
-*   `celestial_data` (for retrieving information about celestial bodies)
-*   `orbital_mechanics` (imported but not directly called in `main`)
-*   `trajectory_planner.TrajectoryPlanner` (for planning the spacecraft's path)
-*   `propulsion_system` (imported but not directly called in `main`)
-*   `fuel_calc` (for calculating fuel cost)
-*   `travel_logger` (for saving travel details)
-*   `constants.C_LIGHT_MPS` (for the speed of light constant)
-*   `fuel_optimizer` (for calculating optimized fuel mass)
-```
+*   **`main()` function**: Orchestrates the entire application. It gathers user inputs for departure/arrival bodies, spacecraft/engine parameters, departure date, and age. It then calls external modules for trajectory planning, fuel optimization, and logging. Finally, it calculates and displays a detailed travel summary, including relativistic travel times and arrival age/date.
+    *   **Inputs**: User input via command line prompts.
+    *   **Outputs/Side Effects**: Prints travel summary to console, saves travel log via `travel_logger`.
+*   **`calc_time_earth(years_traveler_frame, average_speed_ms)`**: Calculates travel time in Earth's reference frame by applying relativistic time dilation based on the traveler's frame time and average spacecraft speed.
+    *   **Inputs**: `years_traveler_frame` (float), `average_speed_ms` (float).
+    *   **Outputs**: `float` (travel time in Earth's frame in years).
+*   **`calc_age(years_travel_time, starting_age)`**: Determines the user's age upon arrival.
+    *   **Inputs**: `years_travel_time` (float), `starting_age` (int).
+    *   **Outputs**: `float` (user's age upon arrival).
+*   **`calc_arrival(departure_date, years_earth_frame)`**: Computes the estimated arrival date based on the departure date and travel time in Earth's frame.
+    *   **Inputs**: `departure_date` (`datetime`), `years_earth_frame` (float).
+    *   **Outputs**: `datetime` (estimated arrival date) or `None`.
+*   **`convert_date(date_str)`**: Helper function to parse a date string into a `datetime` object.
+    *   **Inputs**: `date_str` (string in 'YYYY-MM-DD' format).
+    *   **Outputs**: `datetime.datetime` object.
+
+### Dependencies:
+
+*   **Standard Library**: `math`, `datetime` (for `datetime`, `timedelta`).
+*   **Local Modules**:
+    *   `checks as c`: For input validation (e.g., `is_valid_date`, `is_valid_age`).
+    *   `celestial_data`: Provides data for celestial bodies.
+    *   `orbital_mechanics`: Imports `calculate_circular_orbital_velocity` but it is not directly used in `main`.
+    *   `trajectory_planner.TrajectoryPlanner`: Class to plan spacecraft trajectories (e.g., Hohmann transfer).
+    *   `propulsion_system`: Imported but not directly called in `main`.
+    *   `fuel_calc`: Calculates fuel cost.
+    *   `travel_logger`: Logs travel details.
+    *   `constants`: Provides constants like `C_LIGHT_MPS`.
+    *   `fuel_optimizer`: Optimizes and calculates fuel mass needed for a given trajectory.
 
 ---
 
@@ -516,79 +517,110 @@ This file defines a utility for calculating the required fuel mass for a spacecr
 ---
 
 
-## `tests/test_orbital_mechanics.py`
+## `tests/test_celestial_data.py`
 
-This file, `tests/test_orbital_mechanics.py`, is a pytest suite designed to thoroughly test the functionalities of the `orbital_mechanics.py` module. It verifies various mathematical vector operations and core orbital mechanics calculations, ensuring they produce correct results and handle invalid inputs gracefully.
+This file, `tests/test_celestial_data.py`, is a test suite for the `celestial_data` Python module.
+
+### Purpose
+This file's primary purpose is to rigorously test the functionalities of the `celestial_data` module, ensuring that celestial body information and related utilities are correctly handled, retrieved, and presented.
 
 ### Key Components
 
-*   **Fixtures**:
-    *   `mock_celestial_data()`: Patches `orbital_mechanics.celestial_data.get_celestial_body_data`.
-        *   Inputs: None.
-        *   Outputs: Yields a `MagicMock` configured to return predefined celestial body data (Sun, Earth, Mars, Moon) based on the input body name.
-    *   `mock_ephemeris()`: Patches `orbital_mechanics.ephemeris.get_heliocentric_state`.
-        *   Inputs: None.
-        *   Outputs: Yields a `MagicMock` configured to return simplified heliocentric state data (distance and angular position) for Earth and Mars at a specific date.
-
-*   **Vector Operations Tests (`test_vector_magnitude_`, `test_vector_subtract_`, etc.)**:
-    *   Inputs: Numeric 3-element tuples or lists representing vectors, or a numeric scalar for `vector_scale`.
-    *   Outputs: Assertions verify the correctness of the calculated vector magnitude, sum, difference, scaled vector, dot product, or cross product. They also assert that `ValueError` is raised for invalid input types, dimensions, or non-numeric elements.
-
-*   **Orbital Mechanics Calculations Tests (`test_calculate_gravitational_parameter_`, `test_calculate_circular_orbital_velocity_`, `test_calculate_hohmann_transfer_delta_v_`, `test_calculate_hohmann_transfer_time_of_flight_`, `test_calculate_elliptical_orbital_period_`, `test_calculate_escape_velocity_`)**:
-    *   Inputs: Gravitational parameter (mu), radii, semi-major axis, celestial body names, and sometimes a `datetime` object.
-    *   Outputs: Assertions verify that the calculated orbital parameters (e.g., velocities, periods, delta-Vs) match expected values derived from orbital mechanics principles. They also check for `ValueError` when inputs are non-positive or data is missing/invalid.
-
-*   **Internal Helper Function Test (`test_get_body_orbital_velocity_vector_`)**:
-    *   Inputs: Celestial body name (string), `datetime` object, and gravitational parameter (float).
-    *   Outputs: Asserts the correctness of the calculated orbital velocity vector (magnitude and direction) based on mocked ephemeris data, or raises `ValueError` if ephemeris data is unavailable or inputs are invalid.
-
-*   **Simplified Lambert Transfer Test (`test_calculate_lambert_transfer_`)**:
-    *   Inputs: Gravitational parameter (mu), initial and final position vectors (3-element tuples), and time of flight (float).
-    *   Outputs: Asserts the magnitudes of the transfer velocity vectors at start/end and the total delta-V match expected values for a simplified Hohmann-like transfer. It also raises `ValueError` for invalid inputs, zero vectors, identical position vectors, or impossible transfer times.
+*   **Test Constants**:
+    *   `test_gravitational_constant_value()`: Verifies that `GRAVITATIONAL_CONSTANT` is correctly re-exported as a float and matches `G_GRAVITATIONAL`.
+    *   `test_speed_of_light_value()`: Verifies that `SPEED_OF_LIGHT` is correctly re-exported as a float and matches `C_LIGHT_MPS`.
+*   **Test `get_celestial_body_data` Function**:
+    *   `test_get_celestial_body_data_valid_body()`: Inputs a valid body name (e.g., 'Earth') and asserts data is returned, including orbital elements, with correct values and types.
+    *   `test_get_celestial_body_data_case_insensitivity()`: Inputs body names with different casing (e.g., 'mars', 'MARS') and asserts that data is retrieved identically.
+    *   `test_get_celestial_body_data_non_existent_body()`: Inputs a non-existent body name (e.g., 'Pluto') and asserts `None` is returned.
+    *   `test_get_celestial_body_data_invalid_input_type()`: Inputs non-string types (e.g., integer, `None`) and asserts `None` is returned.
+    *   `test_get_celestial_body_data_sun_orbital_elements()`: Inputs 'Sun' and asserts its orbital elements are `None`.
+    *   `test_get_celestial_body_data_moon_geocentric_elements()`: Inputs 'Moon' and asserts its specific geocentric orbital elements are present and have correct values.
+*   **Test `get_all_solar_system_destinations` Function**:
+    *   `test_get_all_solar_system_destinations_valid_output()`: Inputs nothing and asserts the output is a sorted list of dictionaries with 'name' (string) and 'distance' (float), ensuring Earth is not included, and verifying the closest (Moon) and furthest (Neptune) bodies.
+    *   `test_get_all_solar_system_destinations_earth_data_missing()`: Uses `monkeypatch` to simulate missing Earth data and asserts that `None` is returned, then restores the data.
 
 ### Dependencies
+*   `pytest`: The testing framework used for test discovery, execution, and assertions.
+*   `math`: Used for mathematical operations like `math.fabs`.
+*   `celestial_data`: The module under test, from which constants (`GRAVITATIONAL_CONSTANT`, `SPEED_OF_LIGHT`, `CELESTIAL_BODIES_DATA`) and functions (`get_celestial_body_data`, `get_all_solar_system_destinations`) are imported.
+*   `constants`: Used to import reference constant values (`G_GRAVITATIONAL`, `C_LIGHT_MPS`) for comparison with the re-exported constants from `celestial_data`.
 
-*   `pytest`: Testing framework.
-*   `math`: For mathematical functions like `sqrt`, `pi`, `sin`, `cos`.
-*   `datetime`, `timedelta` (from `datetime` module): For handling dates and time differences.
-*   `unittest.mock.patch`, `unittest.mock.MagicMock`: For mocking external function calls.
-*   `orbital_mechanics`: The module under test, from which various functions are imported.
-*   `celestial_data`: Imported for the purpose of mocking its `get_celestial_body_data` function.
-*   `constants`: Imported, but not directly used in the provided content.
+---
+
+
+## `tests/test_orbital_mechanics.py`
+
+This file `tests/test_orbital_mechanics.py` contains unit tests for the `orbital_mechanics` module using `pytest`. It verifies the correctness and error handling of functions related to vector operations and various orbital mechanics calculations.
+
+### Key Components:
+
+*   **Fixtures**:
+    *   `mock_celestial_data`: Mocks `celestial_data.get_celestial_body_data`. It takes a celestial body name (string) and returns a dictionary with predefined mass, radius, gravitational parameter, semi-major axis, and orbital period for Sun, Earth, Mars, and Moon.
+    *   `mock_ephemeris`: Mocks `orbital_mechanics.ephemeris.get_heliocentric_state`. It takes a body name (string) and a datetime object and returns a dictionary containing simplified position and velocity vectors for Earth and Mars.
+
+*   **Test Functions**:
+    *   **Vector Operations Tests**: `test_vector_magnitude`, `test_vector_subtract`, `test_vector_add`, `test_vector_scale`, `test_vector_dot`, `test_vector_cross`. These functions test their respective vector operations, taking 3-element numeric tuples/lists as input (and a scalar for `vector_scale`). They return a numeric value or a 3-element tuple, and raise `ValueError` for invalid inputs.
+    *   **`test_calculate_gravitational_parameter`**: Tests the calculation of the gravitational parameter. It takes a celestial body name (string) and returns a float. It relies on `mock_celestial_data` and raises `ValueError` for invalid body names or missing data.
+    *   **`test_calculate_circular_orbital_velocity`**: Tests circular orbital velocity. It takes gravitational parameter (`mu`, float) and radius (float), returning orbital velocity (float). Raises `ValueError` for non-positive inputs.
+    *   **`test_calculate_hohmann_transfer_delta_v`**: Tests Hohmann transfer delta-v. It takes `mu`, `r1` (initial radius), and `r2` (final radius) (all floats), returning initial delta-v, final delta-v, and total delta-v (all floats). Raises `ValueError` for invalid inputs or equal radii.
+    *   **`test_calculate_hohmann_transfer_time_of_flight`**: Tests Hohmann transfer time of flight. It takes `mu`, `r1`, and `r2` (all floats), returning time of flight (float). Raises `ValueError` for invalid inputs or equal radii.
+    *   **`test_calculate_elliptical_orbital_period`**: Tests elliptical orbital period. It takes `mu` and `semi_major_axis` (both floats), returning the period (float). Raises `ValueError` for non-positive inputs.
+    *   **`test_calculate_escape_velocity`**: Tests escape velocity. It takes `mu` and `radius` (both floats), returning escape velocity (float). Raises `ValueError` for non-positive inputs.
+    *   **`test_get_body_orbital_velocity_vector`**: Tests a helper function to retrieve a body's orbital velocity vector. It takes a body name (string), a datetime object, and `mu` (float), returning a 3-element velocity vector tuple. It uses `mock_ephemeris` and `mock_celestial_data`, raising `ValueError` for missing ephemeris data, malformed data, or invalid `mu`.
+    *   **`test_calculate_lambert_transfer`**: Tests a simplified Lambert transfer calculation. It takes `mu`, initial position vector `r1_vec`, final position vector `r2_vec` (all 3-element tuples/lists), and `delta_t` (time of flight, float). It returns magnitudes of initial and final transfer velocities, total delta-v, and the time of flight. Raises `ValueError` for invalid inputs, zero/identical position vectors, or impossible transfer conditions.
+
+### Dependencies:
+
+*   `pytest`
+*   `math`
+*   `datetime` (specifically `datetime` and `timedelta`)
+*   `unittest.mock` (specifically `patch` and `MagicMock`)
+*   `orbital_mechanics` (module under test, specific functions are imported)
+*   `celestial_data` (mocked)
+*   `constants` (imported but not explicitly used in the provided content)
+*   `ephemeris` (implicitly mocked via `orbital_mechanics.ephemeris.get_heliocentric_state`)
 
 ---
 
 
 ## `tests/test_trajectory_planner.py`
 
-This file contains unit tests for the `TrajectoryPlanner` class. It uses pytest and unittest.mock to isolate the `TrajectoryPlanner` logic by mocking its external dependencies, ensuring that initialization and trajectory planning methods (Hohmann, Direct/Lambert) behave as expected, including various success and failure scenarios.
+This file contains unit tests for the `TrajectoryPlanner` class, designed to verify its initialization and its ability to plan various types of space trajectories (Hohmann, Direct/Lambert) by mocking external data and calculation dependencies.
 
-### Key Components:
+### Key Components
 
-*   **`_parse_date_string` (Helper Function)**:
-    *   **Inputs**: `date_str` (string in 'YYYY-MM-DD' format).
-    *   **Outputs**: A `datetime.datetime` object.
-*   **`mock_celestial_data_for_planner` (Fixture)**:
-    *   **Inputs**: None.
-    *   **Outputs/Side Effects**: Patches `trajectory_planner.celestial_data.get_celestial_body_data` to return predefined data for Sun, Earth, Mars, and Moon.
-*   **`mock_orbital_mechanics` (Fixture)**:
-    *   **Inputs**: None.
-    *   **Outputs/Side Effects**: Patches several functions within `trajectory_planner.orbital_mechanics` (`calculate_hohmann_transfer_delta_v`, `calculate_hohmann_transfer_time_of_flight`, `calculate_lambert_transfer`, `calculate_gravitational_parameter`). The `calculate_lambert_transfer` mock simulates an iterative solver with an optimal time window.
-*   **`mock_ephemeris_get_heliocentric_state` (Fixture)**:
-    *   **Inputs**: None.
-    *   **Outputs/Side Effects**: Patches `trajectory_planner.ephemeris.get_heliocentric_state` to provide illustrative heliocentric positions for Earth and Mars on specific dates.
-*   **Test Functions (`test_trajectory_planner_init_*`, `test_plan_hohmann_trajectory_*`, `test_plan_direct_transfer_*`, `test_plan_trajectory_*`)**:
-    *   **Inputs**: Utilizes the above-mentioned fixtures.
-    *   **Outputs/Side Effects**: Assertions verify `TrajectoryPlanner`'s initialization (`mu_sun` loading, error handling), successful planning for Hohmann and Direct transfers (correct delta-v, travel time, dependency calls), fallback mechanisms (ephemeris to static data), and robust error handling for unsupported bodies, calculation errors, or invalid inputs. Specific tests cover scenarios like identical departure/arrival bodies for direct transfers.
+*   **`_parse_date_string`**: A helper function to convert date strings (`'%Y-%m-%d'`) into `datetime` objects.
+    *   **Inputs**: `date_str` (string).
+    *   **Outputs**: `datetime` object.
+*   **`mock_celestial_data_for_planner`**: A Pytest fixture that patches `trajectory_planner.celestial_data.get_celestial_body_data` to return predefined static data for Sun, Earth, Mars, and Moon.
+    *   **Inputs**: Celestial body name (string).
+    *   **Outputs**: Mocked `get_celestial_body_data` object that yields predefined celestial body properties.
+*   **`mock_orbital_mechanics`**: A Pytest fixture that patches functions within `trajectory_planner.orbital_mechanics`. It provides default return values for Hohmann calculations and simulates an iterative Lambert solver with a "U-shaped" delta-v profile for varying times of flight.
+    *   **Inputs**: Varies based on patched function (e.g., `mu`, position vectors, `delta_t`).
+    *   **Outputs**: A dictionary containing mocked `hohmann_dv`, `hohmann_tof`, `lambert_transfer`, and `grav_param` functions.
+*   **`mock_ephemeris_get_heliocentric_state`**: A Pytest fixture that patches `trajectory_planner.ephemeris.get_heliocentric_state` to provide simplified heliocentric position and velocity vectors for Earth and Mars on specific dates.
+    *   **Inputs**: `body_name` (string), `date` (datetime object).
+    *   **Outputs**: Mocked `get_heliocentric_state` object that yields a dictionary with `position_vector_m` and `velocity_vector_mps`.
+*   **Test Functions (`test_*`)**: A series of functions testing various scenarios for `TrajectoryPlanner`, including:
+    *   **Initialization**: Successful setup, missing/invalid Sun data.
+    *   **Hohmann Transfers**: Success using ephemeris, fallback to static data, unsupported bodies, and error propagation from orbital mechanics.
+    *   **Direct (Lambert) Transfers**: Success with iterative search, failure to find viable solutions, error propagation from the Lambert solver, and handling identical departure/arrival bodies.
+    *   **General `plan_trajectory` validation**: Handling unsupported trajectory types, invalid date formats, and missing required departure dates.
+    *   **Inputs**: `TrajectoryPlanner` instance, mock fixtures, specific test parameters (body names, dates, trajectory types).
+    *   **Outputs**: Asserts on the success/failure status, calculated delta-v, travel time, messages, and verifies that mock functions were called correctly.
 
-### Dependencies:
+### Dependencies
 
-*   `pytest`: For test structuring and execution.
-*   `unittest.mock`: For creating mock objects and patching modules/functions.
-*   `datetime`, `timedelta`: For date and time manipulation in tests.
-*   `math`: For mathematical operations like `pi` and `isclose`.
-*   `trajectory_planner`: The main module under test.
-*   `celestial_data`, `orbital_mechanics`, `ephemeris`, `constants`: Modules that `TrajectoryPlanner` depends on, which are extensively mocked in these tests.
+*   `pytest`
+*   `unittest.mock.MagicMock`, `patch`, `call`
+*   `datetime`, `timedelta`
+*   `math`
+*   `trajectory_planner` (the module under test)
+*   `celestial_data`
+*   `orbital_mechanics`
+*   `ephemeris`
+*   `constants`
 
 ---
 
@@ -596,33 +628,36 @@ This file contains unit tests for the `TrajectoryPlanner` class. It uses pytest 
 ## `trajectory_planner.py`
 
 ```markdown
-**Purpose**
-This file defines the `TrajectoryPlanner` class, which provides a high-level interface for planning interplanetary trajectories by orchestrating calls to orbital mechanics, celestial data, and ephemeris modules to calculate details like total delta-v and travel time for various transfer types.
+1.  **Purpose**
+    This file defines `TrajectoryPlanner`, a class that provides a high-level interface for planning interplanetary trajectories. It calculates essential details like total delta-v and travel time by orchestrating calls to orbital mechanics and ephemeris modules, supporting various transfer types based on dynamic orbital positions.
 
-**Key Components**
-*   **Class: `TrajectoryPlanner`**
-    *   **Inputs**: Initialized without parameters, but its methods take celestial body names, departure dates, and trajectory types.
-    *   **Outputs/Side Effects**: Stores the Sun's gravitational parameter; its methods return dictionaries containing trajectory calculation results or error messages.
-*   **Method: `__init__(self)`**
-    *   **Inputs**: None (besides `self`).
-    *   **Outputs/Side Effects**: Fetches the Sun's gravitational parameter (`mu_sun`) from `celestial_data` and stores it, raising errors if data is missing or invalid.
-*   **Method: `_plan_hohmann_trajectory(self, departure_body_name: str, arrival_body_name: str, departure_date: datetime) -> dict`**
-    *   **Inputs**: Names of departure and arrival bodies (strings), and a departure date (datetime object).
-    *   **Outputs**: A dictionary with details for a Hohmann transfer, including delta-v, travel time, and dynamic orbital distances, or an error dictionary.
-*   **Method: `_plan_direct_transfer(self, departure_body_name: str, arrival_body_name: str, departure_date: datetime) -> dict`**
-    *   **Inputs**: Names of departure and arrival bodies (strings), and a departure date (datetime object).
-    *   **Outputs**: A dictionary with details for a direct transfer (using a simplified Lambert's problem solver that iterates through flight times to find optimal delta-v), or an error dictionary.
-*   **Method: `plan_trajectory(self, departure_body_name: str, arrival_body_name: str, trajectory_type: str = 'Hohmann', **kwargs) -> dict`**
-    *   **Inputs**: Names of departure and arrival bodies (strings), trajectory type (string, 'Hohmann' or 'Direct'), and `kwargs` requiring `departure_date` (string 'YYYY-MM-DD').
-    *   **Outputs**: Dispatches to the appropriate private planning method (`_plan_hohmann_trajectory` or `_plan_direct_transfer`) and returns its results, or an error dictionary for unsupported types or invalid input.
+2.  **Key Components**
 
-**Dependencies**
-*   `math`
-*   `datetime` (from `datetime` module)
-*   `timedelta` (from `datetime` module)
-*   `orbital_mechanics` (local module)
-*   `celestial_data` (local module)
-*   `ephemeris` (local module)
+    *   **`class TrajectoryPlanner`**:
+        *   **Purpose**: Manages the planning of space trajectories between celestial bodies, integrating orbital mechanics, celestial data, and ephemeris information.
+        *   **`__init__(self)`**:
+            *   **Inputs**: None (self-initializes).
+            *   **Outputs/Side Effects**: Fetches the Sun's gravitational parameter (`mu_sun`) from `celestial_data` and stores it. Raises `ValueError` or `AttributeError` if Sun data is missing or invalid.
+        *   **`_plan_hohmann_trajectory(self, departure_body_name: str, arrival_body_name: str, departure_date: datetime) -> dict`**:
+            *   **Inputs**: Departure and arrival body names (strings), and departure date (`datetime`).
+            *   **Outputs**: A dictionary containing details of a Hohmann transfer (e.g., `total_delta_v_mps`, `travel_time_days`, `success`, `error`, `departure_distance_from_sun_m`, `arrival_distance_from_sun_m`). It retrieves dynamic 3D positions from `ephemeris` and performs calculations using `orbital_mechanics`.
+        *   **`_plan_direct_transfer(self, departure_body_name: str, arrival_body_name: str, departure_date: datetime) -> dict`**:
+            *   **Inputs**: Departure and arrival body names (strings), and departure date (`datetime`).
+            *   **Outputs**: A dictionary containing details of an optimized direct transfer via Lambert's problem (e.g., `total_delta_v_mps`, `travel_time_days`, `success`, `error`, `departure_distance_from_sun_m`, `arrival_distance_from_sun_m`). It iterates over a range of flight times, uses `ephemeris` for 3D position and velocity vectors, and `orbital_mechanics` to solve Lambert's problem for minimum delta-v.
+        *   **`plan_trajectory(self, departure_body_name: str, arrival_body_name: str, trajectory_type: str = 'Hohmann', **kwargs) -> dict`**:
+            *   **Inputs**: Departure and arrival body names (strings), desired `trajectory_type` (string, e.g., 'Hohmann', 'Direct'), and `kwargs` which must include `departure_date` (string 'YYYY-MM-DD').
+            *   **Outputs**: A dictionary with trajectory planning results or an error message. This method acts as a dispatcher, validating inputs and calling the appropriate internal planning method (`_plan_hohmann_trajectory` or `_plan_direct_transfer`).
+
+    *   **`if __name__ == '__main__':` block**:
+        *   **Purpose**: Contains example usage and test cases for the `TrajectoryPlanner` class, demonstrating how to plan various types of transfers (Hohmann, Direct) and handling different success and error scenarios.
+
+3.  **Dependencies**
+
+    *   `math`
+    *   `datetime` (specifically `timedelta`, `datetime` from the `datetime` module)
+    *   `orbital_mechanics` (local module for orbital calculations)
+    *   `celestial_data` (local module for retrieving celestial body data)
+    *   `ephemeris` (local module for dynamic orbital positions and velocities)
 ```
 
 ---
