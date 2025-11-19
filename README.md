@@ -7,30 +7,9 @@
 
 **Branch:** main
 
-**Files Analyzed:** 12
+**Files Analyzed:** 11
 
-**Last Updated:** 2025-11-18 20:19:22
-
----
-
-
-## `README.md`
-
-## `README.md`
-
-### 1. Purpose
-This `README.md` file is an auto-generated, comprehensive overview of the `linjieyingg/space_travel_calculator` repository. It provides high-level metadata about the repository and detailed summaries for individual files within it, outlining their purposes, key components, and dependencies.
-
-### 2. Key Components
-*   **Repository Meta-Summary**:
-    *   **Inputs**: None.
-    *   **Outputs/Side Effects**: Displays high-level repository information such as its name, branch, number of files analyzed, and last updated timestamp.
-*   **Individual File Summaries**:
-    *   **Inputs**: N/A (descriptive sections).
-    *   **Outputs/Side Effects**: Each section provides structured documentation for a specific file (e.g., `main.py`, `checks.py`), detailing its functional aspects, key functions/classes with their inputs/outputs/side effects, and programmatic dependencies.
-
-### 3. Dependencies
-This `README.md` file, being a documentation file, has no runtime code dependencies or imports. Its content conceptually relies on the existence and functionality of the various documented files within the `linjieyingg/space_travel_calculator` repository.
+**Last Updated:** 2025-11-18 20:22:10
 
 ---
 
