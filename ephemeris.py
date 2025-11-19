@@ -53,18 +53,20 @@ def get_heliocentric_state(body_name: str, date: datetime.datetime) -> dict:
 
     Args:
         body_name (str): The case-insensitive name of the celestial body (e.g., 'Mars', 'Jupiter').
+                         Must be a non-empty string.
         date (datetime.datetime): The specific date and time for which to calculate
                                   the orbital state. It is highly recommended to provide
                                   timezone-aware datetime objects, preferably in UTC,
-                                  for consistent results. If timezone-naive, it will be
-                                  converted to UTC assuming local time.
+                                  for consistent results. If the datetime object is
+                                  timezone-naive, it will be assumed to be in local time
+                                  and converted to UTC before calculation.
 
     Returns:
         dict: A dictionary containing the approximate heliocentric state:
-            - "distance_from_sun_m" (float): The approximate distance from the Sun in meters.
-            - "angular_position_rad" (float): The approximate angular position in radians
-              (ranging from 0 to 2*pi), measured counter-clockwise from an arbitrary
-              reference direction at the J2000.0 epoch.
+            - "distance_from_sun_m" (float): The approximate distance from the Sun in meters (m).
+            - "angular_position_rad" (float): The approximate angular position in radians (rad),
+              measured counter-clockwise from an arbitrary reference direction at the J2000.0 epoch,
+              ranging from 0 (inclusive) to 2*pi (exclusive).
 
     Raises:
         ValueError: If inputs are invalid, required celestial body data is missing or invalid,
