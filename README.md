@@ -7,9 +7,9 @@
 
 **Branch:** main
 
-**Files Analyzed:** 18
+**Files Analyzed:** 20
 
-**Last Updated:** 2025-11-18 21:44:47
+**Last Updated:** 2025-11-18 22:09:36
 
 ---
 
@@ -40,28 +40,31 @@ None. This file is self-contained and does not use any external imports.
 
 ## `celestial_data.py`
 
-```markdown
-## celestial_data.py Summary
-
-This module serves as the central data repository for astrophysical data within the `space_travel_calculator` application, providing detailed parameters for solar system bodies and functions to retrieve this information and list potential travel destinations. It also re-exports universal physical constants for consistency.
+This module `celestial_data.py` acts as a central repository for astrophysical data on solar system bodies within the `space_travel_calculator` application. It stores detailed parameters for celestial bodies and provides functions to retrieve this data and list potential travel destinations.
 
 ### Key Components:
 
-*   **`GRAVITATIONAL_CONSTANT`**: Global constant (float) re-exported from `constants`.
-*   **`SPEED_OF_LIGHT`**: Global constant (float) re-exported from `constants`.
-*   **`CELESTIAL_BODIES_DATA`**: A dictionary storing astrophysical data (mass, radius, gravitational parameter, average orbital radius) for various celestial bodies in the solar system.
+*   **`GRAVITATIONAL_CONSTANT` and `SPEED_OF_LIGHT`**:
+    *   **Description**: Universal physical constants re-exported for convenience and consistency.
+    *   **Inputs**: None (directly imported from `constants`).
+    *   **Outputs**: Constant values.
+*   **`CELESTIAL_BODIES_DATA`**:
+    *   **Description**: A dictionary containing detailed astrophysical parameters (mass, radius, gravitational parameter, semi-major axis from Sun, average distance from Earth for Moon) for various celestial bodies in the solar system.
+    *   **Inputs**: None (static data definition).
+    *   **Outputs**: Structured data for celestial bodies.
 *   **`get_celestial_body_data(body_name: str)`**:
-    *   **Inputs**: `body_name` (string, case-insensitive name of a celestial body).
+    *   **Description**: Retrieves the astrophysical data for a specified celestial body.
+    *   **Inputs**: `body_name` (string, case-insensitive name of the celestial body).
     *   **Outputs**: A dictionary containing the body's data if found, otherwise `None`.
 *   **`get_all_solar_system_destinations()`**:
-    *   **Inputs**: None.
-    *   **Outputs**: A list of dictionaries, each with a celestial body's `name` (string) and its calculated average `distance` (float) from Earth in meters, sorted by distance. Returns `None` if Earth's data is missing.
+    *   **Description**: Generates a sorted list of potential solar system destinations from Earth, including their names and calculated distances.
+    *   **Inputs**: None (uses the internal `CELESTIAL_BODIES_DATA`).
+    *   **Outputs**: A list of dictionaries, each with a 'name' and 'distance' (from Earth) in meters, sorted by distance. Returns `None` if Earth's data is unavailable.
 
 ### Dependencies:
 
-*   `math`: Used for `math.fabs()` in distance calculations.
-*   `constants`: Imports `G_GRAVITATIONAL` and `C_LIGHT_MPS` for re-export.
-```
+*   **`math`**: Used for `fabs()` in distance calculations.
+*   **`constants`**: Provides `G_GRAVITATIONAL` and `C_LIGHT_MPS` universal physical constants.
 
 ---
 
@@ -316,40 +319,35 @@ This Python script implements a command-line Tic-Tac-Toe game for two players. I
 ## `main.py`
 
 ```markdown
+## Space Travel Calculator (`main.py`)
+
 ### Purpose
-This file implements a space travel calculator that determines the time, fuel, and cost required for a user to travel between chosen celestial bodies, incorporating relativistic effects and orbital mechanics.
+This file implements a space travel calculator that determines the time required to reach a celestial destination, factoring in relativistic effects, orbital mechanics for trajectory planning, and fuel requirements. It gathers user input, performs calculations, and provides a comprehensive travel summary.
 
 ### Key Components
+
 *   **`calc_time_earth(years_traveler_frame, average_speed_ms)`**:
     *   **Inputs**: Travel time in the traveler's frame (years), average spacecraft speed (m/s).
-    *   **Outputs**: Travel time in Earth's reference frame (years).
-*   **`calc_age(years, age)`**:
-    *   **Inputs**: Travel time (years), user's starting age (int).
-    *   **Outputs**: User's age upon arrival (int).
-*   **`calc_arrival(date, years_earth_frame)`**:
-    *   **Inputs**: Departure date (`datetime`), travel time in Earth's frame (years).
-    *   **Outputs**: Estimated arrival date (`datetime`) or `None` if calculation fails.
+    *   **Outputs**: Travel time in Earth's reference frame (years), accounting for relativistic time dilation.
+*   **`calc_age(years_travel_time, starting_age)`**:
+    *   **Inputs**: Total travel time (years, traveler's frame), user's starting age (years).
+    *   **Outputs**: User's age upon arrival (float).
+*   **`calc_arrival(departure_date, years_earth_frame)`**:
+    *   **Inputs**: Departure date (`datetime` object), total travel years in Earth's frame.
+    *   **Outputs**: Estimated arrival date (`datetime` object) or `None` if calculation fails.
 *   **`convert_date(date_str)`**:
     *   **Inputs**: Date string in 'YYYY-MM-DD' format.
-    *   **Outputs**: `datetime` object.
-*   **`main()` function**:
-    *   **Inputs**: Interactive user inputs for source/destination planets, spacecraft dry mass, engine specific impulse, departure date, and user age.
+    *   **Outputs**: Converted `datetime` object.
+*   **`main()`**: The primary execution function.
+    *   **Inputs**: None (interacts with the user via console for inputs like destination, spacecraft mass, engine specific impulse, departure date, age, and fuel price).
     *   **Outputs/Side Effects**:
-        *   Orchestrates the entire calculation process: gathers user input, calls external modules for trajectory planning, fuel calculation, and logging.
-        *   Prints a detailed travel summary including required Delta-V, fuel mass, cost, travel times (traveler's and Earth's frames), user's age upon arrival, and estimated arrival date to the console.
-        *   Logs travel details using the `travel_logger` module.
+        *   Prints a detailed travel summary to the console, including source/destination, Delta-V, fuel mass/cost, travel times (traveler's and Earth's frames), arrival age, and estimated arrival date.
+        *   Calls external modules to perform trajectory planning, fuel calculations, and logging.
+        *   Logs travel details to a file using `travel_logger.save_travel_log`.
 
 ### Dependencies
-*   `datetime` (standard library)
-*   `math` (standard library)
-*   `checks` (local module aliased as `c`)
-*   `celestial_data` (local module)
-*   `orbital_mechanics` (local module)
-*   `trajectory_planner` (local module)
-*   `propulsion_system` (local module)
-*   `fuel_calc` (local module)
-*   `travel_logger` (local module)
-*   `constants` (local module)
+*   **Standard Library**: `math`, `datetime`, `timedelta`
+*   **Local Modules**: `checks` (aliased as `c`), `celestial_data`, `orbital_mechanics`, `trajectory_planner`, `propulsion_system`, `fuel_calc`, `travel_logger`, `constants` (specifically `C_LIGHT_MPS`).
 ```
 
 ---
@@ -427,6 +425,72 @@ This file defines a utility for calculating the required fuel mass for a spacecr
 
 3.  **Dependencies**: None.
 ```
+
+---
+
+
+## `tests/test_celestial_data.py`
+
+This file contains unit tests for functions that retrieve and process celestial body data. It ensures the `celestial_data` module's functions work correctly with valid, invalid, and non-existent inputs, and that destination lists are properly formatted and sorted.
+
+### Key Components:
+
+*   **`test_get_celestial_body_data_valid_input`**
+    *   **Input:** A valid celestial body name (e.g., `'earth'`).
+    *   **Output:** Asserts that a non-null dictionary is returned, containing expected keys like `mass` and `gravitational_parameter_mu`.
+*   **`test_get_celestial_body_data_invalid_input`**
+    *   **Input:** Invalid input types (e.g., `123`, `None`).
+    *   **Output:** Asserts that `None` is returned for invalid inputs.
+*   **`test_get_celestial_body_data_non_existent`**
+    *   **Input:** A non-existent celestial body name (e.g., `'plutonot'`).
+    *   **Output:** Asserts that `None` is returned.
+*   **`test_get_all_solar_system_destinations`**
+    *   **Input:** None.
+    *   **Output:** Asserts that a non-empty list of dictionaries is returned, with each dictionary having 'name' and 'distance' keys, sorted by distance, and that 'Earth' is excluded.
+
+### Dependencies:
+
+*   `pytest` (testing framework)
+*   `celestial_data` (module containing `get_celestial_body_data`, `get_all_solar_system_destinations`, and `CELESTIAL_BODIES_DATA` which are being tested)
+
+---
+
+
+## `tests/test_main.py`
+
+This file contains a pytest test suite for the `main.py` application, covering both its high-level integration logic and specific helper functions.
+
+### Purpose
+This file tests the `main.py` module by mocking its external dependencies to verify its orchestration logic, input processing, and output generation, as well as providing unit tests for internal utility functions related to time, age, and date calculations, including relativistic effects.
+
+### Key Components
+
+*   **`mock_dependencies` (pytest fixture)**
+    *   **Inputs**: None, but sets up mocks for various external and internal dependencies that `main.py` uses.
+    *   **Outputs/Side Effects**: Returns a dictionary of `MagicMock` objects, pre-configured with `side_effect` or `return_value`, for `main.celestial_data.get_celestial_body_data`, `main.celestial_data.get_all_solar_system_destinations`, `main.TrajectoryPlanner`, `main.propulsion_system.calculate_required_fuel_mass`, `main.fuel_calc.calculate_fuel_cost`, `main.travel_logger.save_travel_log`, `builtins.input`, and `builtins.print`.
+*   **`test_main_function_integrates_trajectory_planner_and_calculates_correctly`**
+    *   **Inputs**: The `mock_dependencies` fixture.
+    *   **Outputs/Side Effects**: Calls `main.main()`. Asserts that mocked dependencies (`TrajectoryPlanner`, fuel calculators, travel logger, `print`) were called with correct arguments and that the `print` output contains expected summary information, validating the main application flow.
+*   **`test_calc_time_earth_no_relativity`**, **`test_calc_time_earth_high_speed`**, **`test_calc_time_earth_speed_of_light_limit`**, **`test_calc_time_earth_zero_speed`**
+    *   **Inputs**: Traveler's time (years) and average speed (m/s).
+    *   **Outputs/Side Effects**: Call `main.calc_time_earth` and assert the calculated Earth time, verifying relativistic time dilation under different speed conditions.
+*   **`test_calc_age_whole_years`**, **`test_calc_age_fractional_years`**, **`test_calc_age_invalid_input_types`**
+    *   **Inputs**: Travel time (years) and current age (integer).
+    *   **Outputs/Side Effects**: Call `main.calc_age` and assert the resulting age, including testing for integer flooring and `TypeError` for invalid inputs.
+*   **`test_calc_arrival_whole_years`**, **`test_calc_arrival_fractional_years`**, **`test_calc_arrival_negative_years`**, **`test_calc_arrival_invalid_date_type`**
+    *   **Inputs**: Departure `datetime` object and travel time (years).
+    *   **Outputs/Side Effects**: Call `main.calc_arrival` and assert the calculated arrival `datetime`, including handling fractional and negative years, and `None` for invalid date types.
+*   **`test_convert_date_valid`**, **`test_convert_date_invalid_format`**, **`test_convert_date_non_string_input`**
+    *   **Inputs**: Date string.
+    *   **Outputs/Side Effects**: Call `main.convert_date` and assert the converted `datetime` object, or raise `ValueError` for incorrect format and `TypeError` for non-string inputs.
+
+### Dependencies
+*   `pytest`: Testing framework.
+*   `math`: For mathematical functions (e.g., `sqrt`).
+*   `datetime`, `timedelta` (from `datetime` module): For date and time manipulation.
+*   `patch`, `MagicMock` (from `unittest.mock` module): For creating mock objects and patching modules/functions.
+*   `main`: The application module being tested.
+*   `constants`: A module containing constants, specifically `C_LIGHT_MPS` for speed of light.
 
 ---
 
