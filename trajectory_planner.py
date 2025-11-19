@@ -9,9 +9,10 @@ class TrajectoryPlanner:
     A class to provide a higher-level interface for planning interplanetary trajectories.
     It orchestrates calls to orbital mechanics functions to determine paths between
     celestial bodies, returning details like total delta-v and total travel time.
-    This version integrates dynamic orbital positions based on a departure date
-    using the ephemeris module and supports multiple (and extensible) trajectory types,
-    including Hohmann transfers and direct transfers via Lambert's problem.
+    This version integrates dynamic orbital positions (3D position and velocity vectors)
+    based on a departure date using the ephemeris module and supports multiple
+    (and extensible) trajectory types, including Hohmann transfers and direct transfers
+    via Lambert's problem.
     """
 
     def __init__(self):
@@ -37,7 +38,8 @@ class TrajectoryPlanner:
         """
         Plans a Hohmann transfer trajectory between two celestial bodies orbiting the Sun.
         This is typically a minimum-energy transfer for coplanar, circular orbits.
-        It considers the dynamic orbital positions of the bodies on the specified departure date.
+        It considers the dynamic 3D orbital positions of the bodies on the specified departure date
+        obtained from the ephemeris module.
 
         Args:
             departure_body_name (str): The name of the celestial body to depart from (e.g., "Earth").
@@ -55,8 +57,8 @@ class TrajectoryPlanner:
                   - 'travel_time_h_m_s': Formatted string of travel time (days, hours, minutes, seconds).
                   - 'success': True if planning was successful, False otherwise.
                   - 'error': Error message if planning failed.
-                  - 'departure_distance_from_sun_m': Dynamic distance of departure body from Sun.
-                  - 'arrival_distance_from_sun_m': Dynamic distance of arrival body from Sun.
+                  - 'departure_distance_from_sun_m': Dynamic distance (magnitude of position vector) of departure body from Sun.
+                  - 'arrival_distance_from_sun_m': Dynamic distance (magnitude of position vector) of arrival body from Sun.
         """
         if not isinstance(departure_body_name, str) or not departure_body_name.strip():
             return {"success": False, "error": "Departure body name must be a non-empty string."}
@@ -69,39 +71,42 @@ class TrajectoryPlanner:
         if departure_body_name.strip().lower() == arrival_body_name.strip().lower():
             return {"success": False, "error": "Departure and arrival bodies cannot be the same."}
 
-        # Use ephemeris to get dynamic distances
+        # Use ephemeris to get dynamic orbital states (position and velocity vectors)
         try:
-            # ephemeris.get_heliocentric_state expects a datetime.datetime object for the date
-            departure_orbital_state = ephemeris.get_heliocentric_state(departure_body_name, departure_date)
-            arrival_orbital_state = ephemeris.get_heliocentric_state(arrival_body_name, departure_date)
+            # ephemeris.get_heliocentric_state is now expected to return (position_vector_m, velocity_vector_mps)
+            # For Hohmann, we only need the position vector to derive radial distances.
+            dep_position_vector_m, _ = ephemeris.get_heliocentric_state(departure_body_name, departure_date)
+            arr_position_vector_m, _ = ephemeris.get_heliocentric_state(arrival_body_name, departure_date)
         except Exception as e:
             # Catch errors from ephemeris module (e.g., unsupported body, internal error)
             return {"success": False, "error": f"Error retrieving orbital states via ephemeris for date '{departure_date.strftime('%Y-%m-%d')}': {e}"}
 
-        if not departure_orbital_state:
+        # Validate the retrieved position vectors
+        if not dep_position_vector_m or not isinstance(dep_position_vector_m, tuple) or len(dep_position_vector_m) != 3:
             return {
                 "success": False,
-                "error": f"Could not get orbital state for departure body: '{departure_body_name}' on {departure_date.strftime('%Y-%m-%d')}. Ensure body name is correct."
+                "error": f"Invalid or missing 3D position vector for departure body: '{departure_body_name}' on {departure_date.strftime('%Y-%m-%d')} from ephemeris. Ensure body name is correct and ephemeris provides valid 3D vectors."
             }
-        if not arrival_orbital_state:
+        if not arr_position_vector_m or not isinstance(arr_position_vector_m, tuple) or len(arr_position_vector_m) != 3:
             return {
                 "success": False,
-                "error": f"Could not get orbital state for arrival body: '{arrival_body_name}' on {departure_date.strftime('%Y-%m-%d')}. Ensure body name is correct."
+                "error": f"Invalid or missing 3D position vector for arrival body: '{arrival_body_name}' on {departure_date.strftime('%Y-%m-%d')} from ephemeris. Ensure body name is correct and ephemeris provides valid 3D vectors."
             }
 
-        # Use 'distance_from_sun_m' from ephemeris as r1 and r2
-        r1 = departure_orbital_state.get("distance_from_sun_m")
-        r2 = arrival_orbital_state.get("distance_from_sun_m")
-
-        if r1 is None or not isinstance(r1, (int, float)) or r1 <= 0:
+        try:
+            # Calculate magnitudes from the 3D position vectors for Hohmann transfer radii (r1, r2)
+            r1 = orbital_mechanics.vector_magnitude(dep_position_vector_m)
+            r2 = orbital_mechanics.vector_magnitude(arr_position_vector_m)
+        except ValueError as ve:
             return {
                 "success": False,
-                "error": f"Invalid or missing 'distance_from_sun_m' for {departure_body_name} from ephemeris data. Expected a positive numeric value."
+                "error": f"Error calculating magnitude of position vector for Hohmann transfer: {ve}. Ensure ephemeris returns valid 3D vectors."
             }
-        if r2 is None or not isinstance(r2, (int, float)) or r2 <= 0:
-            return {
+
+        if r1 <= 0 or r2 <= 0:
+             return {
                 "success": False,
-                "error": f"Invalid or missing 'distance_from_sun_m' for {arrival_body_name} from ephemeris data. Expected a positive numeric value."
+                "error": f"Calculated radial distance from Sun is zero or negative for a celestial body. Ensure ephemeris data is valid and provides non-zero position vectors."
             }
         
         # Ensure that the central body's gravitational parameter is valid before proceeding
@@ -123,7 +128,7 @@ class TrajectoryPlanner:
             # Specific error from orbital_mechanics module functions
             return {
                 "success": False,
-                "error": f"Orbital mechanics calculation error: {ve}"
+                "error": f"Orbital mechanics calculation error for Hohmann transfer: {ve}"
             }
         except Exception as e:
             # Catch any unexpected errors from orbital_mechanics module or other calculations
@@ -157,11 +162,9 @@ class TrajectoryPlanner:
 
     def _plan_direct_transfer(self, departure_body_name: str, arrival_body_name: str, departure_date: datetime) -> dict:
         """
-        Plans a direct transfer trajectory using Lambert's problem, optimizing for minimum total Delta-V.
-        This method iterates through a range of flight times to find the optimal transfer.
-        It uses dynamic orbital positions from the ephemeris module.
-        The underlying `orbital_mechanics.calculate_lambert_transfer` is a simplified analytical approximation,
-        making strong assumptions and not being a full iterative Lambert solver.
+        Plans a direct transfer trajectory using Lambert's problem, optimizing for minimum total Delta-V
+        across a range of flight times. It utilizes dynamic 3D orbital position and velocity vectors
+        from the ephemeris module.
 
         Args:
             departure_body_name (str): The name of the celestial body to depart from (e.g., "Earth").
@@ -178,8 +181,8 @@ class TrajectoryPlanner:
                   - 'travel_time_h_m_s': Formatted string of travel time (days, hours, minutes, seconds).
                   - 'success': True if planning was successful, False otherwise.
                   - 'error': Error message if planning failed.
-                  - 'departure_distance_from_sun_m': Dynamic distance of departure body from Sun.
-                  - 'arrival_distance_from_sun_m': Dynamic distance of arrival body from Sun.
+                  - 'departure_distance_from_sun_m': Dynamic distance (magnitude of position vector) of departure body from Sun.
+                  - 'arrival_distance_from_sun_m': Dynamic distance (magnitude of position vector) of arrival body from Sun.
         """
         if not isinstance(departure_body_name, str) or not departure_body_name.strip():
             return {"success": False, "error": "Departure body name must be a non-empty string."}
@@ -198,24 +201,26 @@ class TrajectoryPlanner:
             }
 
         try:
-            # 1. Get initial state for departure body at departure_date
-            dep_orbital_state = ephemeris.get_heliocentric_state(departure_body_name, departure_date)
-            if not dep_orbital_state or dep_orbital_state.get("distance_from_sun_m") is None or dep_orbital_state["distance_from_sun_m"] <= 0:
-                return {"success": False, "error": f"Could not get valid orbital state for departure body '{departure_body_name}' on {departure_date.strftime('%Y-%m-%d')}."}
+            # 1. Get initial state (3D position and velocity vectors) for departure body at departure_date
+            # The required changes state: "new (position_vector_m, velocity_vector_mps) output from ephemeris.get_heliocentric_state"
+            dep_position_vector_m, dep_velocity_vector_mps = ephemeris.get_heliocentric_state(departure_body_name, departure_date)
             
-            r1_mag = dep_orbital_state["distance_from_sun_m"]
-            ang1_rad = dep_orbital_state["angular_position_rad"]
+            # Validate the retrieved position vector
+            if not dep_position_vector_m or not isinstance(dep_position_vector_m, tuple) or len(dep_position_vector_m) != 3:
+                return {"success": False, "error": f"Invalid or missing 3D position vector for departure body '{departure_body_name}' on {departure_date.strftime('%Y-%m-%d')} from ephemeris."}
             
-            # Convert polar (r, theta) to Cartesian (x, y, 0) for position vector
-            # Assuming a 2D planar orbit for this simplified direct transfer calculation.
-            r1_vec = (r1_mag * math.cos(ang1_rad), r1_mag * math.sin(ang1_rad), 0.0)
+            r1_vec = dep_position_vector_m
+            r1_mag = orbital_mechanics.vector_magnitude(r1_vec)
+            if r1_mag <= 0:
+                return {"success": False, "error": f"Calculated radial distance from Sun is zero or negative for departure body '{departure_body_name}'. Ensure ephemeris data is valid and provides non-zero position vectors."}
 
-        except Exception as e:
-            return {"success": False, "error": f"Error preparing departure body data for Direct Transfer: {e}"}
+        except ValueError as ve: # Catching specific validation errors from orbital_mechanics.vector_magnitude etc.
+            return {"success": False, "error": f"Data processing error for departure body in Direct Transfer: {ve}"}
+        except Exception as e: # Catching potential errors from ephemeris.get_heliocentric_state
+            return {"success": False, "error": f"Error retrieving departure body data via ephemeris for Direct Transfer: {e}"}
 
         # 2. Iterate through possible times of flight (TOF) to find minimum Delta-V
         # Define TOF range and step (in days)
-        # These values are chosen to cover a reasonable range for interplanetary transfers.
         min_tof_days = 50 
         max_tof_days = 700 
         tof_step_days = 5 
@@ -229,17 +234,20 @@ class TrajectoryPlanner:
             current_arrival_date = departure_date + timedelta(seconds=tof_s)
 
             try:
-                # Get final state for arrival body at current_arrival_date
-                arr_orbital_state = ephemeris.get_heliocentric_state(arrival_body_name, current_arrival_date)
-                if not arr_orbital_state or arr_orbital_state.get("distance_from_sun_m") is None or arr_orbital_state["distance_from_sun_m"] <= 0:
-                    # Skip this TOF if arrival data is invalid
+                # Get final state (3D position and velocity vectors) for arrival body at current_arrival_date
+                arr_position_vector_m, arr_velocity_vector_mps = ephemeris.get_heliocentric_state(arrival_body_name, current_arrival_date)
+                
+                # Validate the retrieved position vector
+                if not arr_position_vector_m or not isinstance(arr_position_vector_m, tuple) or len(arr_position_vector_m) != 3:
+                    # Skip this TOF if arrival data is invalid (e.g., position vector is None or malformed)
                     continue 
 
-                r2_mag = arr_orbital_state["distance_from_sun_m"]
-                ang2_rad = arr_orbital_state["angular_position_rad"]
-                r2_vec = (r2_mag * math.cos(ang2_rad), r2_mag * math.sin(ang2_rad), 0.0)
-
-                # 3. Call Lambert Solver
+                r2_vec = arr_position_vector_m
+                r2_mag = orbital_mechanics.vector_magnitude(r2_vec)
+                if r2_mag <= 0:
+                    continue # Skip if radial distance is invalid
+                
+                # 3. Call Lambert Solver with actual 3D position vectors
                 # orbital_mechanics.calculate_lambert_transfer returns:
                 # (delta_v1_mag, delta_v2_mag, total_delta_v, calculated_time_of_flight)
                 # as per the orbital_mechanics.py summary.
@@ -248,8 +256,9 @@ class TrajectoryPlanner:
                 )
 
                 # 4. Check for valid delta-V results and update total Delta-V
-                if calculated_total_delta_v < 0 or not isinstance(calculated_total_delta_v, (int, float)):
+                if not isinstance(calculated_total_delta_v, (int, float)) or calculated_total_delta_v < 0:
                     # Negative delta-V or non-numeric indicates an invalid solution from the simplified solver
+                    # This check is crucial for the iterative Lambert solver, as some TOFs might not yield valid solutions.
                     raise ValueError("Lambert solver returned an invalid total Delta-V (negative or non-numeric).")
                 
                 # 5. Select the TOF that yields the minimum total delta-V
@@ -273,19 +282,24 @@ class TrajectoryPlanner:
                         "error": None,
                         "departure_distance_from_sun_m": r1_mag,
                         "arrival_distance_from_sun_m": r2_mag, # Store the arrival distance for *this* optimal TOF
+                        # Optionally, add individual burn delta-Vs if needed by other modules
+                        # "delta_v_burn1_mps": dv1_mag_burn, 
+                        # "delta_v_burn2_mps": dv2_mag_burn,
                     }
             except ValueError as ve:
                 # Specific errors from orbital_mechanics.calculate_lambert_transfer (e.g., no real solution found)
                 # or from our check for negative delta-V
+                # print(f"DEBUG: Lambert solver failed for TOF {current_tof_days} days: {ve}") # For debugging purposes
                 continue # Try next TOF
             except Exception as e:
-                # General errors during iteration (e.g., ephemeris failure for a specific date)
+                # General errors during iteration (e.g., ephemeris failure for a specific date or vector magnitude issues)
+                # print(f"DEBUG: General error for TOF {current_tof_days} days: {e}") # For debugging purposes
                 continue # Try next TOF
 
         if best_trajectory_data:
             return best_trajectory_data
         else:
-            return {"success": False, "error": "No suitable Direct Transfer trajectory found within the specified time of flight range. Consider adjusting the date or TOF range."}
+            return {"success": False, "error": "No suitable Direct Transfer trajectory found within the specified time of flight range. Consider adjusting the date or TOF range, or checking ephemeris data availability and correctness."}
 
     def plan_trajectory(self, departure_body_name: str, arrival_body_name: str, trajectory_type: str = 'Hohmann', **kwargs) -> dict:
         """
@@ -310,8 +324,8 @@ class TrajectoryPlanner:
                   - 'travel_time_h_m_s': Formatted string of travel time (days, hours, minutes, seconds).
                   - 'success': True if planning was successful, False otherwise.
                   - 'error': Error message if planning failed.
-                  - 'departure_distance_from_sun_m' (optional): Dynamic distance of departure body from Sun.
-                  - 'arrival_distance_from_sun_m' (optional): Dynamic distance of arrival body from Sun.
+                  - 'departure_distance_from_sun_m' (optional): Dynamic distance (magnitude of position vector) of departure body from Sun.
+                  - 'arrival_distance_from_sun_m' (optional): Dynamic distance (magnitude of position vector) of arrival body from Sun.
         """
         if not isinstance(departure_body_name, str) or not departure_body_name.strip():
             return {"success": False, "error": "Departure body name must be a non-empty string."}
