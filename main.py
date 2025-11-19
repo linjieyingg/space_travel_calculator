@@ -250,12 +250,12 @@ def main():
     print("\nCalculating trajectory...")
 
     # --- Trajectory Planning ---
-    # Assume Hohmann Transfer for simplicity as described in trajectory_planner
     trajectory_result = None
     try:
-        trajectory_result = planner.plan_hohmann_trajectory(
+        trajectory_result = planner.plan_trajectory(
             departure_body_name=source_planet, 
-            arrival_body_name=destination_planet
+            arrival_body_name=destination_planet,
+            trajectory_type='Hohmann' # Hardcoded for now, ready for future user selection
         )
     except ValueError as e:
         print(f"Error during trajectory planning: {e}. Please ensure valid departure and arrival bodies are selected and their data is complete.")
