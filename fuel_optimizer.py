@@ -1,37 +1,13 @@
 import math
-import sys
-import os
 
 # Assume 'propulsion_system.py' and 'trajectory_planner.py' are peer modules
 # in the same project structure.
 
 # Import actual functions/classes from propulsion_system
-try:
-    from propulsion_system import calculate_required_fuel_mass as calculate_fuel_mass_from_delta_v
-except ImportError:
-    # This block provides a mock implementation for development/testing if the file doesn't exist yet
-    print("Warning: propulsion_system.py not found. Using mock function for fuel calculation.", file=sys.stderr)
-    G0_STANDARD = 9.80665  # Standard gravity in m/s^2
-
-    def calculate_fuel_mass_from_delta_v(delta_v: float, spacecraft_dry_mass: float, specific_impulse: float) -> float:
-        """
-        MOCK: Calculates the fuel mass required for a given delta-V.
-        In a real implementation, this would be in propulsion_system.py.
-        """
-        if delta_v < 0:
-            raise ValueError("Delta-V cannot be negative.")
-        if spacecraft_dry_mass <= 0:
-            raise ValueError("Spacecraft dry mass must be positive.")
-        if specific_impulse <= 0:
-            raise ValueError("Specific impulse must be positive.")
-
-        effective_exhaust_velocity = specific_impulse * G0_STANDARD
-        if effective_exhaust_velocity == 0:
-            raise ValueError("Effective exhaust velocity cannot be zero.")
-
-        mass_ratio_exponent = delta_v / effective_exhaust_velocity
-        fuel_mass = spacecraft_dry_mass * (math.exp(mass_ratio_exponent) - 1)
-        return fuel_mass
+# The mock implementation is being removed, so we directly attempt to import
+# the calculate_required_fuel_mass function and alias it for consistent usage
+# within this module.
+from propulsion_system import calculate_required_fuel_mass as calculate_fuel_mass_from_delta_v
 
 # Import TrajectoryPlanner class from trajectory_planner
 try:
@@ -80,6 +56,7 @@ def optimize_fuel_for_trajectory(
                     or propulsion system return invalid values.
         RuntimeError: If an unexpected error occurs during the calculation,
                       e.g., a dependency function fails.
+        ImportError: If 'propulsion_system.py' or 'trajectory_planner.py' cannot be found/imported.
     """
     if not isinstance(start_body, str) or not start_body:
         raise ValueError("Start body must be a non-empty string.")
@@ -112,7 +89,7 @@ def optimize_fuel_for_trajectory(
                 **trajectory_args
             )
         except TypeError as te:
-            # Catch TypeError if plan_hohmann_trajectory's signature doesn't accept **trajectory_args
+            # Catch TypeError if plan_hohmann_trajectory's signature doesn't accept all **trajectory_args
             raise ValueError(
                 f"Trajectory planner method signature mismatch: "
                 f"plan_hohmann_trajectory may not accept all provided trajectory arguments. "
@@ -141,9 +118,10 @@ def optimize_fuel_for_trajectory(
             )
 
         # 2. Calculate the fuel mass based on the required Delta-V and engine parameters
+        # Calling the aliased function which now points to the real implementation from propulsion_system.
         fuel_mass = calculate_fuel_mass_from_delta_v(
             delta_v=required_delta_v,
-            spacecraft_dry_mass=spacecraft_dry_mass,
+            dry_mass=spacecraft_dry_mass,  # Use 'dry_mass' for clarity as per propulsion_system signature
             specific_impulse=engine_specific_impulse
         )
 
