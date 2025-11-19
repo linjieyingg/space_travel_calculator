@@ -1,225 +1,185 @@
 import math
+# Assuming constants.py and celestial_bodies.py are available in the Python path
+# or within the same directory as this file, following the project's import patterns.
+import constants
+import celestial_bodies
 
-# Universal Gravitational Constant (m^3 kg^-1 s^-2)
-G = 6.67430e-11
+# Gravitational Constant (G) in m^3 kg^-1 s^-2, assumed to be defined in constants.py
+# e.g., constants.GRAVITATIONAL_CONSTANT = 6.67430e-11
+G = constants.GRAVITATIONAL_CONSTANT
 
-# The `celestial_data` module is listed as a dependency but is not provided in the
-# repository context. In a real application, this would be an actual module
-# providing planetary masses, radii, or pre-calculated gravitational parameters.
-# For this file, functions will assume that necessary parameters (like mass
-# or gravitational parameter) are passed directly to them.
-# Example if celestial_data existed:
-# from celestial_data import get_body_mass, get_standard_gravitational_parameter
-
-
-def calculate_gravitational_parameter(mass_central_body: float) -> float:
+def calculate_gravitational_parameter(central_body_name: str) -> float:
     """
-    Calculates the standard gravitational parameter (mu) for a central body.
-
-    The standard gravitational parameter (mu) is the product of the universal
-    gravitational constant (G) and the mass (M) of the central body.
-    It is fundamental for many orbital mechanics calculations.
+    Calculates the standard gravitational parameter (mu) for a given central celestial body.
+    The gravitational parameter is a constant for a given body, equal to the product of
+    the gravitational constant (G) and the body's mass (M).
 
     Args:
-        mass_central_body (float): The mass of the central body in kilograms (kg).
+        central_body_name (str): The name of the central body (e.g., "Sun", "Earth", "Mars").
+                                 The mass of this body is retrieved from the `celestial_bodies` module.
 
     Returns:
-        float: The standard gravitational parameter (mu) in cubic meters per
-               second squared (m^3/s^2).
+        float: The gravitational parameter (mu) in m^3/s^2.
 
     Raises:
-        TypeError: If `mass_central_body` is not a numeric type.
-        ValueError: If `mass_central_body` is not a positive value.
+        ValueError: If the central body's mass cannot be found in the `celestial_bodies` data,
+                    or if the mass is non-positive.
     """
-    if not isinstance(mass_central_body, (float, int)):
-        raise TypeError("mass_central_body must be a numeric value.")
-    if mass_central_body <= 0:
-        raise ValueError("mass_central_body must be a positive value.")
+    body_mass = celestial_bodies.get_body_mass(central_body_name)
+    if body_mass is None:
+        raise ValueError(f"Mass for central body '{central_body_name}' not found in celestial_bodies data.")
+    if body_mass <= 0:
+        raise ValueError(f"Mass for central body '{central_body_name}' must be positive.")
+    return G * body_mass
 
-    return G * mass_central_body
-
-
-def calculate_orbital_period(semimajor_axis: float, gravitational_parameter: float) -> float:
+def calculate_circular_orbital_velocity(mu: float, radius: float) -> float:
     """
-    Calculates the orbital period of an object in an elliptical orbit using Kepler's Third Law.
-
-    This function is applicable for elliptical and circular orbits where the
-    semi-major axis is positive.
+    Calculates the orbital velocity required for a stable circular orbit at a given radius
+    around a central body with a specified gravitational parameter.
 
     Args:
-        semimajor_axis (float): The semi-major axis of the orbit in meters (m).
-        gravitational_parameter (float): The standard gravitational parameter (mu)
-                                         of the central body in m^3/s^2.
+        mu (float): The gravitational parameter of the central body (m^3/s^2).
+        radius (float): The radius of the circular orbit from the center of the central body (m).
 
     Returns:
-        float: The orbital period in seconds (s).
+        float: The orbital velocity in m/s.
 
     Raises:
-        TypeError: If `semimajor_axis` or `gravitational_parameter` are not numeric types.
-        ValueError: If `semimajor_axis` or `gravitational_parameter` are not positive,
-                    or if the calculation results in an invalid mathematical operation
-                    (e.g., square root of a negative number, though handled by positive checks).
+        ValueError: If the gravitational parameter (mu) or orbital radius is non-positive.
     """
-    if not isinstance(semimajor_axis, (float, int)):
-        raise TypeError("semimajor_axis must be a numeric value.")
-    if not isinstance(gravitational_parameter, (float, int)):
-        raise TypeError("gravitational_parameter must be a numeric value.")
-    if semimajor_axis <= 0:
-        raise ValueError("semimajor_axis must be a positive value for orbital period calculation.")
-    if gravitational_parameter <= 0:
-        raise ValueError("gravitational_parameter must be a positive value.")
-
-    try:
-        # Kepler's Third Law: T = 2 * pi * sqrt(a^3 / mu)
-        period = 2 * math.pi * math.sqrt(semimajor_axis**3 / gravitational_parameter)
-        return period
-    except Exception as e:
-        # Catching potential math errors like sqrt of negative if inputs bypassed checks
-        raise ValueError(f"Error calculating orbital period: {e}")
-
-
-def calculate_specific_orbital_energy(semimajor_axis: float, gravitational_parameter: float) -> float:
-    """
-    Calculates the specific orbital energy (epsilon) of an object in orbit.
-
-    Specific orbital energy is a constant for a given orbit and is used to classify
-    orbit types:
-    - Epsilon < 0: Elliptical orbit (including circular)
-    - Epsilon = 0: Parabolic orbit
-    - Epsilon > 0: Hyperbolic orbit
-
-    Args:
-        semimajor_axis (float): The semi-major axis of the orbit in meters (m).
-                                Note: For hyperbolic orbits, `semimajor_axis` is negative.
-                                For parabolic orbits, `semimajor_axis` is considered infinite.
-        gravitational_parameter (float): The standard gravitational parameter (mu)
-                                         of the central body in m^3/s^2.
-
-    Returns:
-        float: The specific orbital energy in joules per kilogram (J/kg) or m^2/s^2.
-
-    Raises:
-        TypeError: If `semimajor_axis` or `gravitational_parameter` are not numeric types.
-        ValueError: If `gravitational_parameter` is not positive, or if `semimajor_axis`
-                    is zero (which would lead to division by zero and is physically
-                    unrealistic for a stable orbit definition in this context).
-    """
-    if not isinstance(semimajor_axis, (float, int)):
-        raise TypeError("semimajor_axis must be a numeric value.")
-    if not isinstance(gravitational_parameter, (float, int)):
-        raise TypeError("gravitational_parameter must be a numeric value.")
-    if gravitational_parameter <= 0:
-        raise ValueError("gravitational_parameter must be a positive value.")
-    if semimajor_axis == 0:
-        raise ValueError("Semi-major axis cannot be zero for specific orbital energy calculation (implies collision).")
-
-    # Epsilon = -mu / (2 * a)
-    return -gravitational_parameter / (2 * semimajor_axis)
-
-
-def calculate_orbital_velocity_circular(radius: float, gravitational_parameter: float) -> float:
-    """
-    Calculates the orbital velocity required for a stable circular orbit at a given radius.
-
-    Args:
-        radius (float): The radius of the circular orbit in meters (m). This is
-                        measured from the center of the central body.
-        gravitational_parameter (float): The standard gravitational parameter (mu)
-                                         of the central body in m^3/s^2.
-
-    Returns:
-        float: The orbital velocity in meters per second (m/s).
-
-    Raises:
-        TypeError: If `radius` or `gravitational_parameter` are not numeric types.
-        ValueError: If `radius` or `gravitational_parameter` are not positive.
-    """
-    if not isinstance(radius, (float, int)):
-        raise TypeError("radius must be a numeric value.")
-    if not isinstance(gravitational_parameter, (float, int)):
-        raise TypeError("gravitational_parameter must be a numeric value.")
+    if mu <= 0:
+        raise ValueError("Gravitational parameter (mu) must be positive.")
     if radius <= 0:
-        raise ValueError("radius must be a positive value.")
-    if gravitational_parameter <= 0:
-        raise ValueError("gravitational_parameter must be a positive value.")
+        raise ValueError("Orbital radius must be positive.")
+    return math.sqrt(mu / radius)
 
-    try:
-        # v = sqrt(mu / r)
-        velocity = math.sqrt(gravitational_parameter / radius)
-        return velocity
-    except Exception as e:
-        raise ValueError(f"Error calculating circular orbital velocity: {e}")
-
-
-def calculate_delta_v_hohmann_transfer(radius_initial: float, radius_final: float, gravitational_parameter: float) -> tuple[float, float, float]:
+def calculate_hohmann_transfer_delta_v(mu: float, r1: float, r2: float) -> tuple[float, float, float]:
     """
-    Calculates the delta-V required for a Hohmann transfer between two circular orbits.
-
-    A Hohmann transfer is an elliptical orbit used as an energy-efficient maneuver
-    to transfer a spacecraft between two co-planar circular orbits of different
-    altitudes around a central body.
+    Calculates the Delta-V (change in velocity) required for a Hohmann transfer
+    between two coplanar circular orbits. A Hohmann transfer is a two-impulse
+    maneuver used to transfer a spacecraft between two orbits.
 
     Args:
-        radius_initial (float): The radius of the initial circular orbit in meters (m).
-        radius_final (float): The radius of the final circular orbit in meters (m).
-        gravitational_parameter (float): The standard gravitational parameter (mu)
-                                         of the central body in m^3/s^2.
+        mu (float): Gravitational parameter of the central body (m^3/s^2).
+        r1 (float): Radius of the initial circular orbit (m).
+        r2 (float): Radius of the final circular orbit (m).
 
     Returns:
-        tuple[float, float, float]: A tuple containing (delta_v1, delta_v2, total_delta_v)
-                                    in meters per second (m/s).
-                                    - `delta_v1`: The magnitude of the first burn, required
-                                                  to inject the spacecraft into the transfer orbit.
-                                    - `delta_v2`: The magnitude of the second burn, required
-                                                  to circularize the orbit at the final radius.
-                                    - `total_delta_v`: The sum of `delta_v1` and `delta_v2`,
-                                                       representing the total propellant cost.
+        tuple[float, float, float]: A tuple containing:
+            - delta_v1 (float): Delta-V for the first burn to enter the transfer orbit (m/s).
+                                Positive for acceleration, negative for deceleration.
+            - delta_v2 (float): Delta-V for the second burn to enter the final orbit (m/s).
+                                Positive for acceleration, negative for deceleration.
+            - total_delta_v (float): Absolute sum of Delta-V for both burns (m/s),
+                                     representing the total fuel cost.
 
     Raises:
-        TypeError: If any input (`radius_initial`, `radius_final`, `gravitational_parameter`)
-                   is not a numeric type.
-        ValueError: If any radius or `gravitational_parameter` are not positive,
-                    or if the initial and final radii are identical (no transfer needed).
+        ValueError: If mu, r1, or r2 are non-positive, or if r1 equals r2 (no transfer needed).
     """
-    if not isinstance(radius_initial, (float, int)):
-        raise TypeError("radius_initial must be a numeric value.")
-    if not isinstance(radius_final, (float, int)):
-        raise TypeError("radius_final must be a numeric value.")
-    if not isinstance(gravitational_parameter, (float, int)):
-        raise TypeError("gravitational_parameter must be a numeric value.")
+    if mu <= 0:
+        raise ValueError("Gravitational parameter (mu) must be positive.")
+    if r1 <= 0 or r2 <= 0:
+        raise ValueError("Orbital radii (r1, r2) must be positive.")
+    if r1 == r2:
+        raise ValueError("Initial and final orbital radii cannot be equal for a Hohmann transfer.")
 
-    if radius_initial <= 0 or radius_final <= 0:
-        raise ValueError("Orbit radii must be positive values.")
-    if gravitational_parameter <= 0:
-        raise ValueError("gravitational_parameter must be a positive value.")
-    if radius_initial == radius_final:
-        raise ValueError("Initial and final radii cannot be the same for a Hohmann transfer; no transfer is needed.")
+    # Semi-major axis of the elliptical transfer orbit
+    a_transfer = (r1 + r2) / 2
 
-    try:
-        # 1. Calculate velocities for initial and final circular orbits
-        v_initial_circular = calculate_orbital_velocity_circular(radius_initial, gravitational_parameter)
-        v_final_circular = calculate_orbital_velocity_circular(radius_final, gravitational_parameter)
+    # Velocities in the initial and final circular orbits
+    v_circular_r1 = calculate_circular_orbital_velocity(mu, r1)
+    v_circular_r2 = calculate_circular_orbital_velocity(mu, r2)
 
-        # 2. Calculate semi-major axis of the Hohmann transfer ellipse
-        semimajor_axis_transfer = (radius_initial + radius_final) / 2
+    # Velocities at r1 and r2 within the transfer ellipse
+    v_transfer_r1 = math.sqrt(mu * ((2 / r1) - (1 / a_transfer)))
+    v_transfer_r2 = math.sqrt(mu * ((2 / r2) - (1 / a_transfer)))
 
-        # 3. Calculate velocities at periapsis and apoapsis of the transfer orbit
-        # Velocity in an elliptical orbit: v = sqrt(mu * ((2/r) - (1/a)))
-        v_periapsis_transfer = math.sqrt(gravitational_parameter * ((2 / radius_initial) - (1 / semimajor_axis_transfer)))
-        v_apoapsis_transfer = math.sqrt(gravitational_parameter * ((2 / radius_final) - (1 / semimajor_axis_transfer)))
+    # Delta-V for the first burn (at r1)
+    delta_v1 = v_transfer_r1 - v_circular_r1
 
-        # 4. Calculate delta-V for the first burn (injection into transfer orbit)
-        delta_v1 = abs(v_periapsis_transfer - v_initial_circular)
+    # Delta-V for the second burn (at r2)
+    delta_v2 = v_circular_r2 - v_transfer_r2
 
-        # 5. Calculate delta-V for the second burn (circularization at final orbit)
-        delta_v2 = abs(v_final_circular - v_apoapsis_transfer)
-        
-        total_delta_v = delta_v1 + delta_v2
+    # Total Delta-V is the sum of the absolute values of the two burns
+    total_delta_v = abs(delta_v1) + abs(delta_v2)
 
-        return delta_v1, delta_v2, total_delta_v
-    except ValueError as ve:
-        # Re-raise ValueErrors from helper functions with additional context
-        raise ValueError(f"Error during Hohmann transfer calculation: {ve}")
-    except Exception as e:
-        # Catch any other unexpected errors
-        raise ValueError(f"An unexpected error occurred during Hohmann transfer calculation: {e}")
+    return delta_v1, delta_v2, total_delta_v
+
+def calculate_hohmann_transfer_time_of_flight(mu: float, r1: float, r2: float) -> float:
+    """
+    Calculates the time of flight for a Hohmann transfer. This is half the orbital period
+    of the elliptical transfer orbit.
+
+    Args:
+        mu (float): Gravitational parameter of the central body (m^3/s^2).
+        r1 (float): Radius of the initial circular orbit (m).
+        r2 (float): Radius of the final circular orbit (m).
+
+    Returns:
+        float: The time of flight in seconds.
+
+    Raises:
+        ValueError: If mu, r1, or r2 are non-positive, or if r1 equals r2.
+    """
+    if mu <= 0:
+        raise ValueError("Gravitational parameter (mu) must be positive.")
+    if r1 <= 0 or r2 <= 0:
+        raise ValueError("Orbital radii (r1, r2) must be positive.")
+    if r1 == r2:
+        raise ValueError("Initial and final orbital radii cannot be equal for a Hohmann transfer.")
+
+    # Semi-major axis of the elliptical transfer orbit
+    a_transfer = (r1 + r2) / 2
+
+    # Calculate the orbital period of the transfer ellipse using Kepler's Third Law
+    period_transfer = 2 * math.pi * math.sqrt(a_transfer**3 / mu)
+
+    # Time of flight is half the period of the transfer ellipse
+    time_of_flight = period_transfer / 2
+
+    return time_of_flight
+
+def calculate_elliptical_orbital_period(mu: float, semi_major_axis: float) -> float:
+    """
+    Calculates the orbital period of an elliptical (or circular) orbit using Kepler's Third Law.
+
+    Args:
+        mu (float): Gravitational parameter of the central body (m^3/s^2).
+        semi_major_axis (float): The semi-major axis of the elliptical orbit (m).
+                                 For a circular orbit, this is simply the orbit's radius.
+
+    Returns:
+        float: The orbital period in seconds.
+
+    Raises:
+        ValueError: If the gravitational parameter (mu) or semi-major axis is non-positive.
+    """
+    if mu <= 0:
+        raise ValueError("Gravitational parameter (mu) must be positive.")
+    if semi_major_axis <= 0:
+        raise ValueError("Semi-major axis must be positive.")
+
+    return 2 * math.pi * math.sqrt(semi_major_axis**3 / mu)
+
+def calculate_escape_velocity(mu: float, radius: float) -> float:
+    """
+    Calculates the escape velocity from a central body at a given radius.
+    Escape velocity is the minimum speed needed for a free, non-propelled object
+    to escape from the gravitational influence of a massive body.
+
+    Args:
+        mu (float): The gravitational parameter of the central body (m^3/s^2).
+        radius (float): The distance from the center of the central body (m).
+
+    Returns:
+        float: The escape velocity in m/s.
+
+    Raises:
+        ValueError: If the gravitational parameter (mu) or radius is non-positive.
+    """
+    if mu <= 0:
+        raise ValueError("Gravitational parameter (mu) must be positive.")
+    if radius <= 0:
+        raise ValueError("Radius must be positive.")
+
+    return math.sqrt(2 * mu / radius)
