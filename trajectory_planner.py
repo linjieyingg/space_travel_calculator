@@ -32,7 +32,7 @@ class TrajectoryPlanner:
                 "Cannot initialize TrajectoryPlanner."
             )
 
-    def plan_hohmann_trajectory(self, departure_body_name: str, arrival_body_name: str) -> dict:
+    def _plan_hohmann_trajectory(self, departure_body_name: str, arrival_body_name: str) -> dict:
         """
         Plans a Hohmann transfer trajectory between two celestial bodies orbiting the Sun.
         This is typically a minimum-energy transfer for coplanar, circular orbits.
@@ -51,9 +51,6 @@ class TrajectoryPlanner:
                   - 'travel_time_h_m_s': Formatted string of travel time (days, hours, minutes, seconds).
                   - 'success': True if planning was successful, False otherwise.
                   - 'error': Error message if planning failed.
-
-        Raises:
-            ValueError: If celestial body data cannot be retrieved or input is invalid.
         """
         if not isinstance(departure_body_name, str) or not departure_body_name.strip():
             return {"success": False, "error": "Departure body name must be a non-empty string."}
@@ -144,8 +141,42 @@ class TrajectoryPlanner:
             "error": None
         }
 
+    def plan_trajectory(self, departure_body_name: str, arrival_body_name: str, trajectory_type: str = 'Hohmann', **kwargs) -> dict:
+        """
+        Plans a space trajectory between two celestial bodies.
+        This method acts as a dispatcher for different trajectory planning algorithms.
+
+        Args:
+            departure_body_name (str): The name of the celestial body to depart from (e.g., "Earth").
+            arrival_body_name (str): The name of the celestial body to arrive at (e.g., "Mars").
+            trajectory_type (str, optional): The type of trajectory to plan. Defaults to 'Hohmann'.
+                                             Currently, only 'Hohmann' is supported.
+            **kwargs: Additional arguments specific to the chosen trajectory type. (Currently ignored for 'Hohmann')
+
+        Returns:
+            dict: A dictionary containing trajectory details, including:
+                  - 'departure_body': Name of the departure body.
+                  - 'arrival_body': Name of the arrival body.
+                  - 'transfer_type': The type of transfer.
+                  - 'total_delta_v_mps': Total change in velocity required in meters per second.
+                  - 'travel_time_days': Total travel time in days.
+                  - 'travel_time_h_m_s': Formatted string of travel time (days, hours, minutes, seconds).
+                  - 'success': True if planning was successful, False otherwise.
+                  - 'error': Error message if planning failed.
+        """
+        if not isinstance(trajectory_type, str) or not trajectory_type.strip():
+            return {"success": False, "error": "Trajectory type must be a non-empty string."}
+        
+        normalized_type = trajectory_type.strip().lower()
+
+        if normalized_type == 'hohmann':
+            # _plan_hohmann_trajectory does not currently use kwargs
+            return self._plan_hohmann_trajectory(departure_body_name, arrival_body_name)
+        else:
+            return {"success": False, "error": f"Unsupported trajectory type: '{trajectory_type}'. Only 'Hohmann' is currently supported."}
+
     # Future methods could be added here for other trajectory types, e.g.:
-    # def plan_gravity_assist_trajectory(self, departure_body: str, arrival_body: str, flyby_body: str) -> dict:
+    # def _plan_gravity_assist_trajectory(self, departure_body: str, arrival_body: str, flyby_body: str) -> dict:
     #     """
     #     Plans a trajectory utilizing a gravity assist.
     #     """
@@ -158,7 +189,8 @@ if __name__ == '__main__':
         planner = TrajectoryPlanner()
 
         print("--- Planning Earth to Mars Hohmann Transfer ---")
-        earth_to_mars = planner.plan_hohmann_trajectory("Earth", "Mars")
+        # Use the new public method, explicitly specifying 'Hohmann'
+        earth_to_mars = planner.plan_trajectory("Earth", "Mars", trajectory_type='Hohmann')
         if earth_to_mars["success"]:
             print(f"Departure: {earth_to_mars['departure_body']}")
             print(f"Arrival: {earth_to_mars['arrival_body']}")
@@ -169,8 +201,9 @@ if __name__ == '__main__':
         else:
             print(f"Error: {earth_to_mars['error']}")
 
-        print("\n--- Planning Mars to Jupiter Hohmann Transfer ---")
-        mars_to_jupiter = planner.plan_hohmann_trajectory("Mars", "Jupiter")
+        print("\n--- Planning Mars to Jupiter Hohmann Transfer (using default type) ---")
+        # Using default 'Hohmann' type
+        mars_to_jupiter = planner.plan_trajectory("Mars", "Jupiter")
         if mars_to_jupiter["success"]:
             print(f"Departure: {mars_to_jupiter['departure_body']}")
             print(f"Arrival: {mars_to_jupiter['arrival_body']}")
@@ -182,20 +215,24 @@ if __name__ == '__main__':
             print(f"Error: {mars_to_jupiter['error']}")
 
         print("\n--- Planning Invalid Trajectory (same bodies) ---")
-        invalid_plan = planner.plan_hohmann_trajectory("Earth", "earth")
+        invalid_plan = planner.plan_trajectory("Earth", "earth") # Default type
         print(f"Result: {invalid_plan['success']}, Error: {invalid_plan['error']}")
 
         print("\n--- Planning Invalid Trajectory (unknown body) ---")
-        unknown_plan = planner.plan_hohmann_trajectory("Earth", "Pluto")
+        unknown_plan = planner.plan_trajectory("Earth", "Pluto") # Default type
         print(f"Result: {unknown_plan['success']}, Error: {unknown_plan['error']}")
 
         print("\n--- Planning Invalid Trajectory (empty body name) ---")
-        empty_name_plan = planner.plan_hohmann_trajectory("  ", "Mars")
+        empty_name_plan = planner.plan_trajectory("  ", "Mars") # Default type
         print(f"Result: {empty_name_plan['success']}, Error: {empty_name_plan['error']}")
         
         print("\n--- Planning Invalid Trajectory (non-string body name) ---")
-        non_string_plan = planner.plan_hohmann_trajectory(123, "Mars")
+        non_string_plan = planner.plan_trajectory(123, "Mars") # Default type
         print(f"Result: {non_string_plan['success']}, Error: {non_string_plan['error']}")
+
+        print("\n--- Planning Invalid Trajectory (unsupported type) ---")
+        unsupported_plan = planner.plan_trajectory("Earth", "Mars", trajectory_type='Bi-elliptic')
+        print(f"Result: {unsupported_plan['success']}, Error: {unsupported_plan['error']}")
 
     except (ValueError, AttributeError) as e:
         print(f"Initialization Error: {e}")
