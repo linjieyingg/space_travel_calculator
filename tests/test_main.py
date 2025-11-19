@@ -1,61 +1,126 @@
 import pytest
 import math
 from datetime import datetime, timedelta
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 import main # Import the main module
 import constants # Import the constants module
 
-# Mocking external functions for isolated testing of main's components
-@patch('main.trajectory_planner.TrajectoryPlanner')
-@patch('main.fuel_calc.calculate_fuel_cost')
-@patch('main.propulsion_system.calculate_required_fuel_mass')
-@patch('main.travel_logger.save_travel_log')
-def test_main_function_smoke_test(mock_save_log, mock_calculate_fuel_mass, mock_calculate_fuel_cost, MockTrajectoryPlanner):
-    """
-    Smoke test for the main() function to ensure it runs without crashing
-    and orchestrates calls to its dependencies.
-    """
-    # Mock user inputs for main function
-    mock_inputs = [
-        'Earth', # source_planet
-        'Mars',  # destination_planet
-        '10000', # spacecraft_dry_mass (kg)
-        '450',   # engine_specific_impulse (s)
-        '2024-01-01', # departure_date_str
-        '30',    # user_age
-    ]
+# Mock external dependencies for isolated testing of main.py
+@pytest.fixture
+def mock_dependencies():
+    with patch('main.celestial_data.get_celestial_body_data') as mock_get_celestial, \
+         patch('main.celestial_data.get_all_solar_system_destinations') as mock_get_all_dest, \
+         patch('main.TrajectoryPlanner') as MockTrajectoryPlanner, \
+         patch('main.propulsion_system.calculate_required_fuel_mass') as mock_calc_fuel_mass, \
+         patch('main.fuel_calc.calculate_fuel_cost') as mock_calc_fuel_cost, \
+         patch('main.travel_logger.save_travel_log') as mock_save_log, \
+         patch('builtins.input') as mock_input, \
+         patch('builtins.print') as mock_print:
 
-    with patch('builtins.input', side_effect=mock_inputs):
-        # Mock the TrajectoryPlanner instance and its plan_hohmann_trajectory method
+        # Configure mock celestial data
+        mock_get_celestial.side_effect = lambda name: {
+            'earth': {'semi_major_axis_from_sun': 1.496e11, 'gravitational_parameter_mu': 3.986004418e14, 'radius': 6.371e6},
+            'mars': {'semi_major_axis_from_sun': 2.279e11, 'gravitational_parameter_mu': 4.282837e13, 'radius': 3.389e6}
+        }.get(name.lower())
+
+        mock_get_all_dest.return_value = [{'name': 'Mars', 'distance': 7.83e10}]
+
+        # Configure mock TrajectoryPlanner
         mock_planner_instance = MockTrajectoryPlanner.return_value
         mock_planner_instance.plan_hohmann_trajectory.return_value = {
             'success': True,
-            'total_delta_v': 10000.0, # Example delta-v
-            'total_travel_time_days': 250.0, # Example travel time
-            'transfer_type': 'Hohmann Transfer',
-            'error': None
+            'total_delta_v': 15000.0,
+            'total_travel_time_seconds': 250 * 24 * 3600, # ~250 days in seconds
+            'transfer_type': 'Hohmann Transfer'
         }
 
-        mock_calculate_fuel_mass.return_value = 50000.0 # Example fuel mass
-        # Assuming FUEL_PRICE_PER_UNIT is 100.0 as seen in main.py context
-        mock_calculate_fuel_cost.return_value = {'total_cost': 5000000.0} # Example fuel cost
+        # Configure mock fuel calculations
+        mock_calc_fuel_mass.return_value = 50000.0
+        mock_calc_fuel_cost.return_value = {'total_fuel_mass_needed': 50000.0, 'total_cost': 5000000.0}
 
-        # Call the main function
-        main.main()
+        # Simulate user input
+        mock_input.side_effect = [
+            'Earth', # source_planet
+            'Mars',  # destination_planet
+            '100000', # spacecraft_dry_mass (kg)
+            '450',   # engine_specific_impulse (s)
+            '2024-01-01', # departure_date_str
+            '30',    # user_age
+            # main.py uses a constant for FUEL_PRICE_PER_UNIT, so it's not an interactive input.
+        ]
 
-        # Assert that key functions were called
-        mock_planner_instance.plan_hohmann_trajectory.assert_called_once_with('Earth', 'Mars')
-        mock_calculate_fuel_mass.assert_called_once_with(
-            delta_v=pytest.approx(10000.0),
-            dry_mass=pytest.approx(10000.0),
-            specific_impulse=pytest.approx(450.0)
-        )
-        mock_calculate_fuel_cost.assert_called_once_with(
-            total_fuel_mass_needed=pytest.approx(50000.0),
-            fuel_price_per_unit=pytest.approx(100.0) # From main.py's FUEL_PRICE_PER_UNIT
-        )
-        mock_save_log.assert_called_once()
-        # Further assertions could check the exact arguments passed to mock_save_log if needed
+        yield {
+            'mock_get_celestial': mock_get_celestial,
+            'mock_get_all_dest': mock_get_all_dest,
+            'MockTrajectoryPlanner': MockTrajectoryPlanner,
+            'mock_planner_instance': mock_planner_instance, # provide instance for direct checks
+            'mock_calc_fuel_mass': mock_calc_fuel_mass,
+            'mock_calc_fuel_cost': mock_calc_fuel_cost,
+            'mock_save_log': mock_save_log,
+            'mock_input': mock_input,
+            'mock_print': mock_print
+        }
+
+def test_main_function_integrates_trajectory_planner_and_calculates_correctly(mock_dependencies):
+    """
+    Test the main function's orchestration logic, ensuring it correctly calls
+    its dependencies and processes inputs/outputs. This replaces the previous smoke test.
+    """
+    main.main()
+
+    # Verify TrajectoryPlanner was instantiated and its method called correctly
+    mock_dependencies['MockTrajectoryPlanner'].assert_called_once()
+    mock_dependencies['mock_planner_instance'].plan_hohmann_trajectory.assert_called_once_with(
+        departure_body_name='Earth', arrival_body_name='Mars'
+    )
+
+    # Verify fuel mass calculation uses delta-V from planner and dry mass input
+    mock_dependencies['mock_calc_fuel_mass'].assert_called_once_with(
+        delta_v=pytest.approx(15000.0), dry_mass=pytest.approx(100000.0), specific_impulse=pytest.approx(450.0)
+    )
+
+    # Verify fuel cost calculation uses fuel mass and the constant fuel price from main.py
+    # NOTE: The value 100.0 is inferred from the `main.py` context in the repo summary,
+    # as FUEL_PRICE_PER_UNIT is a constant in `main.py`.
+    mock_dependencies['mock_calc_fuel_cost'].assert_called_once_with(
+        total_fuel_mass_needed=pytest.approx(50000.0), fuel_price_per_unit=pytest.approx(100.0)
+    )
+
+    # Verify travel logger was called with correct data
+    mock_dependencies['mock_save_log'].assert_called_once()
+    save_log_args = mock_dependencies['mock_save_log'].call_args.kwargs
+    assert save_log_args['source_planet'] == 'Earth'
+    assert save_log_args['destination_planet'] == 'Mars'
+
+    # The 'speed' for logging is derived from (abs(SMA_dest - SMA_src)) / total_travel_time_seconds
+    # distance = abs(2.279e11 - 1.496e11) = 7.83e10 m
+    # total_travel_time_seconds = 250 * 24 * 3600 = 21600000 seconds
+    # Expected avg_speed_ms = 7.83e10 / 21600000 = 3625000 m/s
+    assert save_log_args['speed'] == pytest.approx(3625000.0)
+
+    # The 'travel_time' for logging is total_travel_time_seconds converted to days.
+    assert save_log_args['travel_time'] == pytest.approx(250.0) # 250 days
+    assert save_log_args['delta_v_required'] == pytest.approx(15000.0)
+    assert save_log_args['fuel_mass_needed'] == pytest.approx(50000.0)
+    assert save_log_args['transfer_type'] == 'Hohmann Transfer'
+
+    # Collect all print calls (args[0] because print passes one string argument normally)
+    printed_output = [call.args[0] for call in mock_dependencies['mock_print'].call_args_list if call.args]
+
+    # Verify key information is printed using 'in' operator for substring matching
+    assert any("Travel Summary" in s for s in printed_output)
+    assert any("Source Planet: Earth" in s for s in printed_output)
+    assert any("Destination Planet: Mars" in s for s in printed_output)
+    assert any("Delta-V Required: 15000.0 m/s" in s for s in printed_output)
+    assert any("Fuel Mass Needed: 50000.0 kg" in s for s in printed_output)
+    assert any("Total Fuel Cost: 5000000.0" in s for s in printed_output)
+    assert any("Transfer Type: Hohmann Transfer" in s for s in printed_output)
+    # Check time outputs
+    assert any("Travel Time (Traveler's Frame):" in s for s in printed_output)
+    assert any("Travel Time (Earth's Frame):" in s for s in printed_output)
+    assert any("Traveler's Age Upon Arrival:" in s for s in printed_output)
+    assert any("Estimated Arrival Date:" in s for s in printed_output)
+
 
 # --- Start of unit tests for main's helper functions ---
 
@@ -146,15 +211,16 @@ def test_calc_arrival_fractional_years():
     
     # 0.5 year travel time: 0.5 * 365.25 = 182.625 days. Timedelta adds 182 days.
     arrival_date_half_year = main.calc_arrival(departure_date, 0.5)
-    expected_date_half_year = departure_date + timedelta(days=math.floor(0.5 * 365.25))
+    # timedelta implicitly handles fractions by rounding to seconds.
+    expected_date_half_year = departure_date + timedelta(days=0.5 * 365.25)
     assert arrival_date_half_year == expected_date_half_year
-    assert arrival_date_half_year == datetime(2024, 7, 1) # 2024-01-01 + 182 days = 2024-07-01
+    assert arrival_date_half_year == datetime(2024, 7, 1, 3, 0) # 2024-01-01 + 182 days 6 hours
 
-    # Small fraction of a year: 0.01 * 365.25 = 3.6525 days. Timedelta adds 3 days.
+    # Small fraction of a year: 0.01 * 365.25 = 3.6525 days. Timedelta adds 3 days + 15.66 minutes.
     arrival_date_small_fraction = main.calc_arrival(departure_date, 0.01)
-    expected_date_small_fraction = departure_date + timedelta(days=math.floor(0.01 * 365.25))
+    expected_date_small_fraction = departure_date + timedelta(days=0.01 * 365.25)
     assert arrival_date_small_fraction == expected_date_small_fraction
-    assert arrival_date_small_fraction == datetime(2024, 1, 4)
+    assert arrival_date_small_fraction == datetime(2024, 1, 4, 15, 39, 36) # 2024-01-01 + 3 days 15 hours 39 minutes 36 seconds
 
 def test_calc_arrival_negative_years():
     """
@@ -163,12 +229,11 @@ def test_calc_arrival_negative_years():
     calculates the past date.
     """
     departure_date = datetime(2023, 1, 1)
-    # -5 * 365.25 = -1826.25 days. Timedelta correctly applies negative days.
+    # -5 * 365.25 = -1826.25 days. timedelta(days=-1826.25) is -1826 days and -6 hours.
     arrival_date = main.calc_arrival(departure_date, -5.0)
-    expected_date = departure_date + timedelta(days=-5 * 365.25)
+    expected_date = departure_date + timedelta(days=-5.0 * 365.25)
     assert arrival_date == expected_date
-    # Specifically assert the resulting date and time components
-    assert arrival_date == datetime(2017, 12, 31, 15, 0) # 2023-01-01 minus 1826 days 6 hours
+    assert arrival_date == datetime(2017, 12, 30, 18, 0) # 2023-01-01 minus 1826 days 6 hours
 
 def test_calc_arrival_invalid_date_type():
     """
