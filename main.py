@@ -183,6 +183,29 @@ def main():
         else:
             print("Invalid arrival body or same as departure. Please choose a different body (case-insensitive).")
 
+    # New: Trajectory Type Selection
+    supported_trajectory_types = ['Hohmann', 'Direct Transfer'] # 'Direct Transfer' is for future expansion
+    selected_trajectory_type = 'Hohmann' # Default to Hohmann
+    while True:
+        type_input = input(f"Enter trajectory type (e.g., {', '.join(supported_trajectory_types)}). Default is Hohmann: ").strip()
+        if not type_input:
+            print(f"No trajectory type entered. Defaulting to '{selected_trajectory_type}'.")
+            break
+        
+        # Normalize input for comparison
+        normalized_input = type_input.replace(' ', '').lower() 
+        
+        if normalized_input == 'hohmann':
+            selected_trajectory_type = 'Hohmann'
+            break
+        elif normalized_input == 'directtransfer': # For future proofing 'Direct Transfer'
+            selected_trajectory_type = 'Direct Transfer'
+            print(f"Note: '{selected_trajectory_type}' is selected, but may not be fully implemented and will default to Hohmann behavior if not supported by the planner.")
+            break
+        else:
+            print(f"Invalid trajectory type. Please choose from {', '.join(supported_trajectory_types)}.")
+
+
     spacecraft_dry_mass = 0.0
     while True:
         try:
@@ -255,8 +278,8 @@ def main():
         trajectory_result = planner.plan_trajectory(
             departure_body_name=source_planet, 
             arrival_body_name=destination_planet,
-            trajectory_type='Hohmann', # Hardcoded for now, ready for future user selection
-            departure_date=departure_date # Pass the departure date
+            trajectory_type=selected_trajectory_type, # Pass the selected trajectory type
+            departure_date=departure_date 
         )
     except ValueError as e:
         print(f"Error during trajectory planning: {e}. Please ensure valid departure and arrival bodies are selected and their data is complete.")
@@ -275,7 +298,7 @@ def main():
     # Extract delta-V and travel time from the trajectory planning result
     delta_v_required = trajectory_result['total_delta_v_mps']
     travel_time_seconds = trajectory_result['total_travel_time_seconds']
-    transfer_type = trajectory_result['transfer_type']
+    transfer_type = trajectory_result['transfer_type'] # This will now reflect the chosen type or fallback
 
     # --- Fuel Calculation (using fuel_optimizer) ---
     fuel_mass_needed = 0.0
@@ -283,7 +306,7 @@ def main():
         fuel_mass_needed = fuel_optimizer.optimize_fuel_for_trajectory(
             start_body=source_planet,
             end_body=destination_planet,
-            trajectory_type=transfer_type, # Use the transfer type from trajectory planning
+            trajectory_type=transfer_type, # Use the transfer type from trajectory planning result
             spacecraft_dry_mass=spacecraft_dry_mass,
             engine_specific_impulse=engine_specific_impulse,
             departure_date=departure_date # Pass the departure date to fuel optimizer for trajectory planning
@@ -351,7 +374,9 @@ def main():
     print("\n--- Travel Summary ---")
     print(f"Departure Body: {source_planet}")
     print(f"Arrival Body: {destination_planet}")
-    print(f"Transfer Type: {transfer_type}")
+    # Acknowledge selected trajectory type
+    print(f"Trajectory Type Selected: {selected_trajectory_type}") 
+    print(f"Calculated Transfer Type: {transfer_type}") # This is what the planner actually used/determined
     print(f"Delta-V Required: {delta_v_required:.2f} m/s")
     print(f"Estimated Fuel Mass Needed: {fuel_mass_needed:.2f} kg")
     print(f"Total Fuel Cost: ${total_fuel_cost:,.2f}")
