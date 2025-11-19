@@ -11,6 +11,7 @@ J2000_EPOCH = datetime.datetime(2000, 1, 1, 12, 0, 0, tzinfo=datetime.timezone.u
 _MU_SUN_CACHE = None # Initialized at module level as requested
 
 def _get_mu_sun() -> float:
+    global _MU_SUN_CACHE # Placed as the very first executable statement as requested
     """
     Retrieves the Sun's gravitational parameter (mu) from celestial data,
     caching the result for subsequent calls.
@@ -21,7 +22,6 @@ def _get_mu_sun() -> float:
     Raises:
         ValueError: If the Sun's gravitational parameter cannot be determined.
     """
-    global _MU_SUN_CACHE # Placed as the very first executable statement as requested
     if _MU_SUN_CACHE is None:
         try:
             # Prefer using orbital_mechanics function which handles retrieval logic
