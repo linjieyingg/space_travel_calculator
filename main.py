@@ -42,9 +42,10 @@ import trajectory_planner # Calculates orbital trajectories
 import propulsion_system # Calculates fuel requirements
 import fuel_calc # For fuel cost calculation (if needed, or direct calculation will be used)
 import travel_logger # For logging travel details
+import constants # Provides universal physical constants
 
 # Constants
-C_LIGHT_MS = 299792458 # Speed of light in m/s
+# C_LIGHT_MS = 299792458 # Removed, now using constants.C_LIGHT_MPS
 FUEL_PRICE_PER_UNIT = 1000000.0 # Example high price for space fuel per kg/unit
 
 # List of solar system bodies for user selection (simplified for example)
@@ -71,7 +72,7 @@ def calc_time_earth(years_traveler_frame, average_speed_ms):
         return years_traveler_frame
     
     # Avoid division by zero or negative square root if speed is too close or exceeds light speed
-    if average_speed_ms >= C_LIGHT_MS:
+    if average_speed_ms >= constants.C_LIGHT_MPS: # Using constant from constants.py
         print("Warning: Speed is at or above the speed of light. Relativistic time dilation calculation may be invalid or undefined.")
         # In a theoretical scenario, if v=c, Lorentz factor is undefined. If v>c, sqrt is imaginary.
         # For practical purposes, we might cap or return a large value, or the traveler's time.
@@ -79,10 +80,10 @@ def calc_time_earth(years_traveler_frame, average_speed_ms):
 
     try:
         # Calculate the Lorentz factor term (1 - v^2/c^2)
-        v_c_squared = (average_speed_ms / C_LIGHT_MS)**2
+        v_c_squared = (average_speed_ms / constants.C_LIGHT_MPS)**2 # Using constant from constants.py
         sqrt_term_arg = 1 - v_c_squared
 
-        if sqrt_term_arg <= 0: # Should be caught by the average_speed_ms >= C_LIGHT_MS check, but good defensive programming
+        if sqrt_term_arg <= 0: # Should be caught by the average_speed_ms >= C_LIGHT_MPS check, but good defensive programming
             print("Warning: Relativistic term argument is non-positive. Returning traveler's time.")
             return years_traveler_frame
         
@@ -151,20 +152,24 @@ def main():
     # --- User Input for Trajectory and Spacecraft ---
 
     # Source Planet Input
+    source_data = None
     while True:
         source_planet = input(f"Enter your source planet ({', '.join(SOLAR_SYSTEM_BODIES)}): ").strip().title()
         if source_planet in SOLAR_SYSTEM_BODIES:
             try:
-                source_data = celestial_data.get_planet_data(source_planet)
-                break
-            except KeyError:
-                print(f"Error: Data for {source_planet} not found in celestial_data. Please try again.")
+                # UPDATED: Call get_celestial_body_data
+                source_data = celestial_data.get_celestial_body_data(source_planet)
+                if source_data: # Ensure data was successfully retrieved
+                    break
+                else:
+                    print(f"Error: Data for {source_planet} not found in celestial_data. Please try again.")
             except Exception as e:
                 print(f"An unexpected error occurred retrieving data for {source_planet}: {e}. Please try again.")
         else:
             print(f"Invalid source planet. Please choose from: {', '.join(SOLAR_SYSTEM_BODIES)}")
 
     # Destination Planet Input
+    destination_data = None
     while True:
         destination_planet = input(f"Enter your destination planet ({', '.join(SOLAR_SYSTEM_BODIES)}, excluding {source_planet}): ").strip().title()
         if destination_planet == source_planet:
@@ -172,10 +177,12 @@ def main():
             continue
         if destination_planet in SOLAR_SYSTEM_BODIES:
             try:
-                destination_data = celestial_data.get_planet_data(destination_planet)
-                break
-            except KeyError:
-                print(f"Error: Data for {destination_planet} not found in celestial_data. Please try again.")
+                # UPDATED: Call get_celestial_body_data
+                destination_data = celestial_data.get_celestial_body_data(destination_planet)
+                if destination_data: # Ensure data was successfully retrieved
+                    break
+                else:
+                    print(f"Error: Data for {destination_planet} not found in celestial_data. Please try again.")
             except Exception as e:
                 print(f"An unexpected error occurred retrieving data for {destination_planet}: {e}. Please try again.")
         else:
@@ -243,15 +250,24 @@ def main():
     transfer_type = "Hohmann Transfer" # Default transfer type
 
     try:
-        # Assuming trajectory_planner.calculate_hohmann_transfer returns a dictionary
-        # with 'delta_v', 'travel_time_traveler_frame_years', 'average_hohmann_speed_ms'
-        hohmann_result = trajectory_planner.calculate_hohmann_transfer(source_data, destination_data)
+        # UPDATED: Instantiate TrajectoryPlanner
+        planner = trajectory_planner.TrajectoryPlanner()
+        # UPDATED: Call plan_hohmann_trajectory on the instance with planet names
+        hohmann_result = planner.plan_hohmann_trajectory(source_planet, destination_planet)
         
-        delta_v = hohmann_result.get('delta_v', 0.0)
-        travel_time_traveler_frame_years = hohmann_result.get('travel_time_traveler_frame_years', 0.0)
-        average_hohmann_speed_ms = hohmann_result.get('average_hohmann_speed_ms', 0.0) # Effective speed for relativistic calculations
+        # Check if planning was successful
+        if hohmann_result and hohmann_result.get('success', False):
+            delta_v = hohmann_result.get('total_delta_v_mps', 0.0)
+            # Assuming 'travel_time_traveler_frame_years' and 'average_hohmann_speed_ms'
+            # are provided by the trajectory planner as per original main.py logic.
+            travel_time_traveler_frame_years = hohmann_result.get('travel_time_traveler_frame_years', 0.0)
+            average_hohmann_speed_ms = hohmann_result.get('average_hohmann_speed_ms', 0.0)
 
-        print(f"Calculated Delta-V for {source_planet} to {destination_planet} {transfer_type}: {delta_v:.3f} m/s")
+            print(f"Calculated Delta-V for {source_planet} to {destination_planet} {transfer_type}: {delta_v:.3f} m/s")
+        else:
+            error_message = hohmann_result.get('error', 'Unknown error during trajectory planning.') if hohmann_result else 'Trajectory planner returned no result.'
+            print(f"Error during trajectory planning: {error_message}. Cannot proceed with calculations.")
+            return # Exit if trajectory planning fails
 
     except ValueError as e:
         print(f"Error during trajectory planning: {e}. Cannot proceed with calculations.")
@@ -268,14 +284,23 @@ def main():
     total_fuel_cost = 0.0
     if delta_v > 0 and spacecraft_dry_mass > 0 and engine_isp > 0:
         try:
-            fuel_mass_kg = propulsion_system.calculate_fuel_mass(spacecraft_dry_mass, delta_v, engine_isp)
-            total_fuel_cost = fuel_mass_kg * FUEL_PRICE_PER_UNIT # Direct calculation
+            # UPDATED: Use calculate_required_fuel_mass with correct argument order (delta_v, dry_mass, specific_impulse)
+            fuel_mass_kg = propulsion_system.calculate_required_fuel_mass(delta_v, spacecraft_dry_mass, engine_isp)
+            
+            # UPDATED: Use fuel_calc.calculate_fuel_cost
+            fuel_cost_result = fuel_calc.calculate_fuel_cost(total_fuel_mass_needed=fuel_mass_kg, fuel_price_per_unit=FUEL_PRICE_PER_UNIT)
+            if fuel_cost_result and 'total_cost' in fuel_cost_result:
+                total_fuel_cost = fuel_cost_result['total_cost']
+            else:
+                print("Warning: Fuel cost calculation failed or returned invalid result.")
+                total_fuel_cost = 0.0 # Default to 0 if calculation fails
+
             print(f"Required Fuel Mass: {fuel_mass_kg:.3f} kg")
             print(f"Estimated Fuel Cost: ${total_fuel_cost:,.2f}")
         except ValueError as e:
-            print(f"Error calculating fuel mass: {e}. Cannot determine cost.")
+            print(f"Error calculating fuel mass or cost: {e}.")
         except Exception as e:
-            print(f"An unexpected error occurred during fuel calculation: {e}. Cannot determine cost.")
+            print(f"An unexpected error occurred during fuel calculation: {e}.")
     else:
         print("Skipping fuel calculation due to invalid Delta-V, spacecraft mass, or engine ISP.")
 
@@ -302,20 +327,19 @@ def main():
 
     # --- Log Travel Details ---
     try:
-        # Assuming travel_logger.save_travel_log has been updated to accept these new parameters
-        # If the signature hasn't been updated in travel_logger.py, this will raise an AttributeError
+        # Corrected parameter names based on travel_logger.py summary
         travel_logger.save_travel_log(
-            destination=destination_planet,
+            source_planet=source_planet,
+            destination_planet=destination_planet,
             speed=average_hohmann_speed_ms, # Using average speed for logging
             travel_time=travel_time_traveler_frame_years,
-            delta_v=delta_v,
-            fuel_mass=fuel_mass_kg,
-            transfer_type=transfer_type,
-            source_planet=source_planet
+            delta_v_required=delta_v,
+            fuel_mass_needed=fuel_mass_kg,
+            transfer_type=transfer_type
         )
         print("\nTravel details successfully logged.")
-    except AttributeError:
-        print("\nWarning: travel_logger.py might not have the updated save_travel_log signature. Logging failed.")
+    except TypeError as e: # Catch TypeError if signature is truly mismatched
+        print(f"\nWarning: travel_logger.save_travel_log signature mismatch: {e}. Logging failed.")
     except Exception as e:
         print(f"\nError saving travel log: {e}")
 
