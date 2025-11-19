@@ -159,8 +159,9 @@ class TrajectoryPlanner:
         """
         Plans a direct transfer trajectory using Lambert's problem, optimizing for minimum total Delta-V.
         This method iterates through a range of flight times to find the optimal transfer.
-        Assumes coplanar, quasi-circular orbits for initial planet velocity vector estimation,
-        and uses a 2D representation for position and velocity vectors.
+        It uses dynamic orbital positions from the ephemeris module.
+        The underlying `orbital_mechanics.calculate_lambert_transfer` is a simplified analytical approximation,
+        making strong assumptions and not being a full iterative Lambert solver.
 
         Args:
             departure_body_name (str): The name of the celestial body to depart from (e.g., "Earth").
@@ -196,13 +197,6 @@ class TrajectoryPlanner:
                 "error": "Central body's (Sun's) gravitational parameter (mu_sun) is invalid. Cannot perform orbital calculations."
             }
 
-        # Helper functions for basic 3D vector operations using tuples
-        def _vec_mag(v):
-            return math.sqrt(v[0]**2 + v[1]**2 + v[2]**2)
-
-        def _vec_sub(v1, v2):
-            return (v1[0] - v2[0], v1[1] - v2[1], v1[2] - v2[2])
-
         try:
             # 1. Get initial state for departure body at departure_date
             dep_orbital_state = ephemeris.get_heliocentric_state(departure_body_name, departure_date)
@@ -215,11 +209,6 @@ class TrajectoryPlanner:
             # Convert polar (r, theta) to Cartesian (x, y, 0) for position vector
             # Assuming a 2D planar orbit for this simplified direct transfer calculation.
             r1_vec = (r1_mag * math.cos(ang1_rad), r1_mag * math.sin(ang1_rad), 0.0)
-
-            # Estimate departure body's heliocentric velocity vector (circular orbit assumption)
-            # Velocity vector is tangential to the position vector for a circular orbit.
-            v_dep_circ_mag = orbital_mechanics.calculate_circular_orbital_velocity(self.mu_sun, r1_mag)
-            v_dep_circ_vec = (-v_dep_circ_mag * math.sin(ang1_rad), v_dep_circ_mag * math.cos(ang1_rad), 0.0)
 
         except Exception as e:
             return {"success": False, "error": f"Error preparing departure body data for Direct Transfer: {e}"}
@@ -250,28 +239,22 @@ class TrajectoryPlanner:
                 ang2_rad = arr_orbital_state["angular_position_rad"]
                 r2_vec = (r2_mag * math.cos(ang2_rad), r2_mag * math.sin(ang2_rad), 0.0)
 
-                # Estimate arrival body's heliocentric velocity vector (circular orbit assumption)
-                v_arr_circ_mag = orbital_mechanics.calculate_circular_orbital_velocity(self.mu_sun, r2_mag)
-                v_arr_circ_vec = (-v_arr_circ_mag * math.sin(ang2_rad), v_arr_circ_mag * math.cos(ang2_rad), 0.0)
-
                 # 3. Call Lambert Solver
-                # IMPORTANT: This assumes orbital_mechanics.calculate_lambert_transfer exists
-                # and returns (v1_transfer_vec, v2_transfer_vec) as 3-element tuples.
-                v1_transfer_vec, v2_transfer_vec = orbital_mechanics.calculate_lambert_transfer(
+                # orbital_mechanics.calculate_lambert_transfer returns:
+                # (delta_v1_mag, delta_v2_mag, total_delta_v, calculated_time_of_flight)
+                # as per the orbital_mechanics.py summary.
+                dv1_mag_burn, dv2_mag_burn, calculated_total_delta_v, _ = orbital_mechanics.calculate_lambert_transfer(
                     self.mu_sun, r1_vec, r2_vec, tof_s
                 )
 
-                # 4. Calculate total Delta-V
-                # dV1 = |v_transfer_at_departure - v_planet_at_departure|
-                # dV2 = |v_planet_at_arrival - v_transfer_at_arrival|
-                delta_v1 = _vec_mag(_vec_sub(v1_transfer_vec, v_dep_circ_vec))
-                delta_v2 = _vec_mag(_vec_sub(v_arr_circ_vec, v2_transfer_vec))
+                # 4. Check for valid delta-V results and update total Delta-V
+                if calculated_total_delta_v < 0 or not isinstance(calculated_total_delta_v, (int, float)):
+                    # Negative delta-V or non-numeric indicates an invalid solution from the simplified solver
+                    raise ValueError("Lambert solver returned an invalid total Delta-V (negative or non-numeric).")
                 
-                total_delta_v = delta_v1 + delta_v2
-
                 # 5. Select the TOF that yields the minimum total delta-V
-                if total_delta_v < min_total_delta_v:
-                    min_total_delta_v = total_delta_v
+                if calculated_total_delta_v < min_total_delta_v:
+                    min_total_delta_v = calculated_total_delta_v
                     
                     td = timedelta(seconds=int(tof_s)) 
                     days = td.days
@@ -293,6 +276,7 @@ class TrajectoryPlanner:
                     }
             except ValueError as ve:
                 # Specific errors from orbital_mechanics.calculate_lambert_transfer (e.g., no real solution found)
+                # or from our check for negative delta-V
                 continue # Try next TOF
             except Exception as e:
                 # General errors during iteration (e.g., ephemeris failure for a specific date)
