@@ -7,9 +7,9 @@
 
 **Branch:** main
 
-**Files Analyzed:** 20
+**Files Analyzed:** 21
 
-**Last Updated:** 2025-11-18 22:09:36
+**Last Updated:** 2025-11-18 22:24:58
 
 ---
 
@@ -139,29 +139,36 @@ None. This file does not rely on any external imports or libraries.
 
 ## `fuel_optimizer.py`
 
-### fuel_optimizer.py
+```markdown
+## Analysis of fuel_optimizer.py
 
-1.  **Purpose**
-    This file calculates the optimal fuel mass required for a planned space trajectory by integrating delta-V requirements from a trajectory planner with propulsion system physics. It acts as an orchestrator between orbital mechanics and rocket equation calculations.
+### Purpose
+This file orchestrates the calculation of optimal fuel mass for space trajectories. It integrates trajectory planning (to determine required delta-V) with propulsion system models (to calculate fuel based on delta-V and engine efficiency).
 
-2.  **Key Components**
-    *   `calculate_fuel_mass_from_delta_v` (Mock/Imported from `propulsion_system.py`)
-        *   **Inputs**: `delta_v` (float), `spacecraft_dry_mass` (float), `specific_impulse` (float)
-        *   **Output**: Calculated fuel mass in kilograms (float).
-    *   `calculate_delta_v` (Mock/Imported from `trajectory_planner.py`)
-        *   **Inputs**: `start_body` (str), `end_body` (str), `trajectory_type` (str), and optional `**kwargs` for trajectory specifics.
-        *   **Output**: Required change in velocity (delta-V) in meters per second (float).
-    *   `optimize_fuel_for_trajectory` (Main function)
-        *   **Inputs**: `start_body` (str), `end_body` (str), `trajectory_type` (str), `spacecraft_dry_mass` (float), `engine_specific_impulse` (float), and optional `**trajectory_args`.
-        *   **Output**: The calculated optimal fuel mass in kilograms (float).
-        *   **Side Effects**: Raises `ValueError` for invalid inputs or invalid results from dependency functions, and `RuntimeError` for unexpected errors during the optimization process.
+### Key Components
 
-3.  **Dependencies**
-    *   `math` (Python standard library)
-    *   `sys` (Python standard library)
-    *   `os` (Python standard library - imported but not explicitly used in the provided code)
-    *   `propulsion_system` (Custom module, expected to contain `calculate_fuel_mass_from_delta_v`)
-    *   `trajectory_planner` (Custom module, expected to contain `calculate_delta_v`)
+*   **`calculate_fuel_mass_from_delta_v` (Function)**
+    *   **Description:** (Mock implementation) Calculates the fuel mass required based on the Tsiolkovsky rocket equation. In a production environment, this function would be imported from `propulsion_system.py`.
+    *   **Inputs:** `delta_v` (float), `spacecraft_dry_mass` (float), `specific_impulse` (float).
+    *   **Outputs:** Required `fuel_mass` (float) in kilograms.
+
+*   **`TrajectoryPlanner` (Class, Imported)**
+    *   **Description:** An external class (imported from `trajectory_planner.py`) responsible for planning space trajectories and determining the total delta-V required.
+    *   **Inputs:** Its `plan_hohmann_trajectory` method takes `departure_body_name`, `arrival_body_name`, and additional `**trajectory_args`.
+    *   **Outputs:** A dictionary containing trajectory details, including `total_delta_v` (float).
+
+*   **`optimize_fuel_for_trajectory` (Function)**
+    *   **Description:** The main function that drives the fuel optimization process. It instantiates `TrajectoryPlanner`, calls its `plan_hohmann_trajectory` method, and then uses the resulting delta-V with the fuel calculation function to determine the total fuel mass.
+    *   **Inputs:** `start_body` (str), `end_body` (str), `trajectory_type` (str - currently only 'Hohmann' is supported), `spacecraft_dry_mass` (float), `engine_specific_impulse` (float), and `**trajectory_args` (keyword arguments passed to the trajectory planner).
+    *   **Outputs:** The `fuel_mass` (float) in kilograms required for the planned trajectory.
+
+### Dependencies
+*   **`math`**: Standard library, used for `math.exp` in the mock `calculate_fuel_mass_from_delta_v`.
+*   **`sys`**: Standard library, used for printing warnings to `sys.stderr`.
+*   **`os`**: Standard library, imported but not used in the provided code snippet.
+*   **`propulsion_system`**: External module, expected to provide `calculate_required_fuel_mass`. A mock implementation is provided if it's not found, allowing for development/testing.
+*   **`trajectory_planner`**: External module, expected to provide the `TrajectoryPlanner` class. This is a critical dependency, and an `ImportError` is raised if it cannot be found.
+```
 
 ---
 
@@ -319,35 +326,35 @@ This Python script implements a command-line Tic-Tac-Toe game for two players. I
 ## `main.py`
 
 ```markdown
-## Space Travel Calculator (`main.py`)
+This file, `main.py`, is the core executable for a space travel calculator. It takes user inputs for a space journey, calculates various parameters like travel time (accounting for relativistic effects), fuel requirements, costs, and arrival dates, and then presents a comprehensive summary.
 
-### Purpose
-This file implements a space travel calculator that determines the time required to reach a celestial destination, factoring in relativistic effects, orbital mechanics for trajectory planning, and fuel requirements. It gathers user input, performs calculations, and provides a comprehensive travel summary.
+### Key Components:
 
-### Key Components
-
+*   **`main()` function**:
+    *   **Inputs**: Gathers interactive user inputs such as departure/arrival bodies, spacecraft dry mass, engine specific impulse, departure date, user's current age, and fuel price per unit.
+    *   **Outputs/Side Effects**: Orchestrates all calculations, prints a detailed travel summary to the console, and logs travel details via `travel_logger`.
 *   **`calc_time_earth(years_traveler_frame, average_speed_ms)`**:
-    *   **Inputs**: Travel time in the traveler's frame (years), average spacecraft speed (m/s).
-    *   **Outputs**: Travel time in Earth's reference frame (years), accounting for relativistic time dilation.
+    *   **Inputs**: Travel time in the traveler's frame (years) and average spacecraft speed (m/s).
+    *   **Outputs**: Travel time in Earth's reference frame (years), applying relativistic time dilation. Handles edge cases for speed.
 *   **`calc_age(years_travel_time, starting_age)`**:
-    *   **Inputs**: Total travel time (years, traveler's frame), user's starting age (years).
-    *   **Outputs**: User's age upon arrival (float).
+    *   **Inputs**: Total travel time (years) and user's starting age (int).
+    *   **Outputs**: User's calculated age upon arrival (float).
 *   **`calc_arrival(departure_date, years_earth_frame)`**:
-    *   **Inputs**: Departure date (`datetime` object), total travel years in Earth's frame.
-    *   **Outputs**: Estimated arrival date (`datetime` object) or `None` if calculation fails.
+    *   **Inputs**: Departure date (`datetime`) and total travel years in Earth's frame (float).
+    *   **Outputs**: Estimated arrival date (`datetime.datetime`) or `None` if calculation fails.
 *   **`convert_date(date_str)`**:
     *   **Inputs**: Date string in 'YYYY-MM-DD' format.
-    *   **Outputs**: Converted `datetime` object.
-*   **`main()`**: The primary execution function.
-    *   **Inputs**: None (interacts with the user via console for inputs like destination, spacecraft mass, engine specific impulse, departure date, age, and fuel price).
-    *   **Outputs/Side Effects**:
-        *   Prints a detailed travel summary to the console, including source/destination, Delta-V, fuel mass/cost, travel times (traveler's and Earth's frames), arrival age, and estimated arrival date.
-        *   Calls external modules to perform trajectory planning, fuel calculations, and logging.
-        *   Logs travel details to a file using `travel_logger.save_travel_log`.
+    *   **Outputs**: Converted `datetime.datetime` object.
+*   **Integration with External Modules**:
+    *   **`TrajectoryPlanner`**: Plans the mission trajectory (e.g., Hohmann transfer) based on departure/arrival bodies, providing total Delta-V, travel time (traveler's frame), and average speed.
+    *   **`fuel_optimizer`**: Calculates the optimized fuel mass required for the planned trajectory, given spacecraft mass and engine specific impulse.
+    *   **`fuel_calc`**: Determines the total cost of the required fuel.
+    *   **`travel_logger`**: Saves the calculated travel details for historical record.
 
-### Dependencies
+### Dependencies:
+
 *   **Standard Library**: `math`, `datetime`, `timedelta`
-*   **Local Modules**: `checks` (aliased as `c`), `celestial_data`, `orbital_mechanics`, `trajectory_planner`, `propulsion_system`, `fuel_calc`, `travel_logger`, `constants` (specifically `C_LIGHT_MPS`).
+*   **Local Modules**: `checks` (aliased as `c`), `celestial_data`, `orbital_mechanics` (imported but not directly used in `main`), `trajectory_planner`, `propulsion_system` (imported but not directly used in `main`), `fuel_calc`, `travel_logger`, `constants`, `fuel_optimizer`.
 ```
 
 ---
@@ -458,39 +465,82 @@ This file contains unit tests for functions that retrieve and process celestial 
 
 ## `tests/test_main.py`
 
-This file contains a pytest test suite for the `main.py` application, covering both its high-level integration logic and specific helper functions.
+```markdown
+This file contains integration and unit tests for the `main.py` module, designed to verify its core functionality and error handling. It uses `pytest` for the testing framework and `unittest.mock` for isolating `main.py` from its external dependencies.
 
-### Purpose
-This file tests the `main.py` module by mocking its external dependencies to verify its orchestration logic, input processing, and output generation, as well as providing unit tests for internal utility functions related to time, age, and date calculations, including relativistic effects.
+### Key Components:
 
-### Key Components
+*   **`mock_dependencies` fixture**:
+    *   **Inputs**: None directly, but it patches several functions and classes within the `main` module's scope (`celestial_data.get_celestial_body_data`, `celestial_data.get_all_solar_system_destinations`, `TrajectoryPlanner`, `fuel_optimizer.optimize_fuel_for_trajectory`, `fuel_calc.calculate_fuel_cost`, `travel_logger.save_travel_log`, `builtins.input`, `builtins.print`).
+    *   **Outputs/Side Effects**: Returns a dictionary of configured mock objects. It sets `side_effect` for `input` to simulate user input sequence and `return_value` for other mocks to provide predictable data or simulate success/failure scenarios.
+*   **`test_main_function_integrates_all_components_correctly`**:
+    *   **Inputs**: `mock_dependencies` fixture.
+    *   **Outputs/Side Effects**: Calls `main.main()`. Asserts that all mocked dependencies were called with the correct arguments (e.g., `TrajectoryPlanner` instantiated, `fuel_optimizer` called with specific mass/impulse, `travel_logger` saved), and that the `mock_print` captured expected summary output including relativistic time calculations and arrival details.
+*   **`test_main_function_trajectory_planner_fails`**:
+    *   **Inputs**: `mock_dependencies` fixture.
+    *   **Outputs/Side Effects**: Simulates a failure in `TrajectoryPlanner`. Asserts an error message is printed and subsequent processing steps (fuel optimization, logging) are not called.
+*   **`test_main_function_fuel_optimizer_raises_value_error`**:
+    *   **Inputs**: `mock_dependencies` fixture.
+    *   **Outputs/Side Effects**: Simulates a `ValueError` from `fuel_optimizer`. Asserts an error message is printed and subsequent steps (fuel cost, logging) are not called.
+*   **`test_main_function_fuel_cost_calculation_fails`**:
+    *   **Inputs**: `mock_dependencies` fixture.
+    *   **Outputs/Side Effects**: Simulates `fuel_calc.calculate_fuel_cost` returning `None`. Asserts an error message is printed and logging is not called.
+*   **`test_main_function_get_all_solar_system_destinations_fails`**:
+    *   **Inputs**: `mock_dependencies` fixture.
+    *   **Outputs/Side Effects**: Simulates `celestial_data.get_all_solar_system_destinations` returning an empty list. Asserts an error message is printed and no further inputs or calculations occur.
+*   **Unit tests for `main`'s helper functions (e.g., `test_calc_time_earth_*`, `test_calc_age_*`, `test_calc_arrival_*`, `test_convert_date_*`)**:
+    *   **Inputs**: Specific values for `traveler_years`, `average_speed_ms`, `current_age`, `departure_date`, `date_str`, covering valid, edge, and error cases.
+    *   **Outputs/Side Effects**: Assertions on the return values, checking for correct calculations, expected behavior with edge cases (like speed of light or zero speed), and proper error/warning handling (e.g., `pytest.raises` for `ValueError`, `mock_print` for warnings).
 
-*   **`mock_dependencies` (pytest fixture)**
-    *   **Inputs**: None, but sets up mocks for various external and internal dependencies that `main.py` uses.
-    *   **Outputs/Side Effects**: Returns a dictionary of `MagicMock` objects, pre-configured with `side_effect` or `return_value`, for `main.celestial_data.get_celestial_body_data`, `main.celestial_data.get_all_solar_system_destinations`, `main.TrajectoryPlanner`, `main.propulsion_system.calculate_required_fuel_mass`, `main.fuel_calc.calculate_fuel_cost`, `main.travel_logger.save_travel_log`, `builtins.input`, and `builtins.print`.
-*   **`test_main_function_integrates_trajectory_planner_and_calculates_correctly`**
-    *   **Inputs**: The `mock_dependencies` fixture.
-    *   **Outputs/Side Effects**: Calls `main.main()`. Asserts that mocked dependencies (`TrajectoryPlanner`, fuel calculators, travel logger, `print`) were called with correct arguments and that the `print` output contains expected summary information, validating the main application flow.
-*   **`test_calc_time_earth_no_relativity`**, **`test_calc_time_earth_high_speed`**, **`test_calc_time_earth_speed_of_light_limit`**, **`test_calc_time_earth_zero_speed`**
-    *   **Inputs**: Traveler's time (years) and average speed (m/s).
-    *   **Outputs/Side Effects**: Call `main.calc_time_earth` and assert the calculated Earth time, verifying relativistic time dilation under different speed conditions.
-*   **`test_calc_age_whole_years`**, **`test_calc_age_fractional_years`**, **`test_calc_age_invalid_input_types`**
-    *   **Inputs**: Travel time (years) and current age (integer).
-    *   **Outputs/Side Effects**: Call `main.calc_age` and assert the resulting age, including testing for integer flooring and `TypeError` for invalid inputs.
-*   **`test_calc_arrival_whole_years`**, **`test_calc_arrival_fractional_years`**, **`test_calc_arrival_negative_years`**, **`test_calc_arrival_invalid_date_type`**
-    *   **Inputs**: Departure `datetime` object and travel time (years).
-    *   **Outputs/Side Effects**: Call `main.calc_arrival` and assert the calculated arrival `datetime`, including handling fractional and negative years, and `None` for invalid date types.
-*   **`test_convert_date_valid`**, **`test_convert_date_invalid_format`**, **`test_convert_date_non_string_input`**
-    *   **Inputs**: Date string.
-    *   **Outputs/Side Effects**: Call `main.convert_date` and assert the converted `datetime` object, or raise `ValueError` for incorrect format and `TypeError` for non-string inputs.
+### Dependencies:
 
-### Dependencies
-*   `pytest`: Testing framework.
-*   `math`: For mathematical functions (e.g., `sqrt`).
-*   `datetime`, `timedelta` (from `datetime` module): For date and time manipulation.
-*   `patch`, `MagicMock` (from `unittest.mock` module): For creating mock objects and patching modules/functions.
-*   `main`: The application module being tested.
-*   `constants`: A module containing constants, specifically `C_LIGHT_MPS` for speed of light.
+*   `pytest`: The testing framework.
+*   `math`: For mathematical functions like `sqrt`.
+*   `datetime`, `timedelta` (from `datetime`): For date and time manipulation.
+*   `patch`, `MagicMock`, `call` (from `unittest.mock`): For creating and managing mock objects.
+*   `main`: The module under test.
+*   `constants`: Provides shared constant values, like `C_LIGHT_MPS`.
+*   `celestial_data`: Imported, primarily for mocking purposes within the `main` module's context.
+```
+
+---
+
+
+## `tests/test_trajectory_planner.py`
+
+This file, `tests/test_trajectory_planner.py`, contains unit tests for the `TrajectoryPlanner` class, specifically focusing on its initialization and the `plan_hohmann_trajectory` method. It uses mocking to isolate the `TrajectoryPlanner` logic from its external data and calculation dependencies.
+
+### Key Components:
+
+*   **`mock_celestial_data_for_planner` (pytest fixture)**:
+    *   **Inputs**: None directly, but configures a mock for `celestial_data.get_celestial_body_data` that takes a celestial body `name`.
+    *   **Outputs/Side effects**: Returns a dictionary containing predefined mock data for 'Sun', 'Earth', 'Mars', and 'Jupiter', or `None` if the body is not in the mock list. This mock is yielded for use in tests.
+*   **`mock_orbital_mechanics` (pytest fixture)**:
+    *   **Inputs**: None.
+    *   **Outputs/Side effects**: Mocks `orbital_mechanics.calculate_hohmann_transfer_delta_v` to return a fixed `(1000.0, 2000.0, 3000.0)` tuple and `orbital_mechanics.calculate_hohmann_transfer_time_of_flight` to return `100 * 24 * 3600` seconds (100 days). The mock objects are yielded.
+*   **Tests for `TrajectoryPlanner.__init__`**:
+    *   **Inputs**: Primarily uses the `mock_celestial_data_for_planner` fixture.
+    *   **Outputs/Side effects**: Contains multiple test functions to ensure `TrajectoryPlanner` initializes correctly when Sun data is valid, and raises appropriate `ValueError` or `AttributeError` exceptions when Sun data is missing, incomplete, or invalid (`gravitational_parameter_mu` field).
+*   **Tests for `TrajectoryPlanner.plan_hohmann_trajectory`**:
+    *   **Inputs**: Uses both `mock_celestial_data_for_planner` and `mock_orbital_mechanics` fixtures, and provides various string inputs for departure and arrival bodies.
+    *   **Outputs/Side effects**: Contains numerous test functions to verify:
+        *   Successful Hohmann transfer calculation between valid bodies (e.g., Earth to Mars), checking the correctness of returned `delta_v`, `travel_time_days`, and formatted `travel_time_h_m_s`.
+        *   Robust input validation for empty, whitespace-only, or non-string body names.
+        *   Handling of identical departure and arrival bodies.
+        *   Error handling for non-existent departure/arrival bodies or missing/invalid `semi_major_axis_from_sun` data.
+        *   Graceful error reporting when underlying `orbital_mechanics` functions raise expected (`ValueError`) or unexpected exceptions.
+        *   Accurate formatting of travel time, including fractional days.
+
+### Dependencies:
+
+*   `pytest`: Testing framework for test execution, fixtures, and assertions (`pytest.approx`, `pytest.raises`).
+*   `unittest.mock.patch`, `unittest.mock.MagicMock`: For creating mock objects and patching dependencies.
+*   `datetime.timedelta`: Imported, likely used by the `TrajectoryPlanner` class for time calculations and formatting.
+*   `math`: Imported, likely used by the `TrajectoryPlanner` or its dependencies for mathematical operations.
+*   `trajectory_planner`: The main module containing the class under test.
+*   `celestial_data`: A module containing functions (e.g., `get_celestial_body_data`) that `TrajectoryPlanner` depends on, which are mocked in these tests.
+*   `orbital_mechanics`: A module containing functions (e.g., `calculate_hohmann_transfer_delta_v`, `calculate_hohmann_transfer_time_of_flight`) that `TrajectoryPlanner` depends on, which are mocked in these tests.
+*   `constants`: Imported, likely a dependency for `TrajectoryPlanner` or its related modules, but not directly mocked or asserted in this test file.
 
 ---
 
@@ -498,30 +548,28 @@ This file tests the `main.py` module by mocking its external dependencies to ver
 ## `trajectory_planner.py`
 
 ```markdown
-## File Analysis: `trajectory_planner.py`
+This file defines a `TrajectoryPlanner` class that serves as a high-level interface for planning interplanetary trajectories, specifically focusing on Hohmann transfers between celestial bodies orbiting the Sun. It orchestrates calls to underlying orbital mechanics functions and celestial data to calculate optimal paths.
 
-### Purpose
-This file defines the `TrajectoryPlanner` class, which serves as a high-level interface for planning interplanetary trajectories. It orchestrates calls to underlying orbital mechanics functions to calculate optimal paths, specifically focusing on Hohmann transfers for minimum energy.
+### Key Components:
 
-### Key Components
 *   **Class: `TrajectoryPlanner`**
     *   **`__init__(self)`**
-        *   **Inputs:** None (initializes `self` object).
-        *   **Outputs/Side Effects:** Fetches the Sun's gravitational parameter (`mu_sun`) from the `celestial_data` module and stores it. Raises `ValueError` or `AttributeError` if Sun data is missing or incomplete.
+        *   **Inputs**: None directly; internally retrieves 'Sun' data from `celestial_data`.
+        *   **Outputs/Side Effects**: Initializes `self.mu_sun` (Sun's gravitational parameter). Raises `ValueError` or `AttributeError` if Sun data is not found or invalid.
     *   **`plan_hohmann_trajectory(self, departure_body_name: str, arrival_body_name: str) -> dict`**
-        *   **Inputs:** `departure_body_name` (string) and `arrival_body_name` (string) representing celestial bodies.
-        *   **Outputs:** A dictionary containing detailed trajectory information, including departure/arrival bodies, transfer type ("Hohmann Transfer"), total delta-v in m/s, total travel time in days and a formatted string, a success flag, and an error message if applicable.
-        *   **Side Effects:** Retrieves orbital data from `celestial_data`, calls `orbital_mechanics` functions to calculate delta-v and time of flight, and formats the results. Includes extensive input validation.
+        *   **Inputs**: `departure_body_name` (str), `arrival_body_name` (str) - names of celestial bodies.
+        *   **Outputs**: A dictionary containing trajectory details such as `total_delta_v_mps`, `travel_time_days`, `travel_time_h_m_s`, and a `success` status with optional `error` message. Returns an error dictionary if inputs are invalid or data is missing/incorrect.
 *   **Main Execution Block (`if __name__ == '__main__':`)**
-    *   **Inputs:** Hardcoded string names for celestial bodies (e.g., "Earth", "Mars", "Jupiter", "Pluto").
-    *   **Outputs/Side Effects:** Demonstrates the `TrajectoryPlanner`'s functionality by planning example trajectories and printing the results or any encountered errors to the console.
+    *   **Inputs**: Hardcoded example calls to `plan_hohmann_trajectory` with various valid and invalid body names.
+    *   **Outputs/Side Effects**: Prints the results of the planned trajectories (or error messages) to the console for demonstration and testing purposes.
 
-### Dependencies
+### Dependencies:
+
 *   `math`
 *   `datetime.timedelta`
-*   `orbital_mechanics` (local module)
-*   `celestial_data` (local module)
-*   `constants.G_GRAVITATIONAL` (imported from `constants`, though `mu_sun` is sourced from `celestial_data` directly in this file's implementation).
+*   `orbital_mechanics` (custom module for core orbital calculations)
+*   `celestial_data` (custom module for retrieving celestial body properties)
+*   `constants.G_GRAVITATIONAL` (imported, but not directly used within the `TrajectoryPlanner` class in this file, likely used by `orbital_mechanics`)
 ```
 
 ---
