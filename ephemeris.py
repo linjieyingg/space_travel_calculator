@@ -8,7 +8,7 @@ from orbital_mechanics import calculate_gravitational_parameter # Only mu is nee
 J2000_EPOCH = datetime.datetime(2000, 1, 1, 12, 0, 0, tzinfo=datetime.timezone.utc)
 
 # --- Internal Helper for Sun's Gravitational Parameter ---
-_MU_SUN_CACHE = None
+_MU_SUN_CACHE = None # Initialized at module level as requested
 
 def _get_mu_sun() -> float:
     """
@@ -21,7 +21,7 @@ def _get_mu_sun() -> float:
     Raises:
         ValueError: If the Sun's gravitational parameter cannot be determined.
     """
-    global _MU_SUN_CACHE
+    global _MU_SUN_CACHE # Placed as the very first executable statement as requested
     if _MU_SUN_CACHE is None:
         try:
             # Prefer using orbital_mechanics function which handles retrieval logic
