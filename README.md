@@ -9,7 +9,7 @@
 
 **Files Analyzed:** 23
 
-**Last Updated:** 2025-11-18 22:51:18
+**Last Updated:** 2025-11-18 23:00:20
 
 ---
 
@@ -110,26 +110,31 @@ This module, `constants.py`, serves as a central repository for universal physic
 
 ## `ephemeris.py`
 
-This file, `ephemeris.py`, provides functions to calculate the approximate heliocentric orbital state (distance and angular position) of celestial bodies using a simplified circular orbit model based on Kepler's Third Law. It serves as a basic ephemeris calculator, specifically excluding the Sun and Earth's Moon from its direct calculations.
+This Python file, `ephemeris.py`, calculates the approximate heliocentric (Sun-centered) orbital state (distance and angular position) for celestial bodies using a simplified circular orbit model based on Kepler's laws. It provides a foundational mechanism for basic astronomical position estimations for planets.
 
 ### Key Components:
 
-*   **`J2000_EPOCH`**: A constant `datetime.datetime` object representing the J2000.0 epoch in UTC.
+*   **`J2000_EPOCH`**: A `datetime.datetime` constant representing the J2000.0 epoch in UTC, used as a reference for time difference calculations.
 *   **`_get_mu_sun()`**:
     *   **Inputs**: None.
-    *   **Outputs**: Returns the Sun's gravitational parameter (μ) as a `float` (m^3/s^2), caching the value for efficiency. Raises `ValueError` if the parameter cannot be retrieved.
+    *   **Outputs**: Returns the Sun's gravitational parameter (mu) as a float (m^3/s^2), internally caching the result for efficiency. Raises `ValueError` if the parameter cannot be retrieved or is invalid.
 *   **`get_heliocentric_state(body_name: str, date: datetime.datetime)`**:
-    *   **Inputs**: `body_name` (string, e.g., 'Mars'), `date` (timezone-aware or naive `datetime.datetime` object).
-    *   **Outputs**: Returns a `dict` containing `"distance_from_sun_m"` (float) and `"angular_position_rad"` (float, 0 to 2π). Raises `ValueError` for invalid inputs, unsupported bodies (Sun, Moon), or missing data.
+    *   **Inputs**:
+        *   `body_name` (str): The case-insensitive name of a celestial body (e.g., 'Mars').
+        *   `date` (datetime.datetime): The specific date and time (timezone-aware recommended, naive dates are converted to UTC).
+    *   **Outputs**: A dictionary containing:
+        *   `"distance_from_sun_m"` (float): Approximate distance from the Sun in meters.
+        *   `"angular_position_rad"` (float): Approximate angular position in radians (0 to 2*pi).
+    *   **Side Effects**: Raises `ValueError` for invalid inputs, missing celestial data, or if the calculation is requested for the Sun or Moon (which are explicitly not supported by this simplified model).
 *   **`if __name__ == '__main__':`**:
-    *   **Purpose**: Contains a self-test suite demonstrating the usage of `get_heliocentric_state` with various valid and invalid inputs, printing the results and caught errors.
+    *   **Purpose**: Contains a comprehensive self-test suite demonstrating the `get_heliocentric_state` function with valid inputs, invalid inputs, edge cases (past dates, naive datetimes), and unsupported bodies, printing results and caught errors.
 
 ### Dependencies:
 
 *   `math`
 *   `datetime`
-*   `celestial_data` (for `get_celestial_body_data`)
-*   `orbital_mechanics` (for `calculate_gravitational_parameter`, `calculate_elliptical_orbital_period`)
+*   `celestial_data` (specifically `get_celestial_body_data`)
+*   `orbital_mechanics` (specifically `calculate_gravitational_parameter`, `calculate_elliptical_orbital_period`)
 
 ---
 
@@ -348,46 +353,46 @@ This Python script implements a command-line Tic-Tac-Toe game for two players. I
 
 ## `main.py`
 
-This Python script (`main.py`) serves as a space travel calculator that determines the time, fuel, and cost required for a user to reach a chosen celestial destination, incorporating relativistic effects, orbital mechanics, and fuel requirements based on user inputs.
+## Purpose
+This file `main.py` is the core execution script for a space travel calculator. It gathers user input for a celestial journey, calculates travel time (accounting for relativistic effects), user's age upon arrival, fuel requirements, and estimated arrival date, then provides a summary and logs the travel details.
 
-### Key Components
+## Key Components
 
-*   **`main()` function**:
-    *   **Inputs**: Interactive user inputs for departure/arrival bodies, spacecraft dry mass, engine specific impulse, departure date, user age, and fuel price per unit.
-    *   **Outputs/Side Effects**: Prints a detailed travel summary to the console and logs travel details using `travel_logger`. It orchestrates all other calculations.
-*   **`calc_time_earth(years_traveler_frame, average_speed_ms)`**:
-    *   **Inputs**: Travel time in the traveler's frame (years) and average spacecraft speed (m/s).
-    *   **Outputs**: Travel time in Earth's reference frame (years), accounting for relativistic time dilation. Returns `float('inf')` for zero speed or traveler's time on error/invalid speed.
-*   **`calc_age(years_travel_time, starting_age)`**:
-    *   **Inputs**: Total travel time (years) and the user's starting age.
-    *   **Outputs**: The user's calculated age upon arrival.
-*   **`calc_arrival(departure_date, years_earth_frame)`**:
-    *   **Inputs**: The departure `datetime` object and travel time in Earth's frame (years).
-    *   **Outputs**: An estimated arrival `datetime` object, or `None` if the calculation fails or results in an out-of-range date.
-*   **`convert_date(date_str)`**:
-    *   **Inputs**: A date string in 'YYYY-MM-DD' format.
-    *   **Outputs**: A `datetime` object representing the parsed date.
-*   **Sections within `main()`**:
-    *   **Input Collection**: Gathers and validates all necessary user inputs for the calculation.
-    *   **Trajectory Planning**: Uses `TrajectoryPlanner` to determine required Delta-V, travel time (traveler's frame), and transfer type.
-    *   **Fuel Calculation**: Employs `fuel_optimizer` and `fuel_calc` to compute the total fuel mass needed and its corresponding cost.
-    *   **Time and Age Calculations**: Utilizes the custom `calc_time_earth`, `calc_age`, and `calc_arrival` functions to compute relativistic travel time, user's arrival age, and estimated arrival date.
-    *   **Output Summary**: Presents all calculated results in a formatted output to the user.
-    *   **Log Travel Details**: Records the key parameters of the simulated journey using the `travel_logger` module.
+### `calc_time_earth`
+*   **Inputs**: `years_traveler_frame` (float, travel time in traveler's reference frame), `average_speed_ms` (float, average speed in m/s).
+*   **Outputs**: `float` representing travel time in Earth's reference frame in years.
+*   **Side Effects**: Prints warnings for invalid or relativistic speeds.
 
-### Dependencies
+### `calc_age`
+*   **Inputs**: `years_travel_time` (float, total travel time), `starting_age` (int, user's current age).
+*   **Outputs**: `float` representing the user's age upon arrival.
+*   **Side Effects**: Raises `ValueError` for non-positive or non-numeric inputs.
 
+### `calc_arrival`
+*   **Inputs**: `departure_date` (datetime object), `years_earth_frame` (float, total travel years in Earth's frame).
+*   **Outputs**: `datetime` object representing the estimated arrival date, or `None` if calculation fails.
+*   **Side Effects**: Prints warnings/errors if the date calculation results in an overflow or invalid input.
+
+### `convert_date`
+*   **Inputs**: `date_str` (string in 'YYYY-MM-DD' format).
+*   **Outputs**: `datetime` object.
+
+### `main()` function
+*   **Inputs**: Interactive user inputs from console for destination, spacecraft parameters (dry mass, engine specific impulse), departure date, user's age, and fuel price.
+*   **Outputs**: Prints a detailed travel summary to the console, including required Delta-V, fuel mass, fuel cost, travel times (traveler's and Earth's frames), arrival age, and estimated arrival date.
+*   **Side Effects**: Orchestrates the entire calculation flow, calls various modules (`TrajectoryPlanner`, `fuel_optimizer`, `fuel_calc`, `travel_logger`, `celestial_data`, `checks`), and attempts to save travel details to a log.
+
+## Dependencies
 *   `math`
-*   `datetime` (from `datetime`)
-*   `timedelta` (from `datetime`)
+*   `datetime`, `timedelta` (from `datetime` module)
 *   `checks as c` (local module for input validation)
 *   `celestial_data` (local module for celestial body information)
-*   `orbital_mechanics` (local module, `calculate_circular_orbital_velocity` is imported but not directly used in `main`)
-*   `trajectory_planner` (local module, provides `TrajectoryPlanner` class)
+*   `orbital_mechanics` (local module, imported but not directly used in `main`)
+*   `trajectory_planner.TrajectoryPlanner` (local module for trajectory calculations)
 *   `propulsion_system` (local module, imported but not directly used in `main`)
 *   `fuel_calc` (local module for fuel cost calculations)
-*   `travel_logger` (local module for logging travel details)
-*   `constants` (local module, specifically `C_LIGHT_MPS`)
+*   `travel_logger` (local module for saving travel logs)
+*   `constants.C_LIGHT_MPS` (local module for physical constants)
 *   `fuel_optimizer` (local module for optimizing fuel calculations)
 
 ---
@@ -584,40 +589,48 @@ This file, `tests/test_main.py`, is a comprehensive Pytest suite designed to tes
 
 ## `tests/test_trajectory_planner.py`
 
-This file contains unit tests for the `TrajectoryPlanner` class, verifying its initialization and the `plan_trajectory` method, specifically focusing on Hohmann transfers. It uses mock objects to isolate `TrajectoryPlanner` from its dependencies and tests various scenarios, including successful planning, input validation, error handling, and the system's reliance on dynamic (ephemeris) versus static celestial data.
+This file contains unit tests for the `TrajectoryPlanner` class, verifying its initialization and its `plan_trajectory` method, specifically focusing on Hohmann transfer calculations. It extensively uses mocking to isolate the `TrajectoryPlanner` logic from its external data and calculation dependencies.
 
 ### Key Components:
 
-*   **`mock_celestial_data_for_planner` (fixture)**
-    *   **Inputs:** None (patches `trajectory_planner.celestial_data.get_celestial_body_data`).
-    *   **Outputs/Side Effects:** Mocks the `get_celestial_body_data` function to return predefined dictionary data for celestial bodies like Sun, Earth, Mars, and Jupiter.
-*   **`mock_orbital_mechanics` (fixture)**
-    *   **Inputs:** None (patches `trajectory_planner.orbital_mechanics.calculate_hohmann_transfer_delta_v` and `calculate_hohmann_transfer_time_of_flight`).
-    *   **Outputs/Side Effects:** Mocks these orbital mechanics functions to return fixed delta-V and time-of-flight values.
-*   **`mock_ephemeris_get_body_orbital_state` (fixture)**
-    *   **Inputs:** None (patches `trajectory_planner.ephemeris.get_body_orbital_state`).
-    *   **Outputs/Side Effects:** Mocks the `get_body_orbital_state` function to return simulated `distance_from_sun_m` data for specific bodies and dates.
-*   **`test_trajectory_planner_init_*` functions**
-    *   **Inputs:** `mock_celestial_data_for_planner` fixture.
-    *   **Outputs/Side Effects:** Instantiate `TrajectoryPlanner` and assert correct initialization (`mu_sun` value) or raise expected `ValueError` or `AttributeError` for invalid or missing Sun data.
-*   **`test_plan_trajectory_hohmann_*` functions**
-    *   **Inputs:** Departure/arrival body names (strings), `trajectory_type` (string, defaults to "Hohmann"), optional `departure_date` (datetime object). These tests use the various mock fixtures.
-    *   **Outputs/Side Effects:** Call `planner.plan_trajectory` and assert the `success` status, resulting `delta_v` and `travel_time` (including formatted string), and error messages. They also verify that the correct mock functions were called with appropriate arguments (e.g., ephemeris data used if available, fallback to static data if not, or failure if both are insufficient).
-*   **`test_plan_trajectory_default_type_hohmann_with_date`, `test_plan_trajectory_unsupported_type_with_date`, `test_plan_trajectory_invalid_type_non_string_with_date` functions**
-    *   **Inputs:** Similar to `test_plan_trajectory_hohmann_*` but with varying `trajectory_type` parameters.
-    *   **Outputs/Side Effects:** Verify the default behavior when `trajectory_type` is not specified, and proper error handling for unsupported or invalid trajectory types.
+*   **`mock_celestial_data_for_planner` (pytest fixture)**:
+    *   **Inputs**: Patches `trajectory_planner.celestial_data.get_celestial_body_data`.
+    *   **Outputs/Side Effects**: Returns mocked static data for celestial bodies (Sun, Earth, Mars, Jupiter), including mass, radius, gravitational parameter, semi-major axis, and orbital period.
+*   **`mock_orbital_mechanics` (pytest fixture)**:
+    *   **Inputs**: Patches `trajectory_planner.orbital_mechanics.calculate_hohmann_transfer_delta_v` and `calculate_hohmann_transfer_time_of_flight`.
+    *   **Outputs/Side Effects**: Mocks these functions to return fixed, predetermined values for delta-v and time-of-flight.
+*   **`mock_ephemeris_get_body_orbital_state` (pytest fixture)**:
+    *   **Inputs**: Patches `trajectory_planner.ephemeris.get_body_orbital_state`.
+    *   **Outputs/Side Effects**: Mocks this function to return dynamic `distance_from_sun_m` for specific celestial bodies (Earth, Mars) based on a given date, simulating real-time ephemeris data.
+*   **`test_trajectory_planner_init_...` functions**:
+    *   **Inputs**: `mock_celestial_data_for_planner`.
+    *   **Outputs/Side Effects**: Test `TrajectoryPlanner`'s constructor, verifying successful initialization with valid Sun data and raising appropriate errors for missing or invalid data.
+*   **`test_plan_trajectory_hohmann_...` functions**:
+    *   **Inputs**: Fixtures (`mock_celestial_data_for_planner`, `mock_orbital_mechanics`, `mock_ephemeris_get_body_orbital_state`) and specific parameters for `plan_trajectory` (e.g., departure/arrival bodies, date, trajectory type).
+    *   **Outputs/Side Effects**: Validate the `plan_trajectory` method for Hohmann transfers under various scenarios, including:
+        *   Successful planning using dynamic ephemeris data.
+        *   Fallback to static celestial data when ephemeris is not used or fails.
+        *   Error handling for invalid inputs (empty/same bodies, non-existent bodies).
+        *   Error handling for failures in ephemeris data retrieval or orbital mechanics calculations.
+        *   Correct formatting of travel time.
+*   **`test_plan_trajectory_default_type_hohmann_with_date`**:
+    *   **Inputs**: Fixtures.
+    *   **Outputs/Side Effects**: Confirms that `plan_trajectory` defaults to "Hohmann Transfer" if no type is explicitly specified.
+*   **`test_plan_trajectory_unsupported_type_with_date` / `test_plan_trajectory_invalid_type_non_string_with_date`**:
+    *   **Inputs**: Fixtures.
+    *   **Outputs/Side Effects**: Verify that `plan_trajectory` correctly handles unsupported or invalid trajectory types.
 
 ### Dependencies:
 
 *   `pytest`: Testing framework.
-*   `unittest.mock.patch`, `MagicMock`, `call`: For mocking dependencies.
-*   `datetime.timedelta`, `datetime.datetime`: Date and time objects.
-*   `math`: (Implicitly used by patched modules, not directly in test code).
-*   `trajectory_planner`: The module containing the `TrajectoryPlanner` class under test.
-*   `celestial_data`: Mocked module.
-*   `orbital_mechanics`: Mocked module.
-*   `constants`: (Imported, but not directly used in these tests).
-*   `ephemeris`: (Implicitly mocked via `trajectory_planner.ephemeris`).
+*   `unittest.mock.patch`, `MagicMock`, `call`: For creating mocks and asserting calls.
+*   `datetime.timedelta`, `datetime.datetime`: For handling dates and time durations.
+*   `math`: Potentially used by the system under test, but not directly by test logic.
+*   `trajectory_planner` (relative import): The class being tested.
+*   `celestial_data` (relative import, mocked): Provides static celestial body information.
+*   `orbital_mechanics` (relative import, mocked): Provides orbital calculation functions.
+*   `constants` (relative import): General constants (not directly used in tests, likely by the SUT).
+*   `ephemeris` (indirectly imported and patched via `trajectory_planner.ephemeris`): Provides dynamic orbital state data.
 
 ---
 
@@ -625,29 +638,37 @@ This file contains unit tests for the `TrajectoryPlanner` class, verifying its i
 ## `trajectory_planner.py`
 
 ```markdown
-### Purpose
-This file defines the `TrajectoryPlanner` class, which provides a high-level interface for planning interplanetary trajectories, specifically Hohmann transfers. It orchestrates calls to orbital mechanics functions and uses an ephemeris to dynamically determine orbital positions based on a departure date, returning details like total delta-v and travel time.
+## TrajectoryPlanner.py Analysis
 
-### Key Components
+### 1. Purpose
+This file defines a `TrajectoryPlanner` class designed to compute interplanetary trajectories between celestial bodies. It orchestrates calls to lower-level orbital mechanics and ephemeris modules to calculate details like total delta-v and travel time, considering dynamic orbital positions on a specified departure date.
+
+### 2. Key Components
 
 *   **`TrajectoryPlanner` Class**:
     *   **`__init__(self)`**:
-        *   **Inputs**: None directly; retrieves Sun's gravitational parameter from `celestial_data`.
-        *   **Outputs/Side Effects**: Initializes `self.mu_sun`. Raises `ValueError` or `AttributeError` if Sun data is invalid or missing.
-    *   **`_plan_hohmann_trajectory(self, departure_body_name: str, arrival_body_name: str, departure_date: str) -> dict`**:
-        *   **Inputs**: Departure body name (string), arrival body name (string), and departure date (string in 'YYYY-MM-DD' format).
-        *   **Outputs**: A dictionary containing transfer details: `departure_body`, `arrival_body`, `transfer_type`, `total_delta_v_mps`, `travel_time_days`, `travel_time_h_m_s`, `success` (boolean), `error` (string or None), `departure_distance_from_sun_m`, `arrival_distance_from_sun_m`.
-        *   **Role**: Calculates a Hohmann transfer, dynamically fetching orbital distances from `ephemeris` for the specified date and then using `orbital_mechanics` to compute delta-v and travel time.
+        *   **Inputs**: None (retrieves Sun's gravitational parameter internally).
+        *   **Outputs/Side Effects**: Initializes `self.mu_sun` (Sun's gravitational parameter). Raises `ValueError` or `AttributeError` if Sun data is missing or invalid.
+    *   **`_plan_hohmann_trajectory(self, departure_body_name: str, arrival_body_name: str, departure_date: datetime) -> dict`**:
+        *   **Inputs**: Departure body name (string), arrival body name (string), departure date (datetime object).
+        *   **Outputs**: A dictionary containing trajectory details (transfer type, delta-v, travel time in days and H:M:S, success status, error message) and dynamic distances from the Sun.
+        *   **Side Effects**: Retrieves orbital states from `ephemeris` and calculates transfer parameters using `orbital_mechanics`.
+    *   **`_plan_direct_transfer(self, departure_body_name: str, arrival_body_name: str, departure_date: datetime) -> dict`**:
+        *   **Inputs**: Departure body name (string), arrival body name (string), departure date (datetime object).
+        *   **Outputs**: A dictionary indicating that this trajectory type is not yet implemented.
     *   **`plan_trajectory(self, departure_body_name: str, arrival_body_name: str, trajectory_type: str = 'Hohmann', **kwargs) -> dict`**:
-        *   **Inputs**: Departure body name (string), arrival body name (string), `trajectory_type` (string, defaults to 'Hohmann'), and `kwargs` which must include `departure_date` for Hohmann transfers.
-        *   **Outputs**: A dictionary with trajectory details (same structure as `_plan_hohmann_trajectory`).
-        *   **Role**: Acts as a public dispatcher, validating inputs and calling the appropriate private planning method (currently only `_plan_hohmann_trajectory`).
-*   **`if __name__ == '__main__':` block**:
-    *   **Role**: Contains example usage of the `TrajectoryPlanner` class, demonstrating successful trajectory planning and various error handling scenarios.
+        *   **Inputs**: Departure body name (string), arrival body name (string), trajectory type (string, default 'Hohmann'), and keyword arguments including `departure_date` (string in 'YYYY-MM-DD' format).
+        *   **Outputs**: A dictionary with trajectory details or an error message, based on the selected `trajectory_type`.
+        *   **Side Effects**: Acts as a dispatcher, validating inputs, parsing the departure date, and calling the appropriate internal planning method (`_plan_hohmann_trajectory` or `_plan_direct_transfer`).
 
-### Dependencies
+*   **`if __name__ == '__main__':` block**:
+    *   **Inputs**: Hardcoded test cases for various trajectory planning scenarios, including valid, invalid, and unimplemented types.
+    *   **Outputs/Side Effects**: Prints the results of the planned trajectories or error messages to the console, demonstrating the class's functionality and error handling.
+
+### 3. Dependencies
 *   `math`
-*   `datetime.timedelta`
+*   `datetime` (from `datetime` module)
+*   `timedelta` (from `datetime` module)
 *   `orbital_mechanics` (local module)
 *   `celestial_data` (local module)
 *   `ephemeris` (local module)
