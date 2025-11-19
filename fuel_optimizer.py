@@ -43,7 +43,7 @@ def optimize_fuel_for_trajectory(
                                         Isp is a measure of the efficiency of a rocket.
         **trajectory_args: Additional keyword arguments to pass to the trajectory planner.
                          (e.g., launch_date, arrival_date, intermediate_maneuvers,
-                         parking_orbit_altitude). Note: TrajectoryPlanner.plan_hohmann_trajectory's
+                         parking_orbit_altitude). Note: TrajectoryPlanner.plan_trajectory's
                          actual signature might not support all arbitrary kwargs, which will raise
                          a ValueError if passed.
 
@@ -65,10 +65,11 @@ def optimize_fuel_for_trajectory(
     if not isinstance(trajectory_type, str) or not trajectory_type:
         raise ValueError("Trajectory type must be a non-empty string.")
 
-    # Enforce 'Hohmann' as plan_hohmann_trajectory is the method used
+    # Enforce 'Hohmann' as plan_trajectory is expected to support it,
+    # and this optimizer is currently designed for Hohmann transfers.
     if trajectory_type.lower() != 'hohmann':
         raise ValueError(f"Unsupported trajectory type: '{trajectory_type}'. "
-                         "Only 'Hohmann' is supported for planning at this time via TrajectoryPlanner.")
+                         "Only 'Hohmann' is supported for planning at this time via TrajectoryPlanner in fuel_optimizer.")
 
     if not isinstance(spacecraft_dry_mass, (int, float)) or spacecraft_dry_mass <= 0:
         raise ValueError("Spacecraft dry mass must be a positive numeric value.")
@@ -80,19 +81,19 @@ def optimize_fuel_for_trajectory(
         planner = TrajectoryPlanner()
 
         # 1. Plan the trajectory to get the required Delta-V
-        # The prompt explicitly states to pass **trajectory_args to plan_hohmann_trajectory.
-        # This might cause a TypeError if TrajectoryPlanner's signature doesn't match the kwargs.
         try:
-            trajectory_result = planner.plan_hohmann_trajectory(
-                departure_body_name=start_body,
-                arrival_body_name=end_body,
+            trajectory_result = planner.plan_trajectory(
+                start_body=start_body,
+                end_body=end_body,
+                trajectory_type=trajectory_type, # Pass the trajectory_type
                 **trajectory_args
             )
         except TypeError as te:
-            # Catch TypeError if plan_hohmann_trajectory's signature doesn't accept all **trajectory_args
+            # Catch TypeError if plan_trajectory's signature doesn't accept all **trajectory_args
+            # Updated message to reflect the new function name
             raise ValueError(
                 f"Trajectory planner method signature mismatch: "
-                f"plan_hohmann_trajectory may not accept all provided trajectory arguments. "
+                f"plan_trajectory may not accept all provided trajectory arguments. "
                 f"Details: {te}"
             ) from te
         except Exception as e:
