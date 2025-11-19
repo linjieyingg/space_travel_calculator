@@ -72,25 +72,45 @@ def mock_celestial_data():
 @pytest.fixture
 def mock_ephemeris():
     """
-    Fixture to mock ephemeris.get_heliocentric_state for _get_body_orbital_velocity_vector.
-    Provides simplified heliocentric states for Earth and Mars for specific dates.
+    Fixture to mock ephemeris.get_heliocentric_state.
+    Provides 3-element position and velocity tuples for Earth and Mars at a specific date.
+    This fixture assumes that ephemeris.get_heliocentric_state will return a dictionary
+    containing 'position_vector_m' and 'velocity_vector_mps'.
     """
+    # Using Sun's mu from mock_celestial_data for consistency in calculating these hardcoded values
+    mu_sun = 1.32712440018e20 # m^3/s^2
+
+    # Earth's data for 2023-01-01 (simplified circular, at +X axis, theta = 0)
+    r_earth = 1.496e11 # m
+    v_mag_earth = math.sqrt(mu_sun / r_earth) # m/s
+    # Position vector (r*cos(theta), r*sin(theta), 0)
+    pos_earth_vec = (r_earth, 0.0, 0.0)
+    # Velocity vector (-v_mag*sin(theta), v_mag*cos(theta), 0)
+    vel_earth_vec = (0.0, v_mag_earth, 0.0) # ~29784.85 m/s
+
+    # Mars' data for 2023-01-01 (simplified circular, at -X axis, theta = pi)
+    r_mars = 2.279e11 # m
+    v_mag_mars = math.sqrt(mu_sun / r_mars) # m/s
+    # Position vector (r*cos(theta), r*sin(theta), 0)
+    pos_mars_vec = (-r_mars, 0.0, 0.0)
+    # Velocity vector (-v_mag*sin(theta), v_mag*cos(theta), 0)
+    vel_mars_vec = (0.0, -v_mag_mars, 0.0) # ~-24128.53 m/s
+
     mock_states = {
         ('earth', datetime(2023, 1, 1, 0, 0, 0, tzinfo=None)): {
-            'distance_from_sun_m': 1.496e11,
-            'angular_position_rad': 0.0  # simplified: Earth at 0 radians on Jan 1
+            'position_vector_m': pos_earth_vec,
+            'velocity_vector_mps': vel_earth_vec,
         },
         ('mars', datetime(2023, 1, 1, 0, 0, 0, tzinfo=None)): {
-            'distance_from_sun_m': 2.279e11,
-            'angular_position_rad': math.pi  # simplified: Mars 180 deg from Earth on Jan 1
+            'position_vector_m': pos_mars_vec,
+            'velocity_vector_mps': vel_mars_vec,
         }
     }
 
     # Patch ephemeris.get_heliocentric_state in the orbital_mechanics module's context
     with patch('orbital_mechanics.ephemeris.get_heliocentric_state') as mock_get_state:
         def side_effect(body_name, date):
-            # Normalizing date to be naive for lookup, as `ephemeris` function takes naive
-            # and internally converts to UTC. Here we simulate the state it *would* return.
+            # Normalizing date to be naive for lookup
             naive_date = date.replace(tzinfo=None) if date.tzinfo else date
             return mock_states.get((body_name.lower(), naive_date))
         mock_get_state.side_effect = side_effect
@@ -361,27 +381,18 @@ def test_calculate_escape_velocity_invalid_inputs():
 
 def test_get_body_orbital_velocity_vector_valid(mock_celestial_data, mock_ephemeris):
     """
-    Tests _get_body_orbital_velocity_vector with mocked ephemeris data, assuming a circular orbit model.
-    Verifies the calculated velocity vector's magnitude and direction.
+    Tests _get_body_orbital_velocity_vector with mocked ephemeris data.
+    Verifies that the function correctly returns the velocity vector provided by the mock.
+    This assumes _get_body_orbital_velocity_vector is updated to extract 'velocity_vector_mps' directly.
     """
     body_name = 'Earth'
     test_date = datetime(2023, 1, 1, 0, 0, 0, tzinfo=None)
-    mu_sun = mock_celestial_data.side_effect('sun')['gravitational_parameter_mu']
+    mu_sun = mock_celestial_data.side_effect('sun')['gravitational_parameter_mu'] # Mu is still a required input
 
+    # Get the expected velocity vector from the mock's internal state
     ephemeris_state = mock_ephemeris.side_effect(body_name, test_date)
-    r = ephemeris_state['distance_from_sun_m']
-    theta = ephemeris_state['angular_position_rad']
-
-    # Expected circular orbital velocity magnitude
-    v_mag_expected = calculate_circular_orbital_velocity(mu_sun, r)
-
-    # For a simplified 2D circular orbit in the XY-plane, if position is (r*cos(theta), r*sin(theta), 0),
-    # the tangential velocity vector (counter-clockwise) is (-v_mag*sin(theta), v_mag*cos(theta), 0).
-    vx_expected = -v_mag_expected * math.sin(theta)
-    vy_expected = v_mag_expected * math.cos(theta)
-    vz_expected = 0.0
-
-    expected_velocity_vector = (vx_expected, vy_expected, vz_expected)
+    expected_velocity_vector = ephemeris_state['velocity_vector_mps']
+    expected_v_mag = vector_magnitude(expected_velocity_vector)
 
     velocity_vector = _get_body_orbital_velocity_vector(body_name, test_date, mu_sun)
 
@@ -389,20 +400,48 @@ def test_get_body_orbital_velocity_vector_valid(mock_celestial_data, mock_epheme
     assert velocity_vector[0] == pytest.approx(expected_velocity_vector[0])
     assert velocity_vector[1] == pytest.approx(expected_velocity_vector[1])
     assert velocity_vector[2] == pytest.approx(expected_velocity_vector[2])
-    assert vector_magnitude(velocity_vector) == pytest.approx(v_mag_expected)
+    assert vector_magnitude(velocity_vector) == pytest.approx(expected_v_mag)
 
 def test_get_body_orbital_velocity_vector_ephemeris_not_found(mock_celestial_data, mock_ephemeris):
     """
     Tests _get_body_orbital_velocity_vector when no ephemeris data is available for the given body/date.
+    Assumes _get_body_orbital_velocity_vector has been updated to expect structured data.
     """
     mock_ephemeris.side_effect = lambda body, date: None  # Simulate no ephemeris data
 
-    body_name = 'Jupiter'  # A body not in the hardcoded mock_ephemeris_states
+    body_name = 'Jupiter'
     test_date = datetime(2023, 1, 1, 0, 0, 0, tzinfo=None)
     mu_sun = mock_celestial_data.side_effect('sun')['gravitational_parameter_mu']
 
-    with pytest.raises(ValueError, match=f"Ephemeris data not available for {body_name} on {test_date.strftime('%Y-%m-%d')}"):
+    with pytest.raises(ValueError, match=f"Ephemeris data not available for {body_name}"):
         _get_body_orbital_velocity_vector(body_name, test_date, mu_sun)
+
+def test_get_body_orbital_velocity_vector_missing_velocity_data(mock_celestial_data, mock_ephemeris):
+    """
+    Tests _get_body_orbital_velocity_vector when ephemeris returns data but without 'velocity_vector_mps'.
+    Assumes _get_body_orbital_velocity_vector has been updated to expect this key.
+    """
+    mock_ephemeris.side_effect = lambda name, date: {'position_vector_m': (1,2,3)} if name.lower() == 'badbody' else None
+    body_name = 'BadBody'
+    test_date = datetime(2023, 1, 1, 0, 0, 0, tzinfo=None)
+    mu_sun = mock_celestial_data.side_effect('sun')['gravitational_parameter_mu']
+
+    with pytest.raises(ValueError, match=f"Required 'velocity_vector_mps' missing for {body_name} in ephemeris data."):
+        _get_body_orbital_velocity_vector(body_name, test_date, mu_sun)
+
+def test_get_body_orbital_velocity_vector_invalid_velocity_data_format(mock_celestial_data, mock_ephemeris):
+    """
+    Tests _get_body_orbital_velocity_vector when ephemeris returns a malformed 'velocity_vector_mps'.
+    Assumes _get_body_orbital_velocity_vector has been updated to validate the format.
+    """
+    mock_ephemeris.side_effect = lambda name, date: {'velocity_vector_mps': [1,2]} if name.lower() == 'badbody' else None
+    body_name = 'BadBody'
+    test_date = datetime(2023, 1, 1, 0, 0, 0, tzinfo=None)
+    mu_sun = mock_celestial_data.side_effect('sun')['gravitational_parameter_mu']
+
+    with pytest.raises(ValueError, match=f"Velocity vector must be a 3-element numeric tuple/list for {body_name}."):
+        _get_body_orbital_velocity_vector(body_name, test_date, mu_sun)
+
 
 def test_get_body_orbital_velocity_vector_invalid_mu(mock_celestial_data, mock_ephemeris):
     """
@@ -411,6 +450,12 @@ def test_get_body_orbital_velocity_vector_invalid_mu(mock_celestial_data, mock_e
     body_name = 'Earth'
     test_date = datetime(2023, 1, 1, 0, 0, 0, tzinfo=None)
     invalid_mu = 0
+
+    # Ensure ephemeris returns valid data, as the mu check happens before accessing it.
+    mock_ephemeris.side_effect = lambda body, date: {
+        'position_vector_m': (1.496e11, 0.0, 0.0),
+        'velocity_vector_mps': (0.0, 29784.85, 0.0)
+    } if body.lower() == 'earth' else None
 
     with pytest.raises(ValueError, match="Gravitational parameter \(mu\) must be positive"):
         _get_body_orbital_velocity_vector(body_name, test_date, invalid_mu)
