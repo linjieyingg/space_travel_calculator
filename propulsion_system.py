@@ -4,6 +4,29 @@ import math
 STANDARD_GRAVITY = 9.80665  # m/s^2, standard acceleration due to gravity
 
 
+def calculate_exhaust_velocity(specific_impulse: float) -> float:
+    """
+    Calculates the effective exhaust velocity of an engine given its specific impulse.
+
+    The effective exhaust velocity is a measure of the efficiency of a rocket engine
+    and is directly proportional to its specific impulse.
+
+    Args:
+        specific_impulse (float): The engine's specific impulse in seconds (s).
+                                  Must be a positive numeric value.
+
+    Returns:
+        float: The effective exhaust velocity in meters/second (m/s).
+
+    Raises:
+        ValueError: If `specific_impulse` is not a positive numeric value.
+    """
+    if not isinstance(specific_impulse, (int, float)) or specific_impulse <= 0:
+        raise ValueError("Specific impulse must be a positive numeric value.")
+
+    return specific_impulse * STANDARD_GRAVITY
+
+
 def calculate_required_fuel_mass(
     delta_v: float,
     dry_mass: float,
@@ -54,9 +77,8 @@ def calculate_required_fuel_mass(
             raise ValueError("Exhaust velocity must be a positive numeric value.")
         effective_exhaust_velocity = exhaust_velocity
     elif specific_impulse is not None:
-        if not isinstance(specific_impulse, (int, float)) or specific_impulse <= 0:
-            raise ValueError("Specific impulse must be a positive numeric value.")
-        effective_exhaust_velocity = specific_impulse * STANDARD_GRAVITY
+        # Utilize the new function for consistency and validation
+        effective_exhaust_velocity = calculate_exhaust_velocity(specific_impulse)
     else:
         raise ValueError("Either specific_impulse or exhaust_velocity must be provided.")
 
