@@ -9,147 +9,158 @@
 
 **Files Analyzed:** 23
 
-**Last Updated:** 2025-11-19 16:35:20
+**Last Updated:** 2025-12-02 16:28:30
 
 ---
 
 
 ## `celestial_bodies.py`
 
-```markdown
-### Purpose
-This module stores structured data for solar system celestial bodies, including their physical properties, gravitational parameters, and orbital characteristics. It serves as a data source for orbital mechanics calculations and simplified space travel planning.
+This module provides a structured dataset of solar system celestial bodies, including their physical properties and orbital characteristics, primarily for orbital mechanics calculations and simplified space travel planning.
 
-### Key Components
-*   **`GRAVITATIONAL_CONSTANT`**: A float constant representing the universal gravitational constant in m^3 kg^-1 s^-2, provided for reference.
-*   **`SOLAR_SYSTEM_BODIES_DATA`**: A dictionary containing comprehensive data for various celestial bodies (Sun, planets, Moon). Each entry is a dictionary with keys for 'mass', 'radius', 'gravitational_parameter_mu', 'semi_major_axis_from_sun', and 'average_distance_from_earth'.
-*   **`get_celestial_body_data(name: str)` function**:
-    *   **Inputs**: `name` (str), the case-insensitive name of a celestial body.
-    *   **Outputs**: A `dict` containing the body's data if found, or `None` if the body is not found or the input is not a string.
-*   **`get_all_solar_system_destinations()` function**:
+### Key Components:
+
+*   **`GRAVITATIONAL_CONSTANT`**:
+    *   A constant float representing the universal gravitational constant in m^3 kg^-1 s^-2.
+    *   **Inputs**: None (constant).
+    *   **Outputs/Side Effects**: Provides a reference constant; not directly used by the module's functions.
+*   **`SOLAR_SYSTEM_BODIES_DATA`**:
+    *   A large dictionary serving as the primary data store for celestial bodies (Sun, planets, Moon). Each entry is a dictionary containing 'mass', 'radius', 'gravitational_parameter_mu', 'semi_major_axis_from_sun', and 'average_distance_from_earth'.
+    *   **Inputs**: None (data structure).
+    *   **Outputs/Side Effects**: Serves as the source for data retrieval functions.
+*   **`get_celestial_body_data(name: str)`**:
+    *   **Inputs**: `name` (str) - The case-insensitive name of a celestial body (e.g., "Earth", "mars").
+    *   **Outputs**: `dict | None` - Returns a dictionary with the body's full data if found, or `None` if not found or if the input `name` is not a string.
+*   **`get_all_solar_system_destinations()`**:
     *   **Inputs**: None.
-    *   **Outputs**: A `list` of dictionaries, where each dictionary represents a destination with its 'name' (str) and 'distance' (float, average distance from Earth). Earth is excluded, and the list is sorted by distance.
-*   **`if __name__ == "__main__":` block**: Contains self-testing code that demonstrates the usage of `get_celestial_body_data` and `get_all_solar_system_destinations` functions, including handling valid, invalid, and non-existent inputs.
+    *   **Outputs**: `list[dict]` - Returns a list of dictionaries, each containing 'name' (str) and 'distance' (float, average distance from Earth), sorted by distance. Earth is excluded from this list.
+*   **`if __name__ == "__main__":` block**:
+    *   **Inputs**: None (executes internal test code).
+    *   **Outputs/Side Effects**: Prints various test cases and their results to the console, demonstrating the functionality of `get_celestial_body_data` and `get_all_solar_system_destinations`.
 
-### Dependencies
-None. This file is self-contained and does not use any external imports.
-```
+### Dependencies:
+
+*   None. This module is self-contained and does not import any external libraries.
 
 ---
 
 
 ## `celestial_data.py`
 
-This module `celestial_data.py` acts as a central repository for astrophysical data on solar system bodies, including physical parameters and classical orbital elements. It also re-exports universal physical constants for consistent use across the `space_travel_calculator` application.
+```markdown
+This module `celestial_data.py` acts as the central repository for astrophysical data within the `space_travel_calculator` application, storing detailed parameters and orbital elements for solar system bodies. It also re-exports universal physical constants from the `constants` module for consistent usage.
 
 ### Key Components:
 
-*   **`GRAVITATIONAL_CONSTANT` & `SPEED_OF_LIGHT`**: Re-exported universal physical constants.
-    *   **Inputs**: None (derived from `constants` module).
-    *   **Outputs**: Numerical constant values.
-*   **`CELESTIAL_BODIES_DATA`**: A dictionary storing detailed astrophysical parameters for various celestial bodies (e.g., mass, radius, gravitational parameter, orbital period, heliocentric/geocentric orbital elements like eccentricity, inclination, mean anomaly).
-    *   **Inputs**: None (static data).
-    *   **Outputs**: Structured dictionary data.
-*   **`get_celestial_body_data(body_name: str)`**: Retrieves the complete data dictionary for a specified celestial body.
-    *   **Inputs**: `body_name` (string, case-insensitive).
-    *   **Outputs**: A dictionary containing the body's data if found, otherwise `None`.
-*   **`get_all_solar_system_destinations()`**: Generates a sorted list of potential solar system destinations from Earth, based on their average distance.
-    *   **Inputs**: None.
-    *   **Outputs**: A list of dictionaries, each containing a celestial body's 'name' and its 'distance' from Earth in meters, sorted by distance. Returns `None` if Earth's data is missing.
+*   **`GRAVITATIONAL_CONSTANT`, `SPEED_OF_LIGHT`**: Universal physical constants re-exported from the `constants` module.
+*   **`CELESTIAL_BODIES_DATA` (Dictionary)**: A large dictionary containing detailed astrophysical and orbital data (mass, radius, gravitational parameter, semi-major axis, orbital period, eccentricity, inclination, etc.) for the Sun, planets, and the Moon.
+*   **`get_celestial_body_data(body_name: str)`**:
+    *   **Inputs**: `body_name` (string, case-insensitive name of a celestial body).
+    *   **Outputs**: A dictionary containing the specified body's data if found, otherwise `None`.
+*   **`get_all_solar_system_destinations()`**:
+    *   **Inputs**: None (uses the internal `CELESTIAL_BODIES_DATA`).
+    *   **Outputs**: A list of dictionaries, where each dictionary represents a potential destination from Earth (excluding Earth itself) with its 'name' and 'distance' in meters, sorted by distance. Returns `None` if Earth's data is unavailable.
 
 ### Dependencies:
 
-*   `math`: Used for `math.fabs()` in distance calculations.
-*   `constants`: Imports `G_GRAVITATIONAL` and `C_LIGHT_MPS` for re-exporting universal constants.
+*   `math` (for `fabs()` function)
+*   `constants` (specifically `G_GRAVITATIONAL`, `C_LIGHT_MPS`)
+```
 
 ---
 
 
 ## `checks.py`
 
-This Python file provides validation functions for various inputs related to a hypothetical space travel calculator.
+This Python file provides utility functions for validating various inputs for a space travel calculator, including dates, speeds, and ages.
 
 ### Purpose
-This file contains utility functions to validate user-provided data such as dates, travel speeds, and ages, ensuring they meet specific criteria for a space travel calculation application.
+This file contains helper functions to validate user inputs such as dates, travel speeds, and traveler's age, ensuring they meet specific criteria for a space travel calculation application.
 
 ### Key Components
 *   **`is_valid_date(date_str, format_str='%Y-%m-%d')`**
-    *   **Inputs**: `date_str` (string representing a date), `format_str` (optional string specifying the expected date format, default is `'%Y-%m-%d'`).
-    *   **Outputs**: Returns `True` if `date_str` can be successfully parsed into a date using `format_str`, `False` otherwise.
+    *   **Inputs**: `date_str` (string representing a date), `format_str` (optional string, default to `'%Y-%m-%d'`, specifying the expected date format).
+    *   **Outputs**: Returns `True` if `date_str` can be successfully parsed into a `datetime` object using `format_str`, `False` otherwise.
 *   **`is_valid_speed(speed)`**
-    *   **Inputs**: `speed` (numeric value, implicitly in km/s based on internal conversion).
+    *   **Inputs**: `speed` (numeric value, implicitly assumed to be in km/s based on the `10**6` conversion to m/s).
     *   **Outputs**: Returns `True` if the `speed` is positive and does not exceed the speed of light (299,792,458 m/s), `False` otherwise.
 *   **`is_valid_age(age)`**
-    *   **Inputs**: `age` (numeric value).
-    *   **Outputs**: Returns `True` if the `age` is between 18 (inclusive) and 75 (exclusive), `False` otherwise.
+    *   **Inputs**: `age` (numeric value representing a person's age).
+    *   **Outputs**: Returns `True` if `age` is between 18 and 74 (inclusive), `False` otherwise.
 
 ### Dependencies
-*   `datetime` from the standard `datetime` module.
+*   **`datetime`**: Imported from the standard Python `datetime` module, specifically used for `datetime.strptime()` to validate date strings.
 
 ---
 
 
 ## `constants.py`
 
-This module, `constants.py`, serves as a central repository for defining universal physical and scientific constants pertinent to space travel calculations within the `space_travel_calculator` application. Its primary goal is to provide a single, consistent source of truth for these critical values, enhancing maintainability and accuracy across the project.
+This module, `constants.py`, serves as a central repository for universal physical and scientific constants crucial for space travel calculations within the `space_travel_calculator` application, ensuring data consistency and maintainability.
 
-### Key Components
+### Key Components:
 
-*   **Universal physical constants**:
-    *   `C_LIGHT_MPS`: Defines the speed of light in a vacuum (meters per second). It's a float representing a fixed physical value.
-    *   `G_GRAVITATIONAL`: Defines the Gravitational Constant (m^3 kg^-1 s^-2). It's a float representing a fixed physical value.
-*   **Alias for backward compatibility**:
-    *   `GRAVITATIONAL_CONSTANT`: An alias that points to `G_GRAVITATIONAL`, ensuring compatibility with older code that might expect this specific variable name. It's a float referencing an existing constant.
-*   **Commented-out examples for future expansion**:
-    *   This section includes examples like `MU_SUN`, `AU_TO_METERS`, and `EARTH_RADIUS_METERS`, indicating placeholders for potential future additions of other relevant constants.
+*   **Universal Physical Constants**:
+    *   `C_LIGHT_MPS`: Represents the speed of light in a vacuum.
+        *   **Value**: `299792458.0` m/s.
+    *   `G_GRAVITATIONAL`: Represents the Gravitational Constant.
+        *   **Value**: `6.67430e-11` m^3 kg^-1 s^-2.
+*   **Aliases**:
+    *   `GRAVITATIONAL_CONSTANT`: An alias for `G_GRAVITATIONAL`, providing backward compatibility for modules expecting this specific name.
+        *   **Value**: Same as `G_GRAVITATIONAL`.
+*   **Commented-out Examples**:
+    *   Includes examples like `MU_SUN` (Sun's standard gravitational parameter), `AU_TO_METERS` (Astronomical Unit in meters), and `EARTH_RADIUS_METERS` (Average Earth radius) as placeholders for future expansion.
 
-### Dependencies
+### Dependencies:
 
-This file has no external dependencies or imports.
+*   This file has no external imports or dependencies.
 
 ---
 
 
 ## `ephemeris.py`
 
-This file, `ephemeris.py`, provides functionality to calculate the approximate heliocentric orbital state (position and velocity vectors) for various celestial bodies at a specified date and time, using a 3D elliptical orbit model. It supports calculating states for planets but explicitly excludes the Sun (as it's the central body) and Earth's Moon (due to its complex barycentric orbit).
+This file provides functionalities to calculate the approximate heliocentric orbital state (position and velocity vectors) of celestial bodies using a 3D elliptical orbit model. It leverages classical orbital elements and Keplerian mechanics to determine a body's location and speed relative to the Sun at a given time.
 
 ### Key Components
 
-*   **`_MU_SUN_CACHE`**: A module-level variable to cache the Sun's gravitational parameter, initialized as `None`.
-*   **`_get_mu_sun()`**: A helper function that retrieves the Sun's gravitational parameter (mu) using `orbital_mechanics` or `celestial_data` and caches it.
-    *   **Inputs**: None.
-    *   **Outputs**: `float` representing the Sun's gravitational parameter in m^3/s^2.
-*   **`_normalize_angle(angle_rad)`**: Normalizes an angle to the range `[0, 2*pi)`.
-    *   **Inputs**: `float` angle in radians.
-    *   **Outputs**: `float` normalized angle in radians.
-*   **`_calculate_mean_anomaly(M0_rad, mean_motion_rad_s, delta_t_s)`**: Calculates the mean anomaly at a given time.
-    *   **Inputs**: `float` initial mean anomaly, `float` mean motion, `float` time difference.
-    *   **Outputs**: `float` mean anomaly in radians.
-*   **`_solve_keplers_equation(M_rad, e, tolerance, max_iterations)`**: Solves Kepler's Equation using Newton-Raphson iteration to find the eccentric anomaly.
-    *   **Inputs**: `float` mean anomaly, `float` eccentricity, optional `float` tolerance, optional `int` max iterations.
-    *   **Outputs**: `float` eccentric anomaly in radians.
-*   **`_calculate_true_anomaly_and_radius(a, e, E_rad)`**: Derives true anomaly and orbital radius from semi-major axis, eccentricity, and eccentric anomaly.
-    *   **Inputs**: `float` semi-major axis, `float` eccentricity, `float` eccentric anomaly.
-    *   **Outputs**: `tuple[float, float]` (true anomaly in radians, orbital radius in meters).
-*   **`_elements_to_cartesian(mu, a, e, i_rad, Omega_rad, omega_rad, nu_rad, r_m)`**: Converts classical orbital elements to heliocentric Cartesian position and velocity vectors.
-    *   **Inputs**: `float` central body mu, `float` semi-major axis, `float` eccentricity, `float` inclination, `float` longitude of ascending node, `float` argument of periapsis, `float` true anomaly, `float` orbital radius.
-    *   **Outputs**: `tuple[tuple[float, float, float], tuple[float, float, float]]` containing position and velocity vectors in meters and m/s, respectively.
-*   **`get_heliocentric_state(body_name, date)`**: The primary public function for calculating the heliocentric orbital state of a celestial body at a specific time.
-    *   **Inputs**: `str` `body_name`, `datetime.datetime` `date` (preferably timezone-aware UTC).
-    *   **Outputs**: `tuple[tuple[float, float, float], tuple[float, float, float]]` representing position (x, y, z) and velocity (vx, vy, vz) vectors in meters and m/s relative to the Sun.
-*   **`if __name__ == '__main__':` block**: Contains a self-test suite that mocks `celestial_data` to run various tests, including valid body calculations, invalid inputs, and timezone handling.
-    *   **Inputs**: None (uses hardcoded test values and mock data).
-    *   **Outputs**: Prints test results and calculated states to the console.
-    *   **Side Effects**: Temporarily patches `sys.modules` to mock `celestial_data` for testing.
+*   **Constants**:
+    *   `J2000_EPOCH`: A `datetime` object representing the J2000.0 epoch, used as a reference for time calculations.
+*   **Helper Functions**:
+    *   `_get_mu_sun()`: Retrieves and caches the Sun's gravitational parameter (mu).
+        *   **Inputs**: None.
+        *   **Outputs**: `float` (Sun's gravitational parameter).
+    *   `_normalize_angle(angle_rad)`: Normalizes an angle to be within `[0, 2*pi)`.
+        *   **Inputs**: `float` (angle in radians).
+        *   **Outputs**: `float` (normalized angle in radians).
+    *   `_calculate_mean_anomaly(M0_rad, mean_motion_rad_s, delta_t_s)`: Calculates mean anomaly at a given time.
+        *   **Inputs**: `float` (initial mean anomaly, mean motion, time difference).
+        *   **Outputs**: `float` (mean anomaly in radians).
+    *   `_solve_keplers_equation(M_rad, e, tolerance, max_iterations)`: Solves Kepler's Equation for eccentric anomaly using Newton-Raphson.
+        *   **Inputs**: `float` (mean anomaly, eccentricity, optional tolerance, max iterations).
+        *   **Outputs**: `float` (eccentric anomaly in radians).
+    *   `_calculate_true_anomaly_and_radius(a, e, E_rad)`: Derives true anomaly and orbital radius from semi-major axis, eccentricity, and eccentric anomaly.
+        *   **Inputs**: `float` (semi-major axis, eccentricity, eccentric anomaly).
+        *   **Outputs**: `tuple[float, float]` (true anomaly in radians, radius in meters).
+    *   `_elements_to_cartesian(mu, a, e, i_rad, Omega_rad, omega_rad, nu_rad, r_m)`: Converts classical orbital elements to heliocentric Cartesian position and velocity vectors.
+        *   **Inputs**: `float` (gravitational parameter, semi-major axis, eccentricity, inclination, RAAN, argument of periapsis, true anomaly, orbital radius).
+        *   **Outputs**: `tuple[tuple[float, float, float], tuple[float, float, float]]` (position vector, velocity vector).
+*   **Main Function**:
+    *   `get_heliocentric_state(body_name, date)`: Calculates the heliocentric orbital state for a specified body at a given date.
+        *   **Inputs**: `str` (celestial body name), `datetime.datetime` (target date/time).
+        *   **Outputs**: `tuple[tuple[float, float, float], tuple[float, float, float]]` (position vector in meters, velocity vector in m/s).
+        *   **Side Effects**: Retrieves celestial body data.
+*   **Self-Test Block (`if __name__ == '__main__':`)**:
+    *   Contains a `MockCelestialData` class to temporarily replace `celestial_data.get_celestial_body_data` for standalone testing.
+    *   Performs various tests for valid inputs, invalid inputs, and timezone handling.
 
 ### Dependencies
 
 *   `math`
 *   `datetime`
-*   `celestial_data` (for `get_celestial_body_data`)
-*   `orbital_mechanics` (for `calculate_gravitational_parameter`)
-*   `sys` (used for mocking in the self-test block)
+*   `celestial_data` (specifically `get_celestial_body_data`)
+*   `orbital_mechanics` (specifically `calculate_gravitational_parameter`)
+*   `sys` (used in the self-test for module mocking)
 
 ---
 
@@ -157,20 +168,17 @@ This file, `ephemeris.py`, provides functionality to calculate the approximate h
 ## `fuel_calc.py`
 
 ```markdown
-## File: fuel_calc.py
-
 ### Purpose
-This file provides a utility function to calculate the total cost of fuel based on the required fuel mass and its price per unit mass, including input validation.
+This file provides a single function to calculate the total cost of fuel required for a journey, based on the total mass of fuel needed and its price per unit mass.
 
 ### Key Components
-
 *   **Function: `calculate_fuel_cost`**
     *   **Inputs**:
-        *   `total_fuel_mass_needed` (numeric): The total mass of fuel required (e.g., in kg).
-        *   `fuel_price_per_unit` (numeric): The cost of one unit of fuel mass (e.g., cost per kg).
+        *   `total_fuel_mass_needed` (numeric): The total mass of fuel required (e.g., in kg, tons).
+        *   `fuel_price_per_unit` (numeric): The cost of one unit of fuel mass (e.g., cost per kg, cost per ton).
     *   **Outputs**:
-        *   Returns a dictionary containing `'total_fuel_mass_needed'` and `'total_cost'` if inputs are valid (numeric and non-negative).
-        *   Returns `None` if `total_fuel_mass_needed` or `fuel_price_per_unit` is negative or not a valid numeric type (int or float).
+        *   Returns a dictionary `{'total_fuel_mass_needed': numeric, 'total_cost': numeric}` containing the input fuel mass and the calculated total cost if inputs are valid.
+        *   Returns `None` if either input is negative or not a valid numeric type (int or float).
 
 ### Dependencies
 None. This file does not rely on any external imports or libraries.
@@ -182,35 +190,19 @@ None. This file does not rely on any external imports or libraries.
 ## `fuel_optimizer.py`
 
 ```markdown
-## fuel_optimizer.py
+### Purpose
+This file, `fuel_optimizer.py`, calculates the optimal fuel mass required for a space trajectory. It integrates data from a trajectory planner (determining required delta-V) with a propulsion system model (calculating fuel based on the Tsiolkovsky rocket equation).
 
-### 1. Purpose
-This file orchestrates the calculation of optimal fuel mass required for a spacecraft's trajectory. It integrates a trajectory planner to determine the necessary delta-V and then uses a propulsion system model to compute the fuel mass based on that delta-V and engine parameters.
-
-### 2. Key Components
+### Key Components
 *   **`optimize_fuel_for_trajectory` function**:
-    *   **Inputs**:
-        *   `start_body` (str): Origin celestial body.
-        *   `end_body` (str): Target celestial body.
-        *   `trajectory_type` (str): The type of trajectory (currently only 'Hohmann' supported).
-        *   `spacecraft_dry_mass` (float): Mass of the spacecraft without fuel (kg).
-        *   `engine_specific_impulse` (float): Engine's specific impulse (seconds).
-        *   `**trajectory_args`: Additional keyword arguments passed to the trajectory planner (e.g., `launch_date`).
-    *   **Outputs**:
-        *   `float`: The calculated optimal fuel mass in kilograms.
-    *   **Side Effects**:
-        *   Raises `ValueError` for invalid inputs or calculation issues.
-        *   Raises `RuntimeError` for unexpected errors during planning or calculation.
-        *   Raises `ImportError` if critical dependencies are missing.
-*   **Internal Logic**:
-    *   Instantiates `TrajectoryPlanner`.
-    *   Calls `planner.plan_trajectory` to get `total_delta_v`.
-    *   Calls `calculate_fuel_mass_from_delta_v` (from `propulsion_system`) to compute fuel mass.
+    *   **Inputs**: `start_body` (str), `end_body` (str), `trajectory_type` (str, currently 'Hohmann' is explicitly supported), `spacecraft_dry_mass` (float), `engine_specific_impulse` (float), and `**trajectory_args` (additional arguments for the trajectory planner).
+    *   **Outputs**: Returns a `float` representing the calculated optimal fuel mass in kilograms.
+    *   **Description**: This is the primary function. It orchestrates the process by first instantiating `TrajectoryPlanner` to get the `total_delta_v` for the specified trajectory, then uses `calculate_fuel_mass_from_delta_v` (from the propulsion system) to determine the fuel mass based on the delta-V and engine parameters. It includes comprehensive input validation and error handling for dependency interactions.
 
-### 3. Dependencies
-*   **`math`**: Standard Python mathematical functions (imported, though not explicitly used within this file's direct logic).
-*   **`propulsion_system`**: Imports `calculate_required_fuel_mass` (aliased as `calculate_fuel_mass_from_delta_v`).
-*   **`trajectory_planner`**: Imports the `TrajectoryPlanner` class.
+### Dependencies
+*   **`math`**: Standard Python library (imported, but not directly used in the provided code snippet).
+*   **`propulsion_system.py`**: A peer module from which `calculate_required_fuel_mass` is imported and aliased as `calculate_fuel_mass_from_delta_v`.
+*   **`trajectory_planner.py`**: A peer module from which the `TrajectoryPlanner` class is imported.
 ```
 
 ---
@@ -218,101 +210,126 @@ This file orchestrates the calculation of optimal fuel mass required for a space
 
 ## `generated/2048_game.py`
 
-This file implements the classic 2048 puzzle game, allowing a player to interact with it via console input. It manages the game board, score, tile generation, movement logic, and win/game over conditions.
+This Python file implements the classic 2048 puzzle game, allowing a player to interactively play the game in the console.
 
 ### Key Components:
 
-*   **Class `Game2048`**: Represents the game state and logic.
-    *   `__init__()`: Initializes a 4x4 grid, sets score to 0, adds two initial random tiles, and sets game state flags (`won`, `game_over`).
-    *   `add_random_tile()`: Finds an empty cell and places either a 2 (90% chance) or a 4 (10% chance). Returns `True` if a tile was added, `False` otherwise.
-    *   `display_board()`: Clears the console and prints the current score and the game grid in a formatted way.
-    *   `_get_row_view(r)`: Inputs row index `r`, outputs the specified row (list).
-    *   `_set_row_view(r, new_row)`: Inputs row index `r` and a `new_row` list, updates the specified row in the grid.
-    *   `_get_col_view(c)`: Inputs column index `c`, outputs the specified column (list).
-    *   `_set_col_view(c, new_col)`: Inputs column index `c` and a `new_col` list, updates the specified column in the grid.
-    *   `_shift_and_merge(line)`: Inputs a list representing a row or column, outputs the shifted and merged line (list) and a boolean indicating if any change occurred. It handles shifting non-zero tiles and merging identical adjacent tiles, updating the game score and checking for a win (2048 tile).
-    *   `move(direction)`: Inputs a string ('up', 'down', 'left', 'right'), applies `_shift_and_merge` to the relevant rows/columns (handling reversals for 'down' and 'right'), adds a new random tile if a valid move occurred, and checks for game over. Returns `True` if a move happened, `False` otherwise.
-    *   `check_game_over()`: Checks if there are any empty cells or possible merges in rows/columns. Sets `self.game_over` to `True` if no more moves are possible, otherwise `False`.
-*   **Function `play_2048()`**:
-    *   Inputs: None.
-    *   Outputs/Side Effects: Runs the main game loop, displaying the board, prompting for user input (W/A/S/D for moves or 'q' to quit), and printing final game status (win/game over, score).
+*   **`Game2048` Class**: Manages the entire game state and logic.
+    *   **`__init__(self)`**:
+        *   **Inputs**: None.
+        *   **Outputs/Side Effects**: Initializes a 4x4 grid with two random tiles, sets initial score to 0, and `won`/`game_over` flags to `False`.
+    *   **`add_random_tile(self)`**:
+        *   **Inputs**: None.
+        *   **Outputs/Side Effects**: Finds an empty cell and places a '2' (90% chance) or '4' (10% chance) into it. Returns `True` if a tile was added, `False` otherwise.
+    *   **`display_board(self)`**:
+        *   **Inputs**: None.
+        *   **Outputs/Side Effects**: Clears the console and prints the current game board and score in a formatted way.
+    *   **`_get_row_view(self, r)` / `_set_row_view(self, r, new_row)`**:
+        *   **Inputs**: `r` (row index), `new_row` (list of integers).
+        *   **Outputs/Side Effects**: Get or set a specific row of the grid.
+    *   **`_get_col_view(self, c)` / `_set_col_view(self, c, new_col)`**:
+        *   **Inputs**: `c` (column index), `new_col` (list of integers).
+        *   **Outputs/Side Effects**: Get or set a specific column of the grid.
+    *   **`_shift_and_merge(self, line)`**:
+        *   **Inputs**: `line` (a list of 4 integers representing a row or column).
+        *   **Outputs**: `final_line` (the processed list after shifting and merging), `changed` (boolean indicating if the line changed).
+        *   **Side Effects**: Updates `self.score` and sets `self.won` to `True` if 2048 is reached. This is the core logic for combining tiles.
+    *   **`move(self, direction)`**:
+        *   **Inputs**: `direction` (string: 'up', 'down', 'left', 'right').
+        *   **Outputs**: `moved_happened` (boolean indicating if any tiles moved or merged).
+        *   **Side Effects**: Applies `_shift_and_merge` to all relevant rows/columns based on direction, updates the grid, calls `add_random_tile` if a move occurred, and calls `check_game_over`.
+    *   **`check_game_over(self)`**:
+        *   **Inputs**: None.
+        *   **Outputs**: Boolean (`True` if the game is over, `False` otherwise).
+        *   **Side Effects**: Updates `self.game_over` flag based on whether there are empty cells or possible merges.
+
+*   **`play_2048()` Function**:
+    *   **Inputs**: None.
+    *   **Outputs/Side Effects**: Runs the main game loop, handles user input for moves ('w', 'a', 's', 'd', 'q'), displays the board, and prints game-over or win messages.
 
 ### Dependencies:
 
-*   `random`: Used for generating random tile values and positions.
-*   `os`: Used for clearing the console for a cleaner display.
+*   **`random`**: Used for generating random tile values (2 or 4) and placing them in random empty cells.
+*   **`os`**: Used for clearing the console screen to refresh the game board display.
 
 ---
 
 
 ## `generated/change_four_to_five_in_a_row.py`
 
-```markdown
-1.  **Purpose**: This file defines a utility function to update text by replacing all instances of the phrase "four in a row" with "five in a row," primarily for updating game titles or descriptions.
-2.  **Key Components**:
-    *   **`update_game_reference(text: str) -> str`**:
-        *   **Inputs**: Takes a single string argument named `text`.
-        *   **Outputs**: Returns a new string where all occurrences of "four in a row" have been replaced by "five in a row".
-3.  **Dependencies**: None. This file does not import any external modules or libraries.
-```
+## Summary of `generated/change_four_to_five_in_a_row.py`
+
+This file provides a utility function to update textual references related to game titles or descriptions. It specifically changes instances of "four in a row" to "five in a row".
+
+### Key Components
+
+*   **Function**: `update_game_reference`
+    *   **Inputs**: `text` (a string) - The input text to be processed.
+    *   **Outputs**: A string where all occurrences of "four in a row" have been replaced by "five in a row".
+
+### Dependencies
+
+*   None. This file uses only built-in Python string methods.
 
 ---
 
 
 ## `generated/count_vowels.py`
 
-```markdown
-## File Analysis: `generated/count_vowels.py`
+### Summary of `generated/count_vowels.py`
 
-### 1. Purpose
-This Python script defines a function to count the occurrences of vowels (a, e, i, o, u), case-insensitively, within a given input string.
+This file defines a single Python function designed to count the occurrences of vowels in a given string. It provides a simple, case-insensitive way to determine the total number of 'a', 'e', 'i', 'o', 'u' characters.
 
-### 2. Key Components
+### Key Components
+
 *   **Function**: `count_vowels`
-    *   **Inputs**: `text` (str) - The string to be analyzed.
-    *   **Outputs**: An integer representing the total count of vowels found in the string.
+    *   **Inputs**: `text` (str) - The input string to be analyzed.
+    *   **Outputs**: An `int` representing the total count of vowels found in the string.
 
-### 3. Dependencies
-None. This file does not rely on any external imports or libraries.
-```
+### Dependencies
+
+*   None. This file uses only built-in Python features and has no external imports or dependencies.
 
 ---
 
 
 ## `generated/four_in_a_row.py`
 
-This Python file implements a command-line based Four-in-a-Row (Connect Four) game for two players. It handles game setup, player turns, piece dropping, win condition checking, and board display.
+```markdown
+## File Analysis: `generated/four_in_a_row.py`
 
-### Key Components:
+### Purpose
+This Python file implements a command-line based Four-in-a-Row (also known as Connect Four) game. It allows two players to take turns dropping pieces into a grid, aiming to get four of their pieces in a row, column, or diagonal.
 
-*   **`create_board()`**:
+### Key Components
+*   **`create_board()`**
     *   **Inputs**: None
-    *   **Outputs**: Returns a 2D list representing an empty game board (6 rows, 7 columns), with `0` for empty slots.
-*   **`print_board(board)`**:
-    *   **Inputs**: `board` (2D list, the current game board).
-    *   **Outputs/Side Effects**: Prints the board state to the console, using 'X' for Player 1 and 'O' for Player 2, and displays column numbers.
-*   **`is_valid_location(board, col)`**:
-    *   **Inputs**: `board` (2D list), `col` (integer, 0-indexed column).
-    *   **Outputs**: Returns `True` if the column is within bounds and not full, `False` otherwise.
-*   **`get_next_open_row(board, col)`**:
-    *   **Inputs**: `board` (2D list), `col` (integer, 0-indexed column).
-    *   **Outputs**: Returns the 0-indexed row number of the lowest available slot in the specified column.
-*   **`drop_piece(board, row, col, piece)`**:
-    *   **Inputs**: `board` (2D list), `row` (integer), `col` (integer), `piece` (integer, 1 or 2).
-    *   **Outputs/Side Effects**: Modifies the `board` by placing `piece` at the given `row` and `col`.
-*   **`winning_move(board, piece)`**:
-    *   **Inputs**: `board` (2D list), `piece` (integer, 1 or 2).
-    *   **Outputs**: Returns `True` if the `piece` has formed four consecutive pieces (horizontally, vertically, or diagonally), `False` otherwise.
-*   **`is_board_full(board)`**:
+    *   **Outputs/Side Effects**: Returns a 2D list representing the game board, initialized with 0s for empty slots.
+*   **`print_board(board)`**
+    *   **Inputs**: `board` (a 2D list representing the current game state).
+    *   **Outputs/Side Effects**: Prints a formatted visual representation of the game board to the console, using 'X' for Player 1 and 'O' for Player 2.
+*   **`is_valid_location(board, col)`**
+    *   **Inputs**: `board` (2D list), `col` (integer column index).
+    *   **Outputs/Side Effects**: Returns `True` if the specified column is within bounds and has an empty slot; otherwise, returns `False`.
+*   **`get_next_open_row(board, col)`**
+    *   **Inputs**: `board` (2D list), `col` (integer column index).
+    *   **Outputs/Side Effects**: Returns the 0-indexed row number of the lowest empty slot in the given column.
+*   **`drop_piece(board, row, col, piece)`**
+    *   **Inputs**: `board` (2D list), `row` (integer row index), `col` (integer column index), `piece` (player identifier, 1 or 2).
+    *   **Outputs/Side Effects**: Modifies the `board` by placing the `piece` at the specified `row` and `col`.
+*   **`winning_move(board, piece)`**
+    *   **Inputs**: `board` (2D list), `piece` (player identifier).
+    *   **Outputs/Side Effects**: Returns `True` if the specified `piece` has achieved four consecutive pieces horizontally, vertically, or diagonally; otherwise, returns `False`.
+*   **`is_board_full(board)`**
     *   **Inputs**: `board` (2D list).
-    *   **Outputs**: Returns `True` if all slots on the board are filled, `False` otherwise.
-*   **`four_in_a_row_game()`**:
+    *   **Outputs/Side Effects**: Returns `True` if the entire board is filled with pieces (indicating a potential tie); otherwise, returns `False`.
+*   **`four_in_a_row_game()`**
     *   **Inputs**: None
-    *   **Outputs/Side Effects**: Orchestrates the entire game loop, handling player input, board updates, game state checks, and printing game messages to the console.
+    *   **Outputs/Side Effects**: Orchestrates the entire game flow, including initializing the board, handling player turns, validating input, dropping pieces, checking for wins or ties, and printing game status.
 
-### Dependencies:
-
-*   `sys`: Used for `sys.stdout.flush()` to ensure immediate console output.
+### Dependencies
+*   **`sys`**: Used for `sys.stdout.flush()` to ensure immediate display of printed output.
+```
 
 ---
 
@@ -320,18 +337,18 @@ This Python file implements a command-line based Four-in-a-Row (Connect Four) ga
 ## `generated/spacecraft_id_validation.py`
 
 ```markdown
-## File Analysis: `generated/spacecraft_id_validation.py`
+## Analysis of `generated/spacecraft_id_validation.py`
 
-**1. Purpose**
-This file defines a utility function to validate spacecraft IDs against a set of predefined criteria, ensuring they meet specific formatting and length requirements.
+### Purpose
+This file defines a utility function to validate spacecraft IDs according to specific criteria: non-empty, alphanumeric, and within a length range of 5 to 20 characters.
 
-**2. Key Components**
+### Key Components
 *   **`validate_spacecraft_id(spacecraft_id: str) -> bool`**
     *   **Inputs**: `spacecraft_id` (str) - The ID string to be validated.
-    *   **Outputs**: `bool` - Returns `True` if the `spacecraft_id` is valid according to the rules (string, non-empty, alphanumeric, 5-20 characters long), otherwise returns `False`.
+    *   **Outputs**: `bool` - Returns `True` if the ID meets all validation criteria, `False` otherwise.
 
-**3. Dependencies**
-*   `re`: Python's built-in regular expression module, used for checking if the ID is alphanumeric.
+### Dependencies
+*   **`re`**: Python's regular expression module, used to check if the ID is purely alphanumeric.
 ```
 
 ---
@@ -340,27 +357,24 @@ This file defines a utility function to validate spacecraft IDs against a set of
 ## `generated/tictactoe.py`
 
 ```markdown
-### File Analysis: `generated/tictactoe.py`
+1.  **Purpose**: This file implements a command-line Tic-Tac-Toe game, allowing two human players (X and O) to take turns marking spaces on a 3x3 board until a win condition is met or the game ends in a draw.
 
-**1. Purpose**
-This Python script implements a command-line Tic-Tac-Toe game for two players. It manages game setup, player turns, board display, and determines win or draw conditions.
+2.  **Key Components**:
+    *   `play_tic_tac_toe()`:
+        *   Inputs: None.
+        *   Outputs or Side Effects: Orchestrates the entire game. It initializes the board, randomly selects the starting player, manages player turns, takes user input for moves, calls helper functions to display the board and check game state, and prints game status (win/draw) and the final game over message to the console.
+    *   `display_board(current_board)`:
+        *   Inputs: `current_board` (a list of 9 strings representing the board's state).
+        *   Outputs or Side Effects: Prints a formatted 3x3 Tic-Tac-Toe board to the console.
+    *   `check_win(current_board, player)`:
+        *   Inputs: `current_board` (a list of 9 strings), `player` (the symbol 'X' or 'O' to check for a win).
+        *   Outputs: Returns `True` if the specified `player` has three of their marks in a row (horizontal, vertical, or diagonal), `False` otherwise.
+    *   `check_draw(current_board)`:
+        *   Inputs: `current_board` (a list of 9 strings).
+        *   Outputs: Returns `True` if there are no empty spaces (' ') left on the board, indicating a draw, `False` otherwise.
 
-**2. Key Components**
-*   **`play_tic_tac_toe()`**:
-    *   **Inputs**: None (interacts with user via `input()`).
-    *   **Outputs/Side Effects**: Manages the entire game flow, prints game messages, the board, and final results to the console.
-*   **`display_board(current_board)`**:
-    *   **Inputs**: `current_board` (a list of 9 strings representing the board state).
-    *   **Outputs/Side Effects**: Prints the current Tic-Tac-Toe board to the console in a formatted 3x3 grid.
-*   **`check_win(current_board, player)`**:
-    *   **Inputs**: `current_board` (list of 9 strings), `player` (string, 'X' or 'O').
-    *   **Outputs/Side Effects**: Returns `True` if the given `player` has achieved three marks in a row (horizontal, vertical, or diagonal), `False` otherwise. No side effects.
-*   **`check_draw(current_board)`**:
-    *   **Inputs**: `current_board` (list of 9 strings).
-    *   **Outputs/Side Effects**: Returns `True` if all spaces on the board are filled and no player has won (indicating a draw), `False` otherwise. No side effects.
-
-**3. Dependencies**
-*   `random`: Used to randomly select which player (X or O) starts the game.
+3.  **Dependencies**:
+    *   `random`: Used to randomly select which player starts the game.
 ```
 
 ---
@@ -368,135 +382,105 @@ This Python script implements a command-line Tic-Tac-Toe game for two players. I
 
 ## `main.py`
 
-This file implements a space travel calculator that determines travel time, age upon arrival, fuel requirements, and cost for a user-chosen celestial destination. It accounts for orbital mechanics, relativistic effects, and specific propulsion system characteristics.
+This file implements a Space Travel Calculator that determines the time, fuel, and cost required for a user to reach a chosen celestial destination, incorporating relativistic effects, orbital mechanics, and fuel optimization. It gathers user input, performs complex calculations, and provides a detailed travel summary.
 
 ### Key Components:
 
-*   **`main()` function**: Orchestrates the entire application. It gathers user inputs for departure/arrival bodies, spacecraft/engine parameters, departure date, and age. It then calls external modules for trajectory planning, fuel optimization, and logging. Finally, it calculates and displays a detailed travel summary, including relativistic travel times and arrival age/date.
-    *   **Inputs**: User input via command line prompts.
-    *   **Outputs/Side Effects**: Prints travel summary to console, saves travel log via `travel_logger`.
-*   **`calc_time_earth(years_traveler_frame, average_speed_ms)`**: Calculates travel time in Earth's reference frame by applying relativistic time dilation based on the traveler's frame time and average spacecraft speed.
+*   **`main()`**:
+    *   **Inputs**: User-provided inputs via console for departure/arrival bodies, trajectory type, spacecraft dry mass, engine specific impulse, departure date, user age, and fuel price.
+    *   **Outputs/Side Effects**: Prints a comprehensive travel summary (Delta-V, fuel mass, cost, travel times in both frames, arrival age, arrival date) to the console and logs travel details using `travel_logger`.
+*   **`calc_time_earth(years_traveler_frame, average_speed_ms)`**:
     *   **Inputs**: `years_traveler_frame` (float), `average_speed_ms` (float).
-    *   **Outputs**: `float` (travel time in Earth's frame in years).
-*   **`calc_age(years_travel_time, starting_age)`**: Determines the user's age upon arrival.
+    *   **Outputs**: `float` representing travel time in Earth's reference frame, considering relativistic time dilation.
+*   **`calc_age(years_travel_time: float, starting_age: int)`**:
     *   **Inputs**: `years_travel_time` (float), `starting_age` (int).
-    *   **Outputs**: `float` (user's age upon arrival).
-*   **`calc_arrival(departure_date, years_earth_frame)`**: Computes the estimated arrival date based on the departure date and travel time in Earth's frame.
-    *   **Inputs**: `departure_date` (`datetime`), `years_earth_frame` (float).
-    *   **Outputs**: `datetime` (estimated arrival date) or `None`.
-*   **`convert_date(date_str)`**: Helper function to parse a date string into a `datetime` object.
+    *   **Outputs**: `float` representing the user's age upon arrival.
+*   **`calc_arrival(departure_date: datetime, years_earth_frame: float)`**:
+    *   **Inputs**: `departure_date` (datetime), `years_earth_frame` (float).
+    *   **Outputs**: `datetime` object of the estimated arrival date or `None` if calculation fails.
+*   **`convert_date(date_str: str)`**:
     *   **Inputs**: `date_str` (string in 'YYYY-MM-DD' format).
-    *   **Outputs**: `datetime.datetime` object.
+    *   **Outputs**: `datetime` object.
 
 ### Dependencies:
 
-*   **Standard Library**: `math`, `datetime` (for `datetime`, `timedelta`).
+*   **Standard Library**: `math`, `datetime`, `timedelta`
 *   **Local Modules**:
-    *   `checks as c`: For input validation (e.g., `is_valid_date`, `is_valid_age`).
-    *   `celestial_data`: Provides data for celestial bodies.
-    *   `orbital_mechanics`: Imports `calculate_circular_orbital_velocity` but it is not directly used in `main`.
-    *   `trajectory_planner.TrajectoryPlanner`: Class to plan spacecraft trajectories (e.g., Hohmann transfer).
+    *   `checks` (aliased as `c`): For input validation (e.g., `is_valid_date`, `is_valid_age`).
+    *   `celestial_data`: To retrieve information about celestial bodies.
+    *   `orbital_mechanics`: Imports `calculate_circular_orbital_velocity` (not directly used in `main`).
+    *   `trajectory_planner`: Provides the `TrajectoryPlanner` class to calculate trajectory parameters.
     *   `propulsion_system`: Imported but not directly called in `main`.
     *   `fuel_calc`: Calculates fuel cost.
     *   `travel_logger`: Logs travel details.
-    *   `constants`: Provides constants like `C_LIGHT_MPS`.
-    *   `fuel_optimizer`: Optimizes and calculates fuel mass needed for a given trajectory.
+    *   `constants`: Provides `C_LIGHT_MPS` (speed of light).
+    *   `fuel_optimizer`: Optimizes and calculates required fuel mass for a trajectory.
 
 ---
 
 
 ## `orbital_mechanics.py`
 
-This file, `orbital_mechanics.py`, provides a suite of functions for performing fundamental calculations related to orbital mechanics and 3D vector mathematics. It enables users to compute various orbital parameters, design transfers, and determine gravitational properties of celestial bodies.
+```markdown
+## orbital_mechanics.py
 
-### Key Components
+**Purpose**: This file provides a collection of functions for performing fundamental 3D vector operations and calculating various parameters related to orbital mechanics, including Hohmann and Lambert transfer maneuvers.
+
+**Key Components**:
 
 *   **3D Vector Utility Functions**:
-    *   `_validate_vector(vec, name)`: Internal helper for input validation.
-    *   `vector_magnitude(vec)`: Calculates the Euclidean magnitude of a 3D vector.
-        *   **Inputs**: `vec` (3-element tuple/list).
-        *   **Outputs**: `float` (magnitude).
-    *   `vector_subtract(vec1, vec2)`: Subtracts two 3D vectors.
-        *   **Inputs**: `vec1`, `vec2` (3-element tuples).
-        *   **Outputs**: `tuple` (resultant vector).
-    *   `vector_add(vec1, vec2)`: Adds two 3D vectors.
-        *   **Inputs**: `vec1`, `vec2` (3-element tuples).
-        *   **Outputs**: `tuple` (resultant vector).
-    *   `vector_scale(vec, scalar)`: Scales a 3D vector by a scalar.
-        *   **Inputs**: `vec` (3-element tuple), `scalar` (float/int).
-        *   **Outputs**: `tuple` (scaled vector).
-    *   `vector_dot(vec1, vec2)`: Calculates the dot product of two 3D vectors.
-        *   **Inputs**: `vec1`, `vec2` (3-element tuples).
-        *   **Outputs**: `float` (dot product).
-    *   `vector_cross(vec1, vec2)`: Calculates the cross product of two 3D vectors.
-        *   **Inputs**: `vec1`, `vec2` (3-element tuples).
-        *   **Outputs**: `tuple` (cross product vector).
-
-*   **Existing Orbital Mechanics Functions**:
-    *   `calculate_gravitational_parameter(central_body_name)`: Retrieves or calculates the gravitational parameter (mu) for a celestial body.
-        *   **Inputs**: `central_body_name` (str).
-        *   **Outputs**: `float` (gravitational parameter).
-    *   `calculate_circular_orbital_velocity(mu, radius)`: Calculates velocity for a circular orbit.
-        *   **Inputs**: `mu` (float), `radius` (float).
-        *   **Outputs**: `float` (orbital velocity).
-    *   `calculate_hohmann_transfer_delta_v(mu, r1, r2)`: Calculates Delta-V for a Hohmann transfer.
-        *   **Inputs**: `mu` (float), `r1` (float), `r2` (float).
-        *   **Outputs**: `tuple[float, float, float]` (Delta-V for burn 1, burn 2, and total).
-    *   `calculate_hohmann_transfer_time_of_flight(mu, r1, r2)`: Calculates time of flight for a Hohmann transfer.
-        *   **Inputs**: `mu` (float), `r1` (float), `r2` (float).
-        *   **Outputs**: `float` (time of flight).
-    *   `calculate_elliptical_orbital_period(mu, semi_major_axis)`: Calculates the orbital period using Kepler's Third Law.
-        *   **Inputs**: `mu` (float), `semi_major_axis` (float).
-        *   **Outputs**: `float` (orbital period).
-    *   `calculate_escape_velocity(mu, radius)`: Calculates escape velocity from a central body.
-        *   **Inputs**: `mu` (float), `radius` (float).
-        *   **Outputs**: `float` (escape velocity).
-
+    *   `_validate_vector(vec: tuple, name: str)`: Internal helper to validate vector format; raises `ValueError` if invalid.
+    *   `vector_magnitude(vec: tuple) -> float`: Calculates the Euclidean magnitude of a 3D vector.
+    *   `vector_subtract(vec1: tuple, vec2: tuple) -> tuple`: Subtracts `vec2` from `vec1`.
+    *   `vector_add(vec1: tuple, vec2: tuple) -> tuple`: Adds two 3D vectors.
+    *   `vector_scale(vec: tuple, scalar: float) -> tuple`: Scales a 3D vector by a scalar.
+    *   `vector_dot(vec1: tuple, vec2: tuple) -> float`: Calculates the dot product of two 3D vectors.
+    *   `vector_cross(vec1: tuple, vec2: tuple) -> tuple`: Calculates the cross product of two 3D vectors.
+*   **Orbital Mechanics Functions**:
+    *   `calculate_gravitational_parameter(central_body_name: str) -> float`: Retrieves or calculates the gravitational parameter (mu) for a celestial body.
+    *   `calculate_circular_orbital_velocity(mu: float, radius: float) -> float`: Determines the velocity for a stable circular orbit.
+    *   `calculate_hohmann_transfer_delta_v(mu: float, r1: float, r2: float) -> tuple[float, float, float]`: Calculates Delta-V requirements for a Hohmann transfer. Returns (delta_v1, delta_v2, total_delta_v).
+    *   `calculate_hohmann_transfer_time_of_flight(mu: float, r1: float, r2: float) -> float`: Calculates the time needed for a Hohmann transfer.
+    *   `calculate_elliptical_orbital_period(mu: float, semi_major_axis: float) -> float`: Calculates the orbital period of an elliptical orbit using Kepler's Third Law.
+    *   `calculate_escape_velocity(mu: float, radius: float) -> float`: Computes the escape velocity from a central body at a given radius.
 *   **Universal Variable Lambert Solver Helper Functions**:
-    *   `_stumpff_c(z)`, `_stumpff_s(z)`: Internal functions calculating Stumpff functions C(z) and S(z).
-        *   **Inputs**: `z` (float).
-        *   **Outputs**: `float`.
-    *   `_calc_time_from_psi(psi, A_param, mu)`: Internal function to calculate time of flight given universal anomaly squared.
-        *   **Inputs**: `psi` (float), `A_param` (float), `mu` (float).
-        *   **Outputs**: `float` (time).
-    *   `_calc_d_time_d_psi(psi, A_param, mu)`: Internal function for derivative of time with respect to psi.
-        *   **Inputs**: `psi` (float), `A_param` (float), `mu` (float).
-        *   **Outputs**: `float` (derivative).
-
+    *   `_stumpff_c(z: float) -> float`: Calculates the Stumpff function C(z).
+    *   `_stumpff_s(z: float) -> float`: Calculates the Stumpff function S(z).
+    *   `_calc_time_from_psi(psi: float, A_param: float, mu: float) -> float`: Calculates time of flight given universal anomaly squared (psi).
+    *   `_calc_d_time_d_psi(psi: float, A_param: float, mu: float) -> float`: Calculates the derivative of time with respect to psi.
 *   **Lambert Solver Function**:
-    *   `calculate_lambert_transfer(mu, r1_vec, r2_vec, delta_t)`: Calculates Delta-V for a Lambert transfer between two position vectors in a given time of flight using an iterative universal variable formulation.
-        *   **Inputs**: `mu` (float), `r1_vec` (3-element tuple), `r2_vec` (3-element tuple), `delta_t` (float).
-        *   **Outputs**: `tuple[float, float, float, float]` (Delta-V magnitude for burn 1, burn 2, total Delta-V, actual time of flight).
+    *   `calculate_lambert_transfer(mu: float, r1_vec: tuple, r2_vec: tuple, delta_t: float) -> tuple[float, float, float, float]`: Solves Lambert's problem to find the Delta-V for a transfer between two position vectors in a specified time. Returns (delta_v1_mag, delta_v2_mag, total_delta_v, calculated_time_of_flight).
 
-### Dependencies
-
-*   `math`
-*   `constants.G_GRAVITATIONAL`
-*   `celestial_data.get_celestial_body_data`
+**Dependencies**:
+*   `math` (Python standard library)
+*   `constants.G_GRAVITATIONAL` (local import)
+*   `celestial_data.get_celestial_body_data` (local import)
+```
 
 ---
 
 
 ## `propulsion_system.py`
 
-This file defines a utility for calculating the required fuel mass for a spacecraft to achieve a specific change in velocity using the Tsiolkovsky rocket equation. It provides a function that takes spacecraft and engine parameters to determine the necessary fuel.
+This file provides a function to calculate the required fuel mass for a spacecraft using the Tsiolkovsky rocket equation. It determines the fuel needed to achieve a specified change in velocity (delta-V), based on the spacecraft's dry mass and engine characteristics.
 
 ### Key Components:
 
-*   **`STANDARD_GRAVITY` (Constant)**:
-    *   **Description**: A constant representing the standard acceleration due to gravity (9.80665 m/s^2), used in conversions related to specific impulse.
-*   **`calculate_required_fuel_mass` (Function)**:
+*   **Constants**:
+    *   `STANDARD_GRAVITY`: A float representing the standard acceleration due to gravity (9.80665 m/s^2).
+*   **Function**: `calculate_required_fuel_mass`
     *   **Inputs**:
         *   `delta_v` (float): Required change in velocity (m/s).
         *   `dry_mass` (float): Mass of the spacecraft without fuel (kg).
         *   `specific_impulse` (float, optional): Engine's specific impulse (s).
         *   `exhaust_velocity` (float, optional): Effective exhaust velocity of the engine (m/s).
-    *   **Outputs**: Returns the required fuel mass (float) in kilograms.
-    *   **Side Effects**: Raises `ValueError` for invalid input parameters (e.g., negative `delta_v`, non-positive `dry_mass`, missing engine characteristics, or invalid specific impulse/exhaust velocity).
+    *   **Outputs or Side Effects**:
+        *   Returns a `float` representing the required fuel mass in kilograms.
+        *   Raises `ValueError` for invalid inputs (e.g., negative delta-V, non-positive dry mass, missing or invalid engine characteristics).
 
 ### Dependencies:
 
-*   **`math`**: Used for mathematical operations, specifically `math.exp` for exponential calculations in the rocket equation.
+*   `math` (Python's built-in math module)
 
 ---
 
@@ -506,14 +490,14 @@ This file defines a utility for calculating the required fuel mass for a spacecr
 ```markdown
 ## spacecraft_validator.py
 
-1.  **Purpose**: This file defines a utility function responsible for validating spacecraft names against specific length and character type criteria.
+1.  **Purpose**: This file provides a utility function to validate spacecraft names against specific rules regarding their length and character composition.
 
 2.  **Key Components**:
     *   **Function**: `validate_spacecraft_name`
-        *   **Inputs**: `name` (str) - The spacecraft name string to be validated.
-        *   **Outputs**: `bool` - Returns `True` if the name is between 3 and 20 characters long (inclusive) and consists only of alphanumeric characters, otherwise returns `False`. It also returns `False` if the input is not a string.
+        *   **Inputs**: `name` (str) - The spacecraft name to be validated.
+        *   **Outputs**: `bool` - Returns `True` if the name is valid (between 3 and 20 alphanumeric characters), `False` otherwise.
 
-3.  **Dependencies**: None.
+3.  **Dependencies**: None. The file does not use any external imports or libraries.
 ```
 
 ---
@@ -521,146 +505,156 @@ This file defines a utility for calculating the required fuel mass for a spacecr
 
 ## `tests/test_celestial_data.py`
 
-This file contains unit tests for the `celestial_data` module, verifying the correctness of its re-exported constants, data retrieval functions, and the integrity of its internal celestial body data.
+This file contains unit tests for the `celestial_data` module. It verifies the correctness of re-exported constants, the functionality and edge cases of data retrieval functions, and the structural integrity of the underlying celestial body data.
 
 ### Key Components:
 
-*   **Test Constants Re-exported from `celestial_data`**:
-    *   `test_gravitational_constant_re_export_value()`: Verifies `GRAVITATIONAL_CONSTANT` from `celestial_data` matches `G_GRAVITATIONAL` from `constants`.
-        *   *Inputs*: None.
-        *   *Outputs*: Asserts equality within a relative tolerance.
-    *   `test_speed_of_light_re_export_value()`: Verifies `SPEED_OF_LIGHT` from `celestial_data` matches `C_LIGHT_MPS` from `constants`.
-        *   *Inputs*: None.
-        *   *Outputs*: Asserts equality within a relative tolerance.
-
+*   **Test Constants Re-exported from celestial_data**:
+    *   `test_gravitational_constant_re_export_value()`: Asserts that `GRAVITATIONAL_CONSTANT` from `celestial_data` matches `G_GRAVITATIONAL` from `constants`.
+    *   `test_speed_of_light_re_export_value()`: Asserts that `SPEED_OF_LIGHT` from `celestial_data` matches `C_LIGHT_MPS` from `constants`.
+    *   **Inputs**: Implicitly uses constants from `celestial_data` and `constants` modules.
+    *   **Outputs**: Performs assertions for value and type equality.
 *   **Test `get_celestial_body_data` function**:
-    *   Includes tests for valid body retrieval, case-insensitivity, non-existent bodies (expecting `None`), invalid input types (expecting `None`), and specific checks for 'Sun' data structure.
-        *   *Inputs*: A string representing a celestial body name (e.g., 'Earth', 'mars', 'Pluto') or invalid types.
-        *   *Outputs*: Asserts the returned dictionary's structure, types, values, or that `None` is returned in error cases.
-
+    *   `test_get_celestial_body_data_valid_body()`: Tests data retrieval for a known body ('Earth'), checking dictionary structure, key presence, and value types.
+    *   `test_get_celestial_body_data_case_insensitivity()`: Verifies that body names are handled case-insensitively.
+    *   `test_get_celestial_body_data_non_existent_body()`: Asserts `None` is returned for unknown bodies.
+    *   `test_get_celestial_body_data_invalid_input_type()`: Asserts `None` is returned for non-string inputs.
+    *   `test_get_celestial_body_data_sun_orbital_elements_expected_values()`: Checks specific expected values for 'Sun' (e.g., zero semi-major axis).
+    *   **Inputs**: String celestial body names or invalid types.
+    *   **Outputs**: Assertions on the returned dictionary's content, type, or `None`.
 *   **Test `get_all_solar_system_destinations` function**:
-    *   `test_get_all_solar_system_destinations_valid_output()`: Checks if the function returns a sorted list of destinations (excluding Earth) with correct structure and non-negative distances.
-        *   *Inputs*: None.
-        *   *Outputs*: Asserts the structure, sorting, and content of the returned list.
-    *   `test_get_all_solar_system_destinations_earth_data_missing()`: Uses a mock to simulate `get_celestial_body_data` failing for 'Earth', expecting `None` to be returned.
-        *   *Inputs*: None (mocked internal calls).
-        *   *Outputs*: Asserts `None` is returned.
-
+    *   `test_get_all_solar_system_destinations_valid_output()`: Checks that a sorted list of dictionaries (destinations, excluding Earth) is returned with correct structure and sorting.
+    *   `test_get_all_solar_system_destinations_earth_data_missing()`: Uses `unittest.mock.patch` to simulate missing Earth data and asserts the function returns `None`.
+    *   **Inputs**: None (implicitly calls `get_all_solar_system_destinations`). One test uses mocking to control internal function behavior.
+    *   **Outputs**: Assertions on the returned list's content, order, and structure, or `None`.
 *   **`test_celestial_bodies_data_integrity()`**:
-    *   Iterates through `CELESTIAL_BODIES_DATA` to ensure each entry has the expected keys, types (e.g., `str`, `float`, `int`), and non-negative values for properties like 'mass', 'radius', and orbital elements.
-        *   *Inputs*: None (implicitly uses `CELESTIAL_BODIES_DATA`).
-        *   *Outputs*: Asserts data consistency and integrity.
+    *   Performs a loop over `CELESTIAL_BODIES_DATA` to check general structure, required keys (`name`, `mass`, `radius`, `gravitational_parameter_mu`), their types, and non-negative values for all entries.
+    *   **Inputs**: Iterates directly through `CELESTIAL_BODIES_DATA`.
+    *   **Outputs**: Assertions on the types and values of data within `CELESTIAL_BODIES_DATA`.
 
 ### Dependencies:
 
-*   `pytest`: Test framework.
-*   `math`: Standard library (imported but not explicitly used in the provided snippets).
-*   `unittest.mock.patch`, `MagicMock`: For mocking functions and objects in tests.
-*   `celestial_data`: The module under test, providing constants (`GRAVITATIONAL_CONSTANT`, `SPEED_OF_LIGHT`, `CELESTIAL_BODIES_DATA`) and functions (`get_celestial_body_data`, `get_all_solar_system_destinations`).
-*   `constants`: Provides definitive constant values (`G_GRAVITATIONAL`, `C_LIGHT_MPS`) for comparison.
+*   **`pytest`**: Testing framework.
+*   **`math`**: (Imported but not directly used in the provided test functions).
+*   **`unittest.mock.patch`, `unittest.mock.MagicMock`**: For mocking dependencies in tests.
+*   **`celestial_data` (local module)**: Imports `GRAVITATIONAL_CONSTANT`, `SPEED_OF_LIGHT`, `get_celestial_body_data`, `get_all_solar_system_destinations`, and `CELESTIAL_BODIES_DATA`.
+*   **`constants` (local module)**: Imports `G_GRAVITATIONAL`, `C_LIGHT_MPS` for comparison against re-exported values.
 
 ---
 
 
 ## `tests/test_constants.py`
 
-### File Analysis: `tests/test_constants.py`
+This file contains unit tests for physical constants defined in a `constants.py` module. It verifies the types and values of these constants and ensures that a deprecated alias for a constant has been removed.
 
-#### 1. Purpose
-This file contains unit tests to verify the values, types, and correct naming conventions of fundamental physical constants defined in the `constants` module. It ensures that the constants adhere to expected standards and that deprecated aliases are no longer present.
+### Key Components
 
-#### 2. Key Components
+*   `test_gravitational_constant_value_and_type()`
+    *   **Inputs**: None (implicitly accesses `G_GRAVITATIONAL` from `constants`).
+    *   **Outputs/Side Effects**: Asserts that `G_GRAVITATIONAL` is a float and its value matches `6.67430e-11` within a specified relative tolerance.
+*   `test_speed_of_light_value_and_type()`
+    *   **Inputs**: None (implicitly accesses `C_LIGHT_MPS` from `constants`).
+    *   **Outputs/Side Effects**: Asserts that `C_LIGHT_MPS` is a float and its value matches `299_792_458.0` within a specified relative tolerance.
+*   `test_no_deprecated_gravitational_constant_alias()`
+    *   **Inputs**: None (implicitly attempts to access a removed attribute `GRAVITATIONAL_CONSTANT` from `constants`).
+    *   **Outputs/Side Effects**: Asserts that attempting to access `GRAVITATIONAL_CONSTANT` from the `constants` module raises an `AttributeError`, confirming its removal. Includes module reloading logic using `sys`.
 
-*   **`test_gravitational_constant_value_and_type()`**
-    *   **Inputs**: None (implicitly accesses `G_GRAVITATIONAL` from the `constants` module).
-    *   **Outputs/Side Effects**: Asserts that `G_GRAVITATIONAL` is a float and its value is approximately `6.67430e-11`.
-*   **`test_speed_of_light_value_and_type()`**
-    *   **Inputs**: None (implicitly accesses `C_LIGHT_MPS` from the `constants` module).
-    *   **Outputs/Side Effects**: Asserts that `C_LIGHT_MPS` is a float and its value is approximately `299_792_458.0`.
-*   **`test_no_deprecated_gravitational_constant_alias()`**
-    *   **Inputs**: None.
-    *   **Outputs/Side Effects**: Verifies that attempting to access a deprecated constant alias (`GRAVITATIONAL_CONSTANT`) from the `constants` module raises an `AttributeError`, confirming its removal. Includes logic to ensure the `constants` module is reloaded for a fresh state if necessary.
+### Dependencies
 
-#### 3. Dependencies
-*   `pytest`: The testing framework used for writing assertions and handling expected exceptions.
-*   `constants`: The module under test, from which `G_GRAVITATIONAL` and `C_LIGHT_MPS` are imported.
-*   `sys` (within one test function): Used to manage Python's module cache for testing module reloading behavior.
+*   `pytest`
+*   `constants` (specifically `G_GRAVITATIONAL`, `C_LIGHT_MPS`)
+*   `sys` (used for module manipulation in `test_no_deprecated_gravitational_constant_alias`)
 
 ---
 
 
 ## `tests/test_orbital_mechanics.py`
 
-This file `tests/test_orbital_mechanics.py` contains unit tests for the `orbital_mechanics` module using `pytest`. It verifies the correctness and error handling of functions related to vector operations and various orbital mechanics calculations.
+This file contains a comprehensive suite of unit tests using `pytest` for functions within an `orbital_mechanics` module. It ensures the correctness and robustness of various calculations related to celestial mechanics and vector operations.
 
 ### Key Components:
 
-*   **Fixtures**:
-    *   `mock_celestial_data`: Mocks `celestial_data.get_celestial_body_data`. It takes a celestial body name (string) and returns a dictionary with predefined mass, radius, gravitational parameter, semi-major axis, and orbital period for Sun, Earth, Mars, and Moon.
-    *   `mock_ephemeris`: Mocks `orbital_mechanics.ephemeris.get_heliocentric_state`. It takes a body name (string) and a datetime object and returns a dictionary containing simplified position and velocity vectors for Earth and Mars.
-
-*   **Test Functions**:
-    *   **Vector Operations Tests**: `test_vector_magnitude`, `test_vector_subtract`, `test_vector_add`, `test_vector_scale`, `test_vector_dot`, `test_vector_cross`. These functions test their respective vector operations, taking 3-element numeric tuples/lists as input (and a scalar for `vector_scale`). They return a numeric value or a 3-element tuple, and raise `ValueError` for invalid inputs.
-    *   **`test_calculate_gravitational_parameter`**: Tests the calculation of the gravitational parameter. It takes a celestial body name (string) and returns a float. It relies on `mock_celestial_data` and raises `ValueError` for invalid body names or missing data.
-    *   **`test_calculate_circular_orbital_velocity`**: Tests circular orbital velocity. It takes gravitational parameter (`mu`, float) and radius (float), returning orbital velocity (float). Raises `ValueError` for non-positive inputs.
-    *   **`test_calculate_hohmann_transfer_delta_v`**: Tests Hohmann transfer delta-v. It takes `mu`, `r1` (initial radius), and `r2` (final radius) (all floats), returning initial delta-v, final delta-v, and total delta-v (all floats). Raises `ValueError` for invalid inputs or equal radii.
-    *   **`test_calculate_hohmann_transfer_time_of_flight`**: Tests Hohmann transfer time of flight. It takes `mu`, `r1`, and `r2` (all floats), returning time of flight (float). Raises `ValueError` for invalid inputs or equal radii.
-    *   **`test_calculate_elliptical_orbital_period`**: Tests elliptical orbital period. It takes `mu` and `semi_major_axis` (both floats), returning the period (float). Raises `ValueError` for non-positive inputs.
-    *   **`test_calculate_escape_velocity`**: Tests escape velocity. It takes `mu` and `radius` (both floats), returning escape velocity (float). Raises `ValueError` for non-positive inputs.
-    *   **`test_get_body_orbital_velocity_vector`**: Tests a helper function to retrieve a body's orbital velocity vector. It takes a body name (string), a datetime object, and `mu` (float), returning a 3-element velocity vector tuple. It uses `mock_ephemeris` and `mock_celestial_data`, raising `ValueError` for missing ephemeris data, malformed data, or invalid `mu`.
-    *   **`test_calculate_lambert_transfer`**: Tests a simplified Lambert transfer calculation. It takes `mu`, initial position vector `r1_vec`, final position vector `r2_vec` (all 3-element tuples/lists), and `delta_t` (time of flight, float). It returns magnitudes of initial and final transfer velocities, total delta-v, and the time of flight. Raises `ValueError` for invalid inputs, zero/identical position vectors, or impossible transfer conditions.
+*   **Fixtures (`mock_celestial_data`, `mock_ephemeris`)**:
+    *   **Inputs**: `mock_celestial_data` is configured to respond to celestial body names (e.g., 'Earth', 'Mars') while `mock_ephemeris` responds to tuples of `(body_name, date)`.
+    *   **Outputs/Side Effects**: They mock external data sources (`celestial_data.get_celestial_body_data` and `orbital_mechanics.ephemeris.get_heliocentric_state`) by providing predefined celestial body properties (mass, radius, mu, semi-major axis, orbital period) and heliocentric position/velocity vectors, respectively. This allows tests to run without actual external data access.
+*   **Vector Operations Tests (`test_vector_magnitude`, `test_vector_subtract`, etc.)**:
+    *   **Inputs**: Two 3-element tuples/lists of numbers for vector operations, or a 3-element tuple/list and a scalar for scaling.
+    *   **Outputs/Side Effects**: Return scalar values (magnitude, dot product) or new 3-element tuples/lists (add, subtract, scale, cross product). They raise `ValueError` for invalid input types, lengths, or non-numeric elements.
+*   **Gravitational Parameter Tests (`test_calculate_gravitational_parameter_valid`, etc.)**:
+    *   **Inputs**: A string representing a celestial body name.
+    *   **Outputs/Side Effects**: Returns the gravitational parameter (`mu`). Raises `ValueError` if the body is not found or if the required data (`gravitational_parameter_mu`) is missing or invalid.
+*   **Orbital Velocity Tests (`test_calculate_circular_orbital_velocity`, `test_calculate_escape_velocity`)**:
+    *   **Inputs**: Gravitational parameter (`mu`) and a radius (or distance from central body).
+    *   **Outputs/Side Effects**: Return the calculated velocity (circular orbital or escape). Raise `ValueError` for non-positive `mu` or radius.
+*   **Hohmann Transfer Tests (`test_calculate_hohmann_transfer_delta_v`, `test_calculate_hohmann_transfer_time_of_flight`)**:
+    *   **Inputs**: Gravitational parameter (`mu`) and two radii (`r1`, `r2`) representing the initial and final orbital radii.
+    *   **Outputs/Side Effects**: Return the required delta-V burns (initial, final, and total) or the time of flight for the transfer. Raise `ValueError` for non-positive `mu` or radii, or if `r1` and `r2` are equal.
+*   **Elliptical Orbital Period Test (`test_calculate_elliptical_orbital_period`)**:
+    *   **Inputs**: Gravitational parameter (`mu`) and the semi-major axis of the elliptical orbit.
+    *   **Outputs/Side Effects**: Returns the orbital period. Raises `ValueError` for non-positive `mu` or semi-major axis.
+*   **Body Orbital Velocity Vector Test (`test_get_body_orbital_velocity_vector`)**:
+    *   **Inputs**: A celestial body name, a `datetime` object, and the central body's gravitational parameter (`mu_sun`).
+    *   **Outputs/Side Effects**: Returns a 3-element tuple representing the body's velocity vector. Raises `ValueError` if ephemeris data is unavailable or malformed, or if `mu` is non-positive.
+*   **Simplified Lambert Transfer Test (`test_calculate_lambert_transfer`)**:
+    *   **Inputs**: Gravitational parameter (`mu`), two 3-element position vectors (`r1_vec`, `r2_vec`), and a time of flight (`delta_t`).
+    *   **Outputs/Side Effects**: Returns the magnitudes of the velocity vectors at `r1` and `r2`, the total delta-V, and the time of flight. Raises `ValueError` for invalid inputs, zero/identical position vectors, or if the transfer is impossible for the simplified solver.
 
 ### Dependencies:
 
-*   `pytest`
-*   `math`
-*   `datetime` (specifically `datetime` and `timedelta`)
-*   `unittest.mock` (specifically `patch` and `MagicMock`)
-*   `orbital_mechanics` (module under test, specific functions are imported)
-*   `celestial_data` (mocked)
-*   `constants` (imported but not explicitly used in the provided content)
-*   `ephemeris` (implicitly mocked via `orbital_mechanics.ephemeris.get_heliocentric_state`)
+*   `pytest`: The testing framework.
+*   `math`: Standard Python mathematical functions.
+*   `datetime`, `timedelta`: For date and time manipulation.
+*   `unittest.mock.patch`, `unittest.mock.MagicMock`: For mocking dependencies.
+*   `orbital_mechanics`: The primary module under test, from which various functions are imported.
+*   `celestial_data`: A module containing celestial body data (mocked in tests).
+*   `constants`: A module likely containing physical constants (imported but not directly used in the provided test content).
+*   `ephemeris`: An implied module containing ephemeris data (mocked via `orbital_mechanics.ephemeris.get_heliocentric_state`).
 
 ---
 
 
 ## `tests/test_trajectory_planner.py`
 
-This file contains unit tests for the `TrajectoryPlanner` class, designed to verify its initialization and its ability to plan various types of space trajectories (Hohmann, Direct/Lambert) by mocking external data and calculation dependencies.
+This file contains unit and integration tests for the `TrajectoryPlanner` class, primarily focusing on its ability to plan Hohmann and Direct (Lambert) trajectories between celestial bodies. It extensively uses `pytest` fixtures and `unittest.mock` to isolate the `TrajectoryPlanner` logic from its external dependencies.
 
-### Key Components
+### Key Components:
 
-*   **`_parse_date_string`**: A helper function to convert date strings (`'%Y-%m-%d'`) into `datetime` objects.
-    *   **Inputs**: `date_str` (string).
-    *   **Outputs**: `datetime` object.
-*   **`mock_celestial_data_for_planner`**: A Pytest fixture that patches `trajectory_planner.celestial_data.get_celestial_body_data` to return predefined static data for Sun, Earth, Mars, and Moon.
-    *   **Inputs**: Celestial body name (string).
-    *   **Outputs**: Mocked `get_celestial_body_data` object that yields predefined celestial body properties.
-*   **`mock_orbital_mechanics`**: A Pytest fixture that patches functions within `trajectory_planner.orbital_mechanics`. It provides default return values for Hohmann calculations and simulates an iterative Lambert solver with a "U-shaped" delta-v profile for varying times of flight.
-    *   **Inputs**: Varies based on patched function (e.g., `mu`, position vectors, `delta_t`).
-    *   **Outputs**: A dictionary containing mocked `hohmann_dv`, `hohmann_tof`, `lambert_transfer`, and `grav_param` functions.
-*   **`mock_ephemeris_get_heliocentric_state`**: A Pytest fixture that patches `trajectory_planner.ephemeris.get_heliocentric_state` to provide simplified heliocentric position and velocity vectors for Earth and Mars on specific dates.
-    *   **Inputs**: `body_name` (string), `date` (datetime object).
-    *   **Outputs**: Mocked `get_heliocentric_state` object that yields a dictionary with `position_vector_m` and `velocity_vector_mps`.
-*   **Test Functions (`test_*`)**: A series of functions testing various scenarios for `TrajectoryPlanner`, including:
-    *   **Initialization**: Successful setup, missing/invalid Sun data.
-    *   **Hohmann Transfers**: Success using ephemeris, fallback to static data, unsupported bodies, and error propagation from orbital mechanics.
-    *   **Direct (Lambert) Transfers**: Success with iterative search, failure to find viable solutions, error propagation from the Lambert solver, and handling identical departure/arrival bodies.
-    *   **General `plan_trajectory` validation**: Handling unsupported trajectory types, invalid date formats, and missing required departure dates.
-    *   **Inputs**: `TrajectoryPlanner` instance, mock fixtures, specific test parameters (body names, dates, trajectory types).
-    *   **Outputs**: Asserts on the success/failure status, calculated delta-v, travel time, messages, and verifies that mock functions were called correctly.
+*   **`_parse_date_string` (Helper Function)**:
+    *   **Inputs**: A date string (`str`) in `'%Y-%m-%d'` format.
+    *   **Outputs**: A `datetime` object.
+*   **`mock_celestial_data_for_planner` (Pytest Fixture)**:
+    *   **Inputs**: None.
+    *   **Outputs**: A `MagicMock` patching `trajectory_planner.celestial_data.get_celestial_body_data`, providing predefined static data for Sun, Earth, Mars, and Moon.
+*   **`mock_orbital_mechanics` (Pytest Fixture)**:
+    *   **Inputs**: None.
+    *   **Outputs**: A dictionary of `MagicMock` objects for `orbital_mechanics` functions. It includes a sophisticated mock for `calculate_lambert_transfer` that simulates an optimal time window for lower delta-v, and basic mocks for Hohmann calculations.
+*   **`mock_ephemeris_get_heliocentric_state` (Pytest Fixture)**:
+    *   **Inputs**: None.
+    *   **Outputs**: A `MagicMock` patching `trajectory_planner.ephemeris.get_heliocentric_state`, providing simplified heliocentric position and velocity vectors for Earth and Mars on specific mock dates.
+*   **`test_trajectory_planner_init_*` (Test Functions)**:
+    *   **Inputs**: `mock_celestial_data_for_planner`.
+    *   **Outputs**: Assertions verifying the `TrajectoryPlanner`'s initialization, including successful loading of Sun data and error handling for missing/invalid data.
+*   **`test_plan_hohmann_trajectory_*` (Test Functions)**:
+    *   **Inputs**: `mock_celestial_data_for_planner`, `mock_orbital_mechanics`, `mock_ephemeris_get_heliocentric_state`.
+    *   **Outputs**: Assertions verifying Hohmann transfer planning, including correct use of ephemeris data (with fallback to static data), handling of unsupported bodies, and propagation of errors from orbital mechanics calculations.
+*   **`test_plan_direct_transfer_*` (Test Functions)**:
+    *   **Inputs**: `mock_celestial_data_for_planner`, `mock_orbital_mechanics`, `mock_ephemeris_get_heliocentric_state`.
+    *   **Outputs**: Assertions verifying Direct (Lambert) transfer planning, including iterative search for optimal transfer time, handling cases where no viable solution is found, error propagation, and special handling for transfers to the same body.
+*   **`test_plan_trajectory_unsupported_type` / `test_plan_trajectory_invalid_date_format` (Test Functions)**:
+    *   **Inputs**: `mock_celestial_data_for_planner`.
+    *   **Outputs**: Assertions for input validation, ensuring unsupported trajectory types or invalid date formats are correctly rejected.
 
-### Dependencies
+### Dependencies:
 
-*   `pytest`
-*   `unittest.mock.MagicMock`, `patch`, `call`
-*   `datetime`, `timedelta`
-*   `math`
-*   `trajectory_planner` (the module under test)
-*   `celestial_data`
-*   `orbital_mechanics`
-*   `ephemeris`
-*   `constants`
+*   `pytest`: Test framework.
+*   `unittest.mock`: For patching and mocking external modules (`MagicMock`, `patch`, `call`).
+*   `datetime`, `timedelta`: For date and time calculations.
+*   `math`: For mathematical operations (e.g., `isclose`, `cos`, `sin`, `pi`).
+*   `trajectory_planner`: The main module under test.
+*   `celestial_data`: Mocked for static celestial body properties.
+*   `orbital_mechanics`: Mocked for orbital transfer calculations (Hohmann, Lambert, vector magnitude).
+*   `ephemeris`: Mocked for heliocentric state data (position and velocity vectors).
+*   `constants`: Referenced implicitly within mocks for constants like `G_GRAVITATIONAL`.
 
 ---
 
@@ -668,36 +662,39 @@ This file contains unit tests for the `TrajectoryPlanner` class, designed to ver
 ## `trajectory_planner.py`
 
 ```markdown
-1.  **Purpose**
-    This file defines `TrajectoryPlanner`, a class that provides a high-level interface for planning interplanetary trajectories. It calculates essential details like total delta-v and travel time by orchestrating calls to orbital mechanics and ephemeris modules, supporting various transfer types based on dynamic orbital positions.
+## File Analysis: trajectory_planner.py
 
-2.  **Key Components**
+### 1. Purpose
+This file defines the `TrajectoryPlanner` class, which provides a high-level interface for planning interplanetary trajectories. It orchestrates calls to external modules like `orbital_mechanics`, `celestial_data`, and `ephemeris` to calculate details such as total delta-v and travel time for various transfer types.
 
-    *   **`class TrajectoryPlanner`**:
-        *   **Purpose**: Manages the planning of space trajectories between celestial bodies, integrating orbital mechanics, celestial data, and ephemeris information.
-        *   **`__init__(self)`**:
-            *   **Inputs**: None (self-initializes).
-            *   **Outputs/Side Effects**: Fetches the Sun's gravitational parameter (`mu_sun`) from `celestial_data` and stores it. Raises `ValueError` or `AttributeError` if Sun data is missing or invalid.
-        *   **`_plan_hohmann_trajectory(self, departure_body_name: str, arrival_body_name: str, departure_date: datetime) -> dict`**:
-            *   **Inputs**: Departure and arrival body names (strings), and departure date (`datetime`).
-            *   **Outputs**: A dictionary containing details of a Hohmann transfer (e.g., `total_delta_v_mps`, `travel_time_days`, `success`, `error`, `departure_distance_from_sun_m`, `arrival_distance_from_sun_m`). It retrieves dynamic 3D positions from `ephemeris` and performs calculations using `orbital_mechanics`.
-        *   **`_plan_direct_transfer(self, departure_body_name: str, arrival_body_name: str, departure_date: datetime) -> dict`**:
-            *   **Inputs**: Departure and arrival body names (strings), and departure date (`datetime`).
-            *   **Outputs**: A dictionary containing details of an optimized direct transfer via Lambert's problem (e.g., `total_delta_v_mps`, `travel_time_days`, `success`, `error`, `departure_distance_from_sun_m`, `arrival_distance_from_sun_m`). It iterates over a range of flight times, uses `ephemeris` for 3D position and velocity vectors, and `orbital_mechanics` to solve Lambert's problem for minimum delta-v.
-        *   **`plan_trajectory(self, departure_body_name: str, arrival_body_name: str, trajectory_type: str = 'Hohmann', **kwargs) -> dict`**:
-            *   **Inputs**: Departure and arrival body names (strings), desired `trajectory_type` (string, e.g., 'Hohmann', 'Direct'), and `kwargs` which must include `departure_date` (string 'YYYY-MM-DD').
-            *   **Outputs**: A dictionary with trajectory planning results or an error message. This method acts as a dispatcher, validating inputs and calling the appropriate internal planning method (`_plan_hohmann_trajectory` or `_plan_direct_transfer`).
+### 2. Key Components
 
-    *   **`if __name__ == '__main__':` block**:
-        *   **Purpose**: Contains example usage and test cases for the `TrajectoryPlanner` class, demonstrating how to plan various types of transfers (Hohmann, Direct) and handling different success and error scenarios.
+*   **`TrajectoryPlanner` Class**:
+    *   **Purpose**: Manages the logic for planning different types of interplanetary transfers.
+    *   **`__init__(self)`**:
+        *   **Inputs**: None (implicitly uses `celestial_data`).
+        *   **Outputs/Side Effects**: Initializes `self.mu_sun` (Sun's gravitational parameter) by fetching data from `celestial_data.get_celestial_body_data('Sun')`. Raises `ValueError` or `AttributeError` if Sun data is missing or invalid.
+    *   **`_plan_hohmann_trajectory(self, departure_body_name: str, arrival_body_name: str, departure_date: datetime) -> dict`**:
+        *   **Inputs**: `departure_body_name` (string), `arrival_body_name` (string), `departure_date` (datetime object).
+        *   **Outputs**: A dictionary containing trajectory details (e.g., `total_delta_v_mps`, `travel_time_days`, `success`, `error`, `departure_distance_from_sun_m`, `arrival_distance_from_sun_m`) for a Hohmann transfer, or an error message if unsuccessful.
+    *   **`_plan_direct_transfer(self, departure_body_name: str, arrival_body_name: str, departure_date: datetime) -> dict`**:
+        *   **Inputs**: `departure_body_name` (string), `arrival_body_name` (string), `departure_date` (datetime object).
+        *   **Outputs**: A dictionary containing trajectory details (e.g., `total_delta_v_mps`, `travel_time_days`, `success`, `error`, `departure_distance_from_sun_m`, `arrival_distance_from_sun_m`) for an optimal direct transfer (Lambert's problem), or an error message if no suitable solution is found. It iterates through a range of flight times to find the minimum delta-v.
+    *   **`plan_trajectory(self, departure_body_name: str, arrival_body_name: str, trajectory_type: str = 'Hohmann', **kwargs) -> dict`**:
+        *   **Inputs**: `departure_body_name` (string), `arrival_body_name` (string), `trajectory_type` (string, 'Hohmann' or 'Direct'), and `departure_date` (string 'YYYY-MM-DD') as a keyword argument.
+        *   **Outputs**: A dictionary dispatching to the chosen planning method's result, including `success` status and `error` messages. It also performs input validation for body names and date format.
+*   **`if __name__ == '__main__':` block**:
+    *   **Purpose**: Provides example usage and comprehensive testing of the `TrajectoryPlanner` class, demonstrating both successful and error-handling scenarios for different trajectory types and invalid inputs.
+    *   **Inputs**: Hardcoded celestial body names, a test departure date string, and various trajectory types.
+    *   **Outputs/Side Effects**: Prints detailed trajectory results or specific error messages to the console.
 
-3.  **Dependencies**
+### 3. Dependencies
 
-    *   `math`
-    *   `datetime` (specifically `timedelta`, `datetime` from the `datetime` module)
-    *   `orbital_mechanics` (local module for orbital calculations)
-    *   `celestial_data` (local module for retrieving celestial body data)
-    *   `ephemeris` (local module for dynamic orbital positions and velocities)
+*   `math`
+*   `datetime`, `timedelta` (from the `datetime` module)
+*   `orbital_mechanics` (custom module, likely handles specific orbital calculations like Hohmann ΔV, Lambert's problem, vector magnitudes)
+*   `celestial_data` (custom module, likely provides astronomical data like gravitational parameters)
+*   `ephemeris` (custom module, likely provides dynamic heliocentric position and velocity vectors for celestial bodies at a given date)
 ```
 
 ---
@@ -705,31 +702,19 @@ This file contains unit tests for the `TrajectoryPlanner` class, designed to ver
 
 ## `travel_logger.py`
 
-```markdown
-## travel_logger.py
+This file provides a utility to log details of space travel calculations to a JSON file.
 
 ### Purpose
-This file provides a utility function to log detailed space travel calculation data, including origin, destination, speed, travel time, delta-v, fuel mass, and transfer type, into a JSON file named `travel_log.json`. It ensures the log file is properly managed, handling cases where it might not exist, be empty, or be malformed.
+This script defines a function to save parameters like origin, destination, speed, travel time, delta-v, fuel mass, and transfer type for space missions into a `travel_log.json` file, appending new entries and handling file integrity.
 
 ### Key Components
-
 *   **`save_travel_log` function**:
-    *   **Inputs**:
-        *   `source_planet` (str): Origin celestial body.
-        *   `destination_planet` (str): Destination celestial body.
-        *   `speed` (float): Spacecraft travel speed.
-        *   `travel_time` (float): Estimated travel time.
-        *   `delta_v_required` (float): Required change in velocity.
-        *   `fuel_mass_needed` (float): Estimated fuel mass.
-        *   `transfer_type` (str): Type of orbital transfer.
-    *   **Outputs/Side Effects**:
-        *   Creates or updates `travel_log.json` by appending a new dictionary entry containing the provided travel details along with a timestamp.
-        *   Prints warning messages to the console if the `travel_log.json` file is found to be corrupted, malformed, or has unexpected content.
+    *   **Inputs**: `source_planet` (str), `destination_planet` (str), `speed` (float), `travel_time` (float), `delta_v_required` (float), `fuel_mass_needed` (float), `transfer_type` (str).
+    *   **Outputs or Side Effects**: Appends a new dictionary entry containing the provided travel details and a timestamp to `travel_log.json`. It creates the file if it doesn't exist, and gracefully handles cases where the file is empty or malformed JSON, ensuring new data can always be logged.
 
 ### Dependencies
-*   `json`: For encoding and decoding JSON data to/from the log file.
-*   `datetime`: For generating ISO-formatted timestamps for each log entry.
-*   `os`: For checking the existence of the log file.
-```
+*   `json`: Used for encoding and decoding JSON data to and from the log file.
+*   `datetime`: Used to generate current timestamps for each log entry.
+*   `os`: Used to check for the existence of the log file (`os.path.exists`).
 
 ---
