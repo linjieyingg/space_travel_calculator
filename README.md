@@ -7,9 +7,9 @@
 
 **Branch:** main
 
-**Files Analyzed:** 24
+**Files Analyzed:** 30
 
-**Last Updated:** 2025-12-02 16:41:12
+**Last Updated:** 2025-12-02 17:23:43
 
 ---
 
@@ -503,6 +503,41 @@ This file provides a function to calculate the required fuel mass for a spacecra
 ---
 
 
+## `src/__init__.py`
+
+*Empty file*
+
+---
+
+
+## `src/astrophysics/__init__.py`
+
+*Empty file*
+
+---
+
+
+## `src/data/__init__.py`
+
+*Empty file*
+
+---
+
+
+## `src/propulsion/__init__.py`
+
+*Empty file*
+
+---
+
+
+## `src/utils/__init__.py`
+
+*Empty file*
+
+---
+
+
 ## `staged_propulsion.py`
 
 ```markdown
@@ -540,6 +575,13 @@ This file provides a function to calculate the fuel mass required for each stage
 *   `typing.List`, `typing.Union`: Used for type hints.
 *   `.propulsion_system`: A relative import for an external module expected to contain a `calculate_required_fuel_mass` function. (This dependency is mocked for self-testing purposes in the `if __name__ == "__main__":` block).
 ```
+
+---
+
+
+## `tests/__init__.py`
+
+*Empty file*
 
 ---
 
