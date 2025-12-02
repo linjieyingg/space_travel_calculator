@@ -7,9 +7,9 @@
 
 **Branch:** main
 
-**Files Analyzed:** 30
+**Files Analyzed:** 32
 
-**Last Updated:** 2025-12-02 17:23:43
+**Last Updated:** 2025-12-02 17:37:32
 
 ---
 
@@ -462,25 +462,27 @@ This file implements a Space Travel Calculator that determines the time, fuel, a
 
 ## `propulsion_system.py`
 
-This file provides a function to calculate the required fuel mass for a spacecraft using the Tsiolkovsky rocket equation. It determines the fuel needed to achieve a specified change in velocity (delta-V), based on the spacecraft's dry mass and engine characteristics.
+This file provides functions for calculating key rocket propulsion metrics, including effective exhaust velocity and the fuel mass required for a specified change in velocity. It encapsulates the Tsiolkovsky rocket equation to assist in basic spacecraft design and mission planning.
 
 ### Key Components:
 
-*   **Constants**:
-    *   `STANDARD_GRAVITY`: A float representing the standard acceleration due to gravity (9.80665 m/s^2).
-*   **Function**: `calculate_required_fuel_mass`
+*   **`calculate_exhaust_velocity(specific_impulse: float) -> float`**
+    *   **Inputs**: `specific_impulse` (float): The engine's specific impulse in seconds.
+    *   **Outputs**: `float`: The effective exhaust velocity in meters/second.
+    *   **Description**: Determines the effective exhaust velocity of an engine based on its specific impulse and standard gravity.
+
+*   **`calculate_required_fuel_mass(delta_v: float, dry_mass: float, specific_impulse: float = None, exhaust_velocity: float = None) -> float`**
     *   **Inputs**:
-        *   `delta_v` (float): Required change in velocity (m/s).
-        *   `dry_mass` (float): Mass of the spacecraft without fuel (kg).
-        *   `specific_impulse` (float, optional): Engine's specific impulse (s).
-        *   `exhaust_velocity` (float, optional): Effective exhaust velocity of the engine (m/s).
-    *   **Outputs or Side Effects**:
-        *   Returns a `float` representing the required fuel mass in kilograms.
-        *   Raises `ValueError` for invalid inputs (e.g., negative delta-V, non-positive dry mass, missing or invalid engine characteristics).
+        *   `delta_v` (float): The required change in velocity in meters/second.
+        *   `dry_mass` (float): The mass of the spacecraft without fuel in kilograms.
+        *   `specific_impulse` (float, optional): The engine's specific impulse in seconds (alternative to `exhaust_velocity`).
+        *   `exhaust_velocity` (float, optional): The effective exhaust velocity in meters/second (alternative to `specific_impulse`).
+    *   **Outputs**: `float`: The required fuel mass in kilograms.
+    *   **Description**: Calculates the amount of fuel needed for a spacecraft to achieve a specific delta-V, utilizing the Tsiolkovsky rocket equation, given the dry mass and engine efficiency (either specific impulse or exhaust velocity).
 
 ### Dependencies:
 
-*   `math` (Python's built-in math module)
+*   `math` (for `math.exp`)
 
 ---
 
@@ -534,6 +536,48 @@ This file provides a function to calculate the required fuel mass for a spacecra
 ## `src/utils/__init__.py`
 
 *Empty file*
+
+---
+
+
+## `src/utils/angle_conversions.py`
+
+```markdown
+## src/utils/angle_conversions.py
+
+### Purpose
+This file provides a collection of utility functions for converting angle measurements between common formats: decimal degrees, radians, and Degrees, Minutes, Seconds (DMS). It includes validation to ensure correct numeric inputs.
+
+### Key Components
+*   `_validate_numeric_input(value: Union[int, float], name: str)`
+    *   **Inputs:** `value` (an integer or float), `name` (a string identifier for the value).
+    *   **Outputs/Side Effects:** Raises a `ValueError` if the `value` is not an `int` or `float`.
+*   `degrees_to_radians(degrees: Union[int, float]) -> float`
+    *   **Inputs:** `degrees` (the angle in decimal degrees).
+    *   **Outputs:** The angle converted to radians as a `float`.
+*   `radians_to_degrees(radians: Union[int, float]) -> float`
+    *   **Inputs:** `radians` (the angle in radians).
+    *   **Outputs:** The angle converted to decimal degrees as a `float`.
+*   `dms_to_degrees(degrees: Union[int, float], minutes: Union[int, float], seconds: Union[int, float]) -> float`
+    *   **Inputs:** `degrees`, `minutes`, and `seconds` components of an angle. Minutes and seconds must be within `[0, 60)`.
+    *   **Outputs:** The angle converted to decimal degrees as a `float`.
+*   `degrees_to_dms(degrees: Union[int, float]) -> tuple[int, int, float]`
+    *   **Inputs:** `degrees` (the angle in decimal degrees).
+    *   **Outputs:** A tuple `(degrees_int, minutes_int, seconds_float)` representing the angle in DMS format.
+*   `dms_to_radians(degrees: Union[int, float], minutes: Union[int, float], seconds: Union[int, float]) -> float`
+    *   **Inputs:** `degrees`, `minutes`, and `seconds` components of an angle.
+    *   **Outputs:** The angle converted to radians as a `float`.
+*   `radians_to_dms(radians: Union[int, float]) -> tuple[int, int, float]`
+    *   **Inputs:** `radians` (the angle in radians).
+    *   **Outputs:** A tuple `(degrees_int, minutes_int, seconds_float)` representing the angle in DMS format.
+*   `if __name__ == "__main__":` block
+    *   **Inputs:** None.
+    *   **Outputs/Side Effects:** Executes a series of self-tests for all conversion functions, printing results and demonstrating error handling for invalid inputs.
+
+### Dependencies
+*   `math`: Used for `math.radians`, `math.degrees`, `math.isclose`, and `math.pi`.
+*   `typing.Union`: Used for type hinting to indicate parameters can be either `int` or `float`.
+```
 
 ---
 
@@ -692,6 +736,34 @@ This file contains a comprehensive suite of unit tests using `pytest` for functi
 *   `celestial_data`: A module containing celestial body data (mocked in tests).
 *   `constants`: A module likely containing physical constants (imported but not directly used in the provided test content).
 *   `ephemeris`: An implied module containing ephemeris data (mocked via `orbital_mechanics.ephemeris.get_heliocentric_state`).
+
+---
+
+
+## `tests/test_propulsion_system.py`
+
+This file contains unit tests for the `propulsion_system` module, verifying the correctness and robustness of functions related to calculating rocket fuel mass and exhaust velocity. It uses the `pytest` framework to test various scenarios, including valid inputs, edge cases, and error conditions.
+
+### Key Components:
+
+*   **`ABS_TOL` and `REL_TOL`**: Define absolute and relative tolerances for floating-point comparisons using `math.isclose`.
+*   **Tests for `calculate_exhaust_velocity`**: A series of test functions prefixed with `test_calculate_exhaust_velocity_` that:
+    *   **Inputs**: Test `specific_impulse` (numeric value).
+    *   **Outputs/Side Effects**: Verify the calculated exhaust velocity (float) is correct for valid inputs and that `ValueError` is raised for zero, negative, or non-numeric specific impulse.
+*   **Tests for `calculate_required_fuel_mass`**: A series of test functions prefixed with `test_calculate_required_fuel_mass_` that:
+    *   **Inputs**: Test `delta_v`, `dry_mass`, and either `specific_impulse` or `exhaust_velocity` (all numeric).
+    *   **Outputs/Side Effects**: Verify the calculated fuel mass (float) is correct for valid inputs and that `ValueError` is raised for:
+        *   Invalid (negative or non-numeric) `delta_v` or `dry_mass`.
+        *   Missing engine characteristics (`specific_impulse` or `exhaust_velocity`).
+        *   Invalid (non-positive or non-numeric) `specific_impulse` or `exhaust_velocity`.
+        *   Inconsistent `specific_impulse` and `exhaust_velocity` when both are provided.
+        *   Extremely high `delta_v` leading to potential `OverflowError`.
+
+### Dependencies:
+
+*   `pytest`: The testing framework used for structuring tests, parameterization (`@pytest.mark.parametrize`), and exception handling (`pytest.raises`).
+*   `math`: Used for floating-point comparison (`math.isclose`).
+*   `propulsion_system`: The module under test, from which `calculate_required_fuel_mass`, `STANDARD_GRAVITY`, and `calculate_exhaust_velocity` are imported.
 
 ---
 
