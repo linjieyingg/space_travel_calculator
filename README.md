@@ -7,9 +7,9 @@
 
 **Branch:** main
 
-**Files Analyzed:** 23
+**Files Analyzed:** 24
 
-**Last Updated:** 2025-12-02 16:28:30
+**Last Updated:** 2025-12-02 16:41:12
 
 ---
 
@@ -498,6 +498,47 @@ This file provides a function to calculate the required fuel mass for a spacecra
         *   **Outputs**: `bool` - Returns `True` if the name is valid (between 3 and 20 alphanumeric characters), `False` otherwise.
 
 3.  **Dependencies**: None. The file does not use any external imports or libraries.
+```
+
+---
+
+
+## `staged_propulsion.py`
+
+```markdown
+## File Summary: `staged_propulsion.py`
+
+This file provides a function to calculate the fuel mass required for each stage of a multi-stage rocket, working backward from the last stage to account for the cumulative mass lifted. It includes robust input validation and demonstration tests.
+
+### Key Components:
+
+*   **`calculate_multistage_fuel_mass(payload_mass, stage_dry_masses, stage_specific_impulses, stage_delta_vs)` function**:
+    *   **Purpose**: Computes the fuel needed for each stage of a rocket, considering the effective payload (actual payload plus all subsequent stages' dry and fuel mass). It iterates backward through stages.
+    *   **Inputs**:
+        *   `payload_mass` (float): Mass of the final payload.
+        *   `stage_dry_masses` (List[float]): Dry mass for each stage.
+        *   `stage_specific_impulses` (List[float]): Specific impulse for each stage's engine.
+        *   `stage_delta_vs` (List[float]): Delta-V requirement for each stage.
+    *   **Outputs**: `List[float]` of fuel masses for each stage, ordered from first to last.
+    *   **Side Effects**: Raises `ValueError` if any input parameters are invalid (e.g., non-positive masses/ISPs, negative delta-Vs, mismatched list lengths, or empty lists).
+
+*   **`MockPropulsionSystem` class (within `if __name__ == "__main__":`)**:
+    *   **Purpose**: A local mock implementation of the `propulsion_system` module for standalone testing of `staged_propulsion.py`. It specifically provides `calculate_required_fuel_mass`.
+    *   **`calculate_required_fuel_mass(delta_v, dry_mass, specific_impulse)` static method**:
+        *   **Purpose**: Calculates the fuel mass for a *single* stage using the Tsiolkovsky rocket equation.
+        *   **Inputs**: `delta_v` (float), `dry_mass` (float), `specific_impulse` (float).
+        *   **Outputs**: `float` representing the required fuel mass.
+        *   **Side Effects**: Raises `ValueError` for invalid inputs.
+
+*   **`if __name__ == "__main__":` block**:
+    *   **Purpose**: Contains demo test cases that instantiate the `MockPropulsionSystem` and call `calculate_multistage_fuel_mass` with various valid and invalid inputs to demonstrate its functionality and error handling.
+    *   **Outputs/Side Effects**: Prints calculation results or error messages to the console.
+
+### Dependencies:
+
+*   `math`: Used for mathematical operations, specifically `math.exp` in the fuel calculation (both in the mock and implicitly expected in the actual `propulsion_system`).
+*   `typing.List`, `typing.Union`: Used for type hints.
+*   `.propulsion_system`: A relative import for an external module expected to contain a `calculate_required_fuel_mass` function. (This dependency is mocked for self-testing purposes in the `if __name__ == "__main__":` block).
 ```
 
 ---
