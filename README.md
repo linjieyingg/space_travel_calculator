@@ -7,9 +7,9 @@
 
 **Branch:** main
 
-**Files Analyzed:** 17
+**Files Analyzed:** 16
 
-**Last Updated:** 2025-12-08 13:39:00
+**Last Updated:** 2025-12-08 14:12:18
 
 ---
 
@@ -261,48 +261,6 @@ This file serves as the main entry point for a space travel calculator applicati
 ## `src/utils/__init__.py`
 
 *Empty file*
-
----
-
-
-## `src/utils/angle_conversions.py`
-
-```markdown
-## src/utils/angle_conversions.py
-
-### Purpose
-This file provides a collection of utility functions for converting angle measurements between common formats: decimal degrees, radians, and Degrees, Minutes, Seconds (DMS). It includes validation to ensure correct numeric inputs.
-
-### Key Components
-*   `_validate_numeric_input(value: Union[int, float], name: str)`
-    *   **Inputs:** `value` (an integer or float), `name` (a string identifier for the value).
-    *   **Outputs/Side Effects:** Raises a `ValueError` if the `value` is not an `int` or `float`.
-*   `degrees_to_radians(degrees: Union[int, float]) -> float`
-    *   **Inputs:** `degrees` (the angle in decimal degrees).
-    *   **Outputs:** The angle converted to radians as a `float`.
-*   `radians_to_degrees(radians: Union[int, float]) -> float`
-    *   **Inputs:** `radians` (the angle in radians).
-    *   **Outputs:** The angle converted to decimal degrees as a `float`.
-*   `dms_to_degrees(degrees: Union[int, float], minutes: Union[int, float], seconds: Union[int, float]) -> float`
-    *   **Inputs:** `degrees`, `minutes`, and `seconds` components of an angle. Minutes and seconds must be within `[0, 60)`.
-    *   **Outputs:** The angle converted to decimal degrees as a `float`.
-*   `degrees_to_dms(degrees: Union[int, float]) -> tuple[int, int, float]`
-    *   **Inputs:** `degrees` (the angle in decimal degrees).
-    *   **Outputs:** A tuple `(degrees_int, minutes_int, seconds_float)` representing the angle in DMS format.
-*   `dms_to_radians(degrees: Union[int, float], minutes: Union[int, float], seconds: Union[int, float]) -> float`
-    *   **Inputs:** `degrees`, `minutes`, and `seconds` components of an angle.
-    *   **Outputs:** The angle converted to radians as a `float`.
-*   `radians_to_dms(radians: Union[int, float]) -> tuple[int, int, float]`
-    *   **Inputs:** `radians` (the angle in radians).
-    *   **Outputs:** A tuple `(degrees_int, minutes_int, seconds_float)` representing the angle in DMS format.
-*   `if __name__ == "__main__":` block
-    *   **Inputs:** None.
-    *   **Outputs/Side Effects:** Executes a series of self-tests for all conversion functions, printing results and demonstrating error handling for invalid inputs.
-
-### Dependencies
-*   `math`: Used for `math.radians`, `math.degrees`, `math.isclose`, and `math.pi`.
-*   `typing.Union`: Used for type hinting to indicate parameters can be either `int` or `float`.
-```
 
 ---
 
