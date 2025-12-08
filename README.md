@@ -7,9 +7,9 @@
 
 **Branch:** main
 
-**Files Analyzed:** 32
+**Files Analyzed:** 34
 
-**Last Updated:** 2025-12-02 17:37:32
+**Last Updated:** 2025-12-08 12:48:56
 
 ---
 
@@ -161,6 +161,62 @@ This file provides functionalities to calculate the approximate heliocentric orb
 *   `celestial_data` (specifically `get_celestial_body_data`)
 *   `orbital_mechanics` (specifically `calculate_gravitational_parameter`)
 *   `sys` (used in the self-test for module mocking)
+
+---
+
+
+## `flight_data_processor.py`
+
+This module centralizes post-trajectory calculations for relativistic time dilation, estimated arrival age, and arrival dates, enhancing modularity for a space travel application.
+
+### Key Components
+
+*   **`calc_time_earth`**
+    *   **Inputs**: `years_traveler_frame` (travel time experienced by traveler in years), `average_speed_ms` (average spacecraft speed in m/s).
+    *   **Outputs**: Returns the equivalent travel time in Earth's reference frame in years (float). Returns `float('inf')` if speed is at or above the speed of light.
+*   **`calc_age`**
+    *   **Inputs**: `years_travel_time` (total travel time in years), `starting_age` (traveler's age at journey start).
+    *   **Outputs**: Returns the traveler's estimated age upon arrival (float).
+*   **`calc_arrival`**
+    *   **Inputs**: `departure_date` (exact `datetime` of departure), `years_earth_frame` (total travel time in Earth's reference frame in years).
+    *   **Outputs**: Returns the estimated arrival `datetime`. Returns `datetime.max` if the travel time is infinite or excessively large.
+
+### Dependencies
+
+*   `math` (for mathematical operations like `sqrt`, `isclose`)
+*   `datetime` (specifically `datetime` and `timedelta` classes)
+*   `typing` (specifically `Union` for type hints)
+*   `constants` (a local module, likely for physical constants like the speed of light)
+
+---
+
+
+## `flight_plan.py`
+
+This file defines a `FlightPlan` dataclass, which serves as an immutable, structured representation for all details of a planned space journey, including user inputs, trajectory specifics, fuel calculations, and relativistic effects. It includes robust post-initialization validation to ensure data integrity.
+
+### Key Components:
+
+*   **Class: `FlightPlan`**
+    *   **Description**: A dataclass marked as `frozen=True` to ensure immutability, representing a complete space flight plan.
+    *   **Inputs**: Numerous attributes covering:
+        *   **User Inputs**: `departure_body_name` (str), `arrival_body_name` (str), `trajectory_type` (str), `spacecraft_dry_mass_kg` (float), `engine_specific_impulse_s` (float), `departure_date` (datetime.datetime), `traveler_starting_age_years` (int), `fuel_price_per_unit` (float).
+        *   **Trajectory Specifics**: `total_delta_v_mps` (float), `travel_time_traveler_frame_years` (float), `travel_time_earth_frame_years` (float), `departure_distance_from_sun_m` (float), `arrival_distance_from_sun_m` (float).
+        *   **Fuel Calculations**: `total_fuel_mass_needed_kg` (float), `total_fuel_cost` (float).
+        *   **Relativistic Effects**: `traveler_arrival_age_years` (float), `arrival_date_earth_frame` (datetime.datetime).
+    *   **Outputs/Side Effects**:
+        *   `__post_init__`: Performs comprehensive type and value validation for all attributes, raising `ValueError` or `TypeError` for invalid data (e.g., negative mass, illogical dates).
+        *   `__str__`: Returns a human-readable, formatted string summarizing the flight plan details.
+*   **Section: `if __name__ == '__main__':`**
+    *   **Description**: Contains example usage demonstrating how to create `FlightPlan` instances, including valid scenarios and expected error handling for invalid data.
+    *   **Inputs**: Hardcoded parameters for `FlightPlan` instantiation.
+    *   **Outputs/Side Effects**: Prints flight plan summaries or caught validation errors to the console.
+
+### Dependencies:
+
+*   `datetime`: For handling date and time objects (`datetime.datetime`).
+*   `dataclasses`: For the `dataclass` decorator and `field` to define the immutable data structure.
+*   `typing`: For type hinting, specifically `Union`.
 
 ---
 
@@ -382,39 +438,37 @@ This file defines a utility function to validate spacecraft IDs according to spe
 
 ## `main.py`
 
-This file implements a Space Travel Calculator that determines the time, fuel, and cost required for a user to reach a chosen celestial destination, incorporating relativistic effects, orbital mechanics, and fuel optimization. It gathers user input, performs complex calculations, and provides a detailed travel summary.
+## Summary of `main.py`
 
-### Key Components:
+### Purpose
+This file implements a Space Travel Calculator that prompts the user for travel parameters, then calculates the time to reach a celestial destination, fuel requirements, and relativistic effects. It consolidates inputs and calculated data into a `FlightPlan` object for a comprehensive travel summary and logging.
 
-*   **`main()`**:
-    *   **Inputs**: User-provided inputs via console for departure/arrival bodies, trajectory type, spacecraft dry mass, engine specific impulse, departure date, user age, and fuel price.
-    *   **Outputs/Side Effects**: Prints a comprehensive travel summary (Delta-V, fuel mass, cost, travel times in both frames, arrival age, arrival date) to the console and logs travel details using `travel_logger`.
-*   **`calc_time_earth(years_traveler_frame, average_speed_ms)`**:
-    *   **Inputs**: `years_traveler_frame` (float), `average_speed_ms` (float).
-    *   **Outputs**: `float` representing travel time in Earth's reference frame, considering relativistic time dilation.
-*   **`calc_age(years_travel_time: float, starting_age: int)`**:
-    *   **Inputs**: `years_travel_time` (float), `starting_age` (int).
-    *   **Outputs**: `float` representing the user's age upon arrival.
-*   **`calc_arrival(departure_date: datetime, years_earth_frame: float)`**:
-    *   **Inputs**: `departure_date` (datetime), `years_earth_frame` (float).
-    *   **Outputs**: `datetime` object of the estimated arrival date or `None` if calculation fails.
-*   **`convert_date(date_str: str)`**:
-    *   **Inputs**: `date_str` (string in 'YYYY-MM-DD' format).
-    *   **Outputs**: `datetime` object.
+### Key Components
 
-### Dependencies:
+*   **`main()` function**:
+    *   **Inputs**: Gathers user inputs such as departure/arrival bodies, trajectory type, spacecraft mass, engine specific impulse, departure date, user age, and fuel price via console prompts.
+    *   **Outputs/Side Effects**: Prints a detailed travel summary to the console and logs the `FlightPlan` details using the `travel_logger` module. It orchestrates calls to various modules for calculations.
+*   **Input Collection Section**: Manages user interaction for gathering all necessary parameters for the flight plan, including validation using the `checks` module.
+*   **Trajectory Planning Section**: Utilizes `TrajectoryPlanner` to calculate `delta_v_required`, `travel_time_seconds`, and `average_speed_for_relativistic_calc_mps` based on user-selected bodies and trajectory type.
+*   **Fuel Calculation Section**: Leverages `fuel_optimizer` to determine `fuel_mass_needed` and `fuel_calc` to calculate `total_fuel_cost` based on trajectory and spacecraft parameters.
+*   **Time and Age Calculations Section**: Employs `flight_data_processor` (fdp) to compute `travel_time_years_traveler_frame`, `travel_time_years_earth_frame`, `arrival_age_years`, and `estimated_arrival_date`, accounting for relativistic effects.
+*   **`FlightPlan` Object Assembly**: Gathers all collected inputs and calculated results into a structured `FlightPlan` dataclass instance.
+*   **Output Summary & Logging**: Presents the comprehensive flight plan summary to the user and saves it via `travel_logger.save_travel_log`.
 
+### Dependencies
 *   **Standard Library**: `math`, `datetime`, `timedelta`
-*   **Local Modules**:
-    *   `checks` (aliased as `c`): For input validation (e.g., `is_valid_date`, `is_valid_age`).
+*   **Custom Modules**:
+    *   `checks` (as `c`): For input validation.
     *   `celestial_data`: To retrieve information about celestial bodies.
-    *   `orbital_mechanics`: Imports `calculate_circular_orbital_velocity` (not directly used in `main`).
-    *   `trajectory_planner`: Provides the `TrajectoryPlanner` class to calculate trajectory parameters.
-    *   `propulsion_system`: Imported but not directly called in `main`.
-    *   `fuel_calc`: Calculates fuel cost.
-    *   `travel_logger`: Logs travel details.
-    *   `constants`: Provides `C_LIGHT_MPS` (speed of light).
-    *   `fuel_optimizer`: Optimizes and calculates required fuel mass for a trajectory.
+    *   `orbital_mechanics`: (Imported but not directly used in `main`'s current logic).
+    *   `trajectory_planner`: To plan the space trajectory.
+    *   `propulsion_system`: (Imported but not directly used in `main`'s current logic, likely used by `fuel_optimizer`).
+    *   `fuel_calc`: To calculate fuel cost.
+    *   `travel_logger`: To save travel log details.
+    *   `constants`: To access global constants like `C_LIGHT_MPS`.
+    *   `fuel_optimizer`: To optimize and calculate required fuel mass.
+    *   `flight_plan`: Defines the `FlightPlan` dataclass.
+    *   `flight_data_processor` (as `fdp`): For time, age, and relativistic calculations.
 
 ---
 
@@ -857,19 +911,20 @@ This file defines the `TrajectoryPlanner` class, which provides a high-level int
 
 ## `travel_logger.py`
 
-This file provides a utility to log details of space travel calculations to a JSON file.
+This file provides a utility to log space travel plan details.
 
 ### Purpose
-This script defines a function to save parameters like origin, destination, speed, travel time, delta-v, fuel mass, and transfer type for space missions into a `travel_log.json` file, appending new entries and handling file integrity.
+This file defines a function to save detailed space travel calculation specifics from a `FlightPlan` object to a `travel_log.json` file, ensuring logs are appended and handling file creation or corruption.
 
 ### Key Components
-*   **`save_travel_log` function**:
-    *   **Inputs**: `source_planet` (str), `destination_planet` (str), `speed` (float), `travel_time` (float), `delta_v_required` (float), `fuel_mass_needed` (float), `transfer_type` (str).
-    *   **Outputs or Side Effects**: Appends a new dictionary entry containing the provided travel details and a timestamp to `travel_log.json`. It creates the file if it doesn't exist, and gracefully handles cases where the file is empty or malformed JSON, ensuring new data can always be logged.
+*   **`save_travel_log(flight_plan: FlightPlan)` function**:
+    *   **Inputs**: Takes a `flight_plan` object of type `FlightPlan`, containing attributes like `origin_body`, `destination_body`, `speed_Mm_s`, `travel_time_years`, `delta_v_required_km_s`, `fuel_mass_needed_kg`, and `transfer_type`.
+    *   **Outputs/Side Effects**: Appends a new entry (a dictionary with flight plan details and a timestamp) to `travel_log.json`. If the file doesn't exist, it's created; if it's empty or malformed, it's initialized or reset.
 
 ### Dependencies
-*   `json`: Used for encoding and decoding JSON data to and from the log file.
-*   `datetime`: Used to generate current timestamps for each log entry.
-*   `os`: Used to check for the existence of the log file (`os.path.exists`).
+*   `json`: For reading and writing data to JSON format.
+*   `datetime`: For generating timestamps for log entries.
+*   `os`: For checking if the log file exists.
+*   `FlightPlan`: A custom class expected to be imported from `flight_plan.py`.
 
 ---
