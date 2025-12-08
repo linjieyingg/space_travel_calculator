@@ -7,9 +7,9 @@
 
 **Branch:** main
 
-**Files Analyzed:** 18
+**Files Analyzed:** 17
 
-**Last Updated:** 2025-12-08 13:36:59
+**Last Updated:** 2025-12-08 13:39:00
 
 ---
 
@@ -30,26 +30,6 @@ This module serves as a centralized source for astrophysical data, storing detai
 
 *   `math`: For mathematical operations (e.g., `fabs`).
 *   `constants`: Provides `G_GRAVITATIONAL` and `C_LIGHT_MPS`.
-
----
-
-
-## `checks.py`
-
-This module provides a utility function for validating date strings against a specified format, intended for a space travel calculator application.
-
-### Key Components:
-
-*   **`is_valid_date(date_str, format_str='%Y-%m-%d')` function**
-    *   **Inputs**:
-        *   `date_str` (str): The date string to be validated.
-        *   `format_str` (str, optional): The expected format of the date string (defaults to `'%Y-%m-%d'`).
-    *   **Outputs**:
-        *   `bool`: `True` if `date_str` can be successfully parsed into a datetime object using `format_str`; `False` otherwise.
-
-### Dependencies:
-
-*   `datetime` (from the `datetime` standard library module)
 
 ---
 
