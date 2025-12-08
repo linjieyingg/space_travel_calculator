@@ -5,7 +5,9 @@ Semester: Fall 2024
 Description:
     Space travel calculator that calculates time it takes for a user to
     reach a chosen celestial destination, accounting for relativistic effects,
-    orbital mechanics, and fuel requirements.
+    orbital mechanics, and fuel requirements. This refactored version
+    leverages a structured FlightPlan data model and delegates core
+    calculation logic to dedicated modules.
 
 Assignment Information:
     Assignment:     Individual Project
@@ -44,101 +46,12 @@ import fuel_calc
 import travel_logger
 from constants import C_LIGHT_MPS # Import directly from constants for clarity
 import fuel_optimizer # Added import for fuel_optimizer
+from flight_plan import FlightPlan # New: Import FlightPlan dataclass
+import flight_data_processor as fdp # New: Import flight data processing functions
 
 # Constants
 # Conversion factor from years to seconds
 YEAR_TO_SECONDS = 365.25 * 24 * 3600
-
-def calc_time_earth(years_traveler_frame, average_speed_ms):
-    """
-    Calculates travel time in Earth's reference frame using relativistic effects.
-
-    Args:
-        years_traveler_frame (float): Travel time in the traveler's (proper) frame in years.
-        average_speed_ms (float): The average effective speed of the spacecraft relative to Earth in m/s.
-                                  Used to calculate the Lorentz factor for relativistic time dilation.
-
-    Returns:
-        float: Travel time in Earth's reference frame in years.
-    """
-    if average_speed_ms < 0:
-        print("Warning: Negative speed provided. Returning traveler's time.")
-        return years_traveler_frame
-    
-    if average_speed_ms == 0:
-        # If speed is zero, travel conceptually takes infinite time from Earth's perspective for a journey
-        return float('inf')
-
-    if average_speed_ms >= C_LIGHT_MPS:
-        # Speed at or above light speed means Lorentz factor is undefined or imaginary.
-        # For practical purposes, return traveler's time as a fallback or indicate error.
-        print("Warning: Speed is at or above the speed of light. Relativistic time dilation calculation may be invalid or undefined. Returning traveler's time.")
-        return years_traveler_frame 
-
-    try:
-        lorentz_factor = 1 / math.sqrt(1 - (average_speed_ms / C_LIGHT_MPS)**2)
-        time_earth_frame = years_traveler_frame * lorentz_factor
-        return time_earth_frame
-    except Exception as e:
-        print(f"Warning: Error during relativistic time calculation: {e}. Falling back to traveler's time.")
-        return years_traveler_frame
-
-def calc_age(years_travel_time: float, starting_age: int) -> float:
-    """
-    Calculates the user's age upon arrival.
-
-    Args:
-        years_travel_time (float): Total travel time in years (traveler's frame).
-        starting_age (int): User's starting age.
-
-    Returns:
-        float: User's age upon arrival.
-    """
-    if not isinstance(starting_age, (int, float)) or starting_age < 0:
-        raise ValueError("Starting age must be a non-negative number.")
-    if not isinstance(years_travel_time, (int, float)) or years_travel_time < 0:
-        raise ValueError("Travel time must be a non-negative number.")
-
-    return starting_age + years_travel_time
-
-def calc_arrival(departure_date: datetime, years_earth_frame: float) -> datetime | None:
-    """
-    Calculates the estimated arrival date based on departure date and travel time
-    in Earth's reference frame.
-
-    Args:
-        departure_date (datetime): The date of departure.
-        years_earth_frame (float): Total travel years in Earth's reference frame.
-
-    Returns:
-        datetime.datetime: Estimated arrival date, or None if calculation fails.
-    """
-    try:
-        # Convert years to days for timedelta
-        days_earth_frame = years_earth_frame * 365.25 # Account for leap years roughly
-        arrival_date = departure_date + timedelta(days=days_earth_frame)
-        return arrival_date
-    except OverflowError:
-        print("Warning: Arrival date calculation resulted in a date out of range due to extremely long travel time.")
-        return None
-    except TypeError:
-        print("Error: Invalid date or time input for arrival calculation.")
-        return None
-    except Exception as e:
-        print(f"Warning: An unexpected error occurred calculating arrival date: {e}")
-        return None
-
-def convert_date(date_str: str) -> datetime:
-    """
-    Converts a date string in YYYY-MM-DD format to a datetime object.
-
-    Args:
-        date_str (str): Date string in 'YYYY-MM-DD' format.
-
-    Returns:
-        datetime.datetime: Converted datetime object.
-    """
-    return datetime.strptime(date_str, '%Y-%m-%d')
 
 def main():
     print("Welcome to the Space Travel Calculator!")
@@ -236,7 +149,7 @@ def main():
         departure_date_str = input("Enter departure date (YYYY-MM-DD): ")
         if c.is_valid_date(departure_date_str):
             try:
-                departure_date = convert_date(departure_date_str)
+                departure_date = datetime.strptime(departure_date_str, '%Y-%m-%d')
                 break
             except ValueError:
                 print("Error: Date format is superficially correct but could not be parsed. Please re-enter a valid date.")
@@ -355,66 +268,85 @@ def main():
         print("Error calculating fuel cost. Check input parameters or the result from fuel mass calculation.")
         return
 
-    # --- Time and Age Calculations ---
-    # Convert travel time from seconds to years (traveler's frame is assumed to be the Hohmann transfer time initially)
+    # --- Time and Age Calculations (using flight_data_processor) ---
     travel_time_years_traveler_frame = travel_time_seconds / YEAR_TO_SECONDS
     
-    # REVISIT: The relativistic time dilation calculation `calc_time_earth` requires an `average_speed_ms`.
-    # For Hohmann transfers, the speed is not constant. Using an 'average' speed for relativistic 
-    # effects on a Hohmann trajectory is a significant simplification. 
-    # If the intent is to show *some* relativistic effect, we need a representative speed.
-    # The `trajectory_planner` provides `average_hohmann_speed_ms` in its output.
-    # Let's use the provided average speed from the planner if available, otherwise fallback to a placeholder.
-    average_speed_for_relativistic_calc = trajectory_result.get('average_hohmann_speed_ms', 0.0)
+    average_speed_for_relativistic_calc_mps = trajectory_result.get('average_hohmann_speed_ms', 0.0)
 
     # Fallback to a placeholder if the average speed from planner is not valid or zero.
-    if average_speed_for_relativistic_calc <= 0:
+    if average_speed_for_relativistic_calc_mps <= 0:
         print("Warning: Average Hohmann speed is zero or negative. Using a placeholder speed for relativistic calculation (0.1% of C).")
-        average_speed_for_relativistic_calc = 0.001 * C_LIGHT_MPS 
+        average_speed_for_relativistic_calc_mps = 0.001 * C_LIGHT_MPS 
 
-    travel_time_years_earth_frame = calc_time_earth(travel_time_years_traveler_frame, average_speed_for_relativistic_calc)
-    
-    arrival_age = 0.0
+    travel_time_years_earth_frame = 0.0
     try:
-        arrival_age = calc_age(travel_time_years_traveler_frame, user_age)
-    except ValueError as e:
-        print(f"Error calculating arrival age: {e}. Age calculation skipped.")
-        # arrival_age remains 0.0 or could be set to user_age
+        travel_time_years_earth_frame = fdp.calculate_earth_frame_time(
+            travel_time_years_traveler_frame, average_speed_for_relativistic_calc_mps
+        )
+    except Exception as e:
+        print(f"Error calculating Earth frame time: {e}. Defaulting to traveler's frame time.")
+        travel_time_years_earth_frame = travel_time_years_traveler_frame
 
-    estimated_arrival_date = calc_arrival(departure_date, travel_time_years_earth_frame)
+
+    arrival_age_years = 0.0
+    try:
+        arrival_age_years = fdp.calculate_arrival_age(travel_time_years_traveler_frame, user_age)
+    except ValueError as e:
+        print(f"Error calculating arrival age: {e}. Arrival age calculation skipped.")
+        arrival_age_years = float(user_age) # Set to starting age as a fallback
+
+    estimated_arrival_date = None
+    try:
+        estimated_arrival_date = fdp.calculate_arrival_date(departure_date, travel_time_years_earth_frame)
+    except Exception as e:
+        print(f"Error calculating estimated arrival date: {e}.")
+        # estimated_arrival_date remains None
+
+    # --- Assemble FlightPlan Object ---
+    flight_plan = FlightPlan(
+        source_planet=source_planet,
+        destination_planet=destination_planet,
+        selected_trajectory_type=selected_trajectory_type,
+        calculated_transfer_type=transfer_type,
+        departure_date=departure_date,
+        spacecraft_dry_mass_kg=spacecraft_dry_mass,
+        engine_specific_impulse_s=engine_specific_impulse,
+        user_starting_age_years=user_age,
+        fuel_price_per_unit=fuel_price_per_unit,
+        delta_v_required_mps=delta_v_required,
+        fuel_mass_needed_kg=fuel_mass_needed,
+        total_fuel_cost=total_fuel_cost,
+        average_speed_for_relativistic_calc_mps=average_speed_for_relativistic_calc_mps,
+        travel_time_traveler_frame_years=travel_time_years_traveler_frame,
+        travel_time_earth_frame_years=travel_time_years_earth_frame,
+        arrival_age_years=arrival_age_years,
+        estimated_arrival_date=estimated_arrival_date
+    )
 
     # --- Output Summary ---
     print("\n--- Travel Summary ---")
-    print(f"Departure Body: {source_planet}")
-    print(f"Arrival Body: {destination_planet}")
-    # Acknowledge selected trajectory type
-    print(f"Trajectory Type Selected: {selected_trajectory_type}") 
-    print(f"Calculated Transfer Type: {transfer_type}") # This is what the planner actually used/determined
-    print(f"Delta-V Required: {delta_v_required:.2f} m/s")
-    print(f"Estimated Fuel Mass Needed: {fuel_mass_needed:.2f} kg")
-    print(f"Total Fuel Cost: ${total_fuel_cost:,.2f}")
-    print(f"Travel Time (Traveler's Frame): {travel_time_years_traveler_frame:.2f} years ({travel_time_seconds / (3600 * 24):.2f} days)")
-    if travel_time_years_earth_frame == float('inf'):
+    print(f"Departure Body: {flight_plan.source_planet}")
+    print(f"Arrival Body: {flight_plan.destination_planet}")
+    print(f"Trajectory Type Selected: {flight_plan.selected_trajectory_type}") 
+    print(f"Calculated Transfer Type: {flight_plan.calculated_transfer_type}")
+    print(f"Delta-V Required: {flight_plan.delta_v_required_mps:.2f} m/s")
+    print(f"Estimated Fuel Mass Needed: {flight_plan.fuel_mass_needed_kg:.2f} kg")
+    print(f"Total Fuel Cost: ${flight_plan.total_fuel_cost:,.2f}")
+    print(f"Travel Time (Traveler's Frame): {flight_plan.travel_time_traveler_frame_years:.2f} years ({flight_plan.travel_time_traveler_frame_years * YEAR_TO_SECONDS / (3600 * 24):.2f} days)")
+    if flight_plan.travel_time_earth_frame_years == float('inf'):
         print("Travel Time (Earth's Frame): Effectively infinite due to zero average speed.")
     else:
-        print(f"Travel Time (Earth's Frame): {travel_time_years_earth_frame:.2f} years ({travel_time_years_earth_frame * 365.25:.2f} days)")
-    print(f"Your Age Upon Arrival: {arrival_age:.0f} years")
-    if estimated_arrival_date:
-        print(f"Estimated Arrival Date: {estimated_arrival_date.strftime('%Y-%m-%d')}")
+        print(f"Travel Time (Earth's Frame): {flight_plan.travel_time_earth_frame_years:.2f} years ({flight_plan.travel_time_earth_frame_years * 365.25:.2f} days)")
+    print(f"Your Age Upon Arrival: {flight_plan.arrival_age_years:.0f} years")
+    if flight_plan.estimated_arrival_date:
+        print(f"Estimated Arrival Date: {flight_plan.estimated_arrival_date.strftime('%Y-%m-%d')}")
     else:
         print("Estimated Arrival Date: Could not be determined")
 
     # --- Log Travel Details ---
     try:
-        travel_logger.save_travel_log(
-            source_planet=source_planet,
-            destination_planet=destination_planet,
-            speed=average_speed_for_relativistic_calc, # Using the speed used for relativistic calculation
-            travel_time=travel_time_seconds, # Log original seconds from planner
-            delta_v_required=delta_v_required,
-            fuel_mass_needed=fuel_mass_needed,
-            transfer_type=transfer_type
-        )
+        # Assuming travel_logger.save_travel_log has been updated to accept a FlightPlan object
+        travel_logger.save_travel_log(flight_plan)
         print("\nTravel details logged successfully.")
     except Exception as e:
         print(f"\nError saving travel log: {e}")
