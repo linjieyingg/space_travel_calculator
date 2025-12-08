@@ -4,14 +4,14 @@ celestial_data.py
 Purpose:
 This module serves as the centralized and definitive source for astrophysical data within the
 space_travel_calculator application. It stores detailed parameters for celestial bodies in our
-solar system and provides functions to retrieve this data and list potential destinations.
+solar system and provides functions to retrieve this data.
 It also re-exports universal physical constants from the `constants` module for convenience
 and consistency, resolving redundancy with previous definitions.
 
 This file consolidates the functionality previously found in `celestial_bodies.py` and
 `celestial_data.py` into a single, comprehensive module, ensuring all necessary physical
 and orbital properties (mass, radius, gravitational_parameter_mu, semi_major_axis_from_sun,
-average_distance_from_earth for the Moon, and orbital_period_days) are present for calculations.
+and orbital_period_days) are present for calculations.
 
 Crucially, it now includes classical orbital elements (eccentricity, inclination, longitude of
 ascending node, argument of periapsis, and mean anomaly at J2000 epoch) for each body. These
@@ -51,7 +51,6 @@ CELESTIAL_BODIES_DATA = {
         "radius": 6.957e8, # meters
         "gravitational_parameter_mu": 1.32712440018e20, # m^3/s^2 (G*Mass_Sun)
         "semi_major_axis_from_sun": 0.0, # Sun is the center
-        "average_distance_from_earth": 1.496e11, # For reference, not direct orbit
         "orbital_period_days": 0.0, # Not orbiting the sun
         # Classical orbital elements are not applicable for the central body in a heliocentric frame
         "eccentricity": None,
@@ -105,7 +104,6 @@ CELESTIAL_BODIES_DATA = {
         "radius": 1.7374e6,
         "gravitational_parameter_mu": 4.9048695e12, # G * Mass_Moon
         "semi_major_axis_from_sun": 1.496e11, # Approximately Earth's distance from Sun (for heliocentric reference)
-        "average_distance_from_earth": 3.844e8, # Average distance from Earth in meters
         "orbital_period_days": 27.3217, # Earth days (sidereal period around Earth)
         # These are GEOCENTRIC orbital elements for the Moon's orbit around Earth
         "eccentricity": 0.054900,
@@ -189,49 +187,8 @@ def get_celestial_body_data(body_name: str) -> dict | None:
         body_name (str): The case-insensitive name of the celestial body.
 
     Returns:
-        dict: A dictionary containing the body's data if found, otherwise None.
+        dict: A dictionary containing the body's full data if found, or None.
     """
     if not isinstance(body_name, str):
         return None
     return CELESTIAL_BODIES_DATA.get(body_name.upper())
-
-def get_all_solar_system_destinations() -> list[dict] | None:
-    """
-    Generates a list of all solar system bodies as potential destinations from Earth,
-    sorted by their average distance from Earth.
-
-    Returns:
-        list: A list of dictionaries, each with 'name' and 'distance' from Earth in meters.
-              Returns None if Earth's data is missing.
-    """
-    earth_data = get_celestial_body_data('Earth')
-    if not earth_data or 'semi_major_axis_from_sun' not in earth_data:
-        # Earth data is critical for distance calculations, return None if unavailable
-        return None
-
-    earth_semi_major_axis = earth_data['semi_major_axis_from_sun']
-    destinations = []
-
-    for body_name_key, data in CELESTIAL_BODIES_DATA.items():
-        if body_name_key == 'EARTH':
-            continue
-
-        distance = 0.0
-        # Check for 'name' key, as it's used in the output dictionary
-        if 'name' not in data:
-            continue # Skip bodies that don't have a 'name' defined
-
-        if body_name_key == 'MOON' and 'average_distance_from_earth' in data:
-            distance = data['average_distance_from_earth']
-        elif 'semi_major_axis_from_sun' in data:
-            distance = math.fabs(data['semi_major_axis_from_sun'] - earth_semi_major_axis)
-        else:
-            # Skip bodies without sufficient data to calculate distance
-            continue
-
-        destinations.append({'name': data['name'], 'distance': distance})
-
-    # Sort destinations by distance
-    destinations.sort(key=lambda x: x['distance'])
-
-    return destinations
