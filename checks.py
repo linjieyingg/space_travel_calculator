@@ -3,8 +3,8 @@ Course Number: ENGR 13300
 Semester: Fall 2024
 
 Description:
-    Space travel calculator that calculates time it takes to 
-    reach a destination chosen by the user. 
+    This module provides utility functions for validating date inputs,
+    primarily for a space travel calculator application.
 
 Assignment Information:
     Assignment:     Individual Project
@@ -34,32 +34,20 @@ Academic Integrity Statement:
 
 from datetime import datetime
 
-# Checks if string is a valid date in ISO format
 def is_valid_date(date_str, format_str='%Y-%m-%d'):
+    """
+    Checks if a given string is a valid date according to a specified format.
+
+    Inputs:
+        date_str (str): The string representing the date to validate.
+        format_str (str): The expected format of the date string (default: '%Y-%m-%d').
+
+    Outputs:
+        bool: True if date_str can be successfully parsed into a datetime object
+              using format_str, False otherwise.
+    """
     try:
         datetime.strptime(date_str, format_str)
         return True
     except ValueError:
         return False
-    
-# Checks if speed is valid speed (equal to or less than speed of light)
-def is_valid_speed(speed):
-    # convert speed to m/s
-    speed = speed * 10**6
-    c = 299792458
-    if speed <= c:
-        if speed > 0:
-            return True
-    else:
-        return False
-    
-# Checks if age is valid age    
-def is_valid_age(age):
-    # not allowed to go to space is user is a minor or age is < 0
-    if age < 18:
-        return False
-    # not allowed to go to space is user is over 75
-    elif age >= 75:
-        return False
-    else: 
-        return True
