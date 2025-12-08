@@ -1,11 +1,13 @@
 import json
 import datetime
 import os
+# Assuming FlightPlan class is defined in flight_plan.py
+# and is accessible in the same directory or via a configured Python path.
+from flight_plan import FlightPlan 
 
-def save_travel_log(source_planet: str, destination_planet: str, speed: float, travel_time: float,
-                    delta_v_required: float, fuel_mass_needed: float, transfer_type: str):
+def save_travel_log(flight_plan: FlightPlan):
     """
-    Saves detailed space travel calculation details to a JSON log file.
+    Saves detailed space travel calculation details from a FlightPlan object to a JSON log file.
 
     The log file 'travel_log.json' will store a list of dictionaries,
     each containing a timestamp, origin body, destination body, spacecraft speed,
@@ -16,13 +18,15 @@ def save_travel_log(source_planet: str, destination_planet: str, speed: float, t
     in a way that new data can be appended.
 
     Args:
-        source_planet (str): The name of the celestial body of origin (e.g., 'Earth').
-        destination_planet (str): The name of the target celestial body (destination).
-        speed (float): The calculated or estimated travel speed of the spacecraft (e.g., in Mm/s).
-        travel_time (float): The calculated or estimated travel time from the traveler's perspective (e.g., in years).
-        delta_v_required (float): The total change in velocity (delta-v) required for the mission (e.g., in km/s).
-        fuel_mass_needed (float): The estimated mass of fuel required for the mission (e.g., in kg).
-        transfer_type (str): The type of orbital transfer used (e.g., 'Hohmann Transfer', 'Ballistic Capture').
+        flight_plan (FlightPlan): An object containing all details of the planned space travel.
+                                  Expected attributes include:
+                                  - origin_body (str)
+                                  - destination_body (str)
+                                  - speed_Mm_s (float)
+                                  - travel_time_years (float)
+                                  - delta_v_required_km_s (float)
+                                  - fuel_mass_needed_kg (float)
+                                  - transfer_type (str)
     """
     log_file = 'travel_log.json'
     log_data = []
@@ -31,15 +35,16 @@ def save_travel_log(source_planet: str, destination_planet: str, speed: float, t
     timestamp = datetime.datetime.now().isoformat()
 
     # Create the new entry with detailed orbital trajectory planning information
+    # Extract data directly from the FlightPlan object
     new_entry = {
         'timestamp': timestamp,
-        'origin_body': source_planet, # Renamed key for clarity as requested
-        'destination_body': destination_planet, # Renamed key for clarity as requested
-        'speed_Mm_s': speed,
-        'travel_time_years': travel_time,
-        'delta_v_required_km_s': delta_v_required,
-        'fuel_mass_needed_kg': fuel_mass_needed,
-        'transfer_type': transfer_type
+        'origin_body': flight_plan.origin_body,
+        'destination_body': flight_plan.destination_body,
+        'speed_Mm_s': flight_plan.speed_Mm_s,
+        'travel_time_years': flight_plan.travel_time_years,
+        'delta_v_required_km_s': flight_plan.delta_v_required_km_s,
+        'fuel_mass_needed_kg': flight_plan.fuel_mass_needed_kg,
+        'transfer_type': flight_plan.transfer_type
     }
 
     # Load existing data if the file exists and is valid JSON
