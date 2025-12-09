@@ -7,9 +7,9 @@
 
 **Branch:** main
 
-**Files Analyzed:** 16
+**Files Analyzed:** 17
 
-**Last Updated:** 2025-12-09 03:16:11
+**Last Updated:** 2025-12-09 03:22:53
 
 ---
 
@@ -212,20 +212,17 @@ This Python file implements a command-line based Four-in-a-Row (also known as Co
 
 ## `main.py`
 
-This file serves as the main entry point for a space travel calculator application, primarily acting as an orchestrator or placeholder for the application start after its core logic was refactored into other modules.
+This file (`main.py`) serves as the main entry point and a placeholder for a "Space Travel Calculator" application, demonstrating the usage of angle conversion utility functions. The core application logic has been externalized.
 
 ### Key Components:
 
 *   **`main()` function**:
-    *   **Inputs**: None
-    *   **Outputs/Side Effects**: Prints a welcome message and a note about the externalized application logic to the console.
-*   **`if __name__ == "__main__":` block**:
-    *   **Inputs**: None
-    *   **Outputs/Side Effects**: Ensures the `main()` function is called only when the script is executed directly.
+    *   **Inputs**: None.
+    *   **Outputs/Side Effects**: Prints welcome messages and status updates to the console. It then demonstrates the conversion between degrees and radians using `degrees_to_radians` and `radians_to_degrees`, including error handling for invalid input types, outputting results and error messages to the console.
 
 ### Dependencies:
 
-*   None explicitly imported within this file. The content mentions core logic has been externalized to "other modules," implying a dependency on those modules at a conceptual level, but not via `import` statements in `main.py`.
+*   `src.utils.angle_conversions`: Imports `degrees_to_radians` and `radians_to_degrees` for angle conversion utilities.
 
 ---
 
@@ -261,6 +258,41 @@ This file serves as the main entry point for a space travel calculator applicati
 ## `src/utils/__init__.py`
 
 *Empty file*
+
+---
+
+
+## `src/utils/angle_conversions.py`
+
+This file provides a collection of utility functions for converting angular measurements between various common units: degrees, radians, and Degrees-Minutes-Seconds (DMS) format. It ensures input validation and leverages Python's built-in math functions for core conversions.
+
+### Key Components:
+
+*   **`_is_number(value)`**:
+    *   **Inputs**: `value` (any type)
+    *   **Outputs**: `bool` indicating if the value is an `int` or `float`.
+*   **`deg_to_rad(degrees: float)`**:
+    *   **Inputs**: `degrees` (float)
+    *   **Outputs**: `float` (angle in radians). Raises `ValueError` for non-numeric input.
+*   **`rad_to_deg(radians: float)`**:
+    *   **Inputs**: `radians` (float)
+    *   **Outputs**: `float` (angle in degrees). Raises `ValueError` for non-numeric input.
+*   **`dms_to_deg(degrees: float, minutes: float, seconds: float)`**:
+    *   **Inputs**: `degrees`, `minutes`, `seconds` (all floats, minutes/seconds 0-60).
+    *   **Outputs**: `float` (angle in decimal degrees). Raises `ValueError` for non-numeric or out-of-range inputs.
+*   **`deg_to_dms(decimal_degrees: float)`**:
+    *   **Inputs**: `decimal_degrees` (float)
+    *   **Outputs**: `tuple[int, int, float]` (degrees, minutes, seconds). Raises `ValueError` for non-numeric input.
+*   **`rad_to_dms(radians: float)`**:
+    *   **Inputs**: `radians` (float)
+    *   **Outputs**: `tuple[int, int, float]` (degrees, minutes, seconds). Raises `ValueError` for non-numeric input.
+*   **`dms_to_rad(degrees: float, minutes: float, seconds: float)`**:
+    *   **Inputs**: `degrees`, `minutes`, `seconds` (all floats, minutes/seconds 0-60).
+    *   **Outputs**: `float` (angle in radians). Raises `ValueError` for non-numeric or out-of-range inputs.
+
+### Dependencies:
+
+*   **`math`**: Used for `math.radians` and `math.degrees` functions.
 
 ---
 
