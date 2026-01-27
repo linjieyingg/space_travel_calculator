@@ -9,7 +9,7 @@
 
 **Files Analyzed:** 18
 
-**Last Updated:** 2025-12-09 03:33:01
+**Last Updated:** 2026-01-27 17:01:56
 
 ---
 
@@ -254,27 +254,28 @@ This file, `main.py`, serves as the primary entry point for a space travel calcu
 
 ## `src/astrophysics/orbital_calculations.py`
 
-This Python file, `orbital_calculations.py`, provides core functions for computing orbital parameters and the instantaneous position of celestial bodies in elliptical orbits. It implements solutions for Kepler's equation and converts between different orbital anomalies to determine distances.
+This file, `orbital_calculations.py`, provides functions for fundamental astrodynamics calculations, specifically for determining the position of celestial bodies in elliptical orbits and planning orbital transfers. It uses mathematical models and orbital parameters to calculate eccentric anomaly, true anomaly, orbital distance, and the delta-v required for Hohmann transfers.
 
-### Purpose
-This file offers utilities to calculate orbital parameters like eccentric anomaly and true anomaly, and ultimately determine a celestial body's current orbital distance from its primary at a given time using principles of orbital mechanics.
-
-### Key Components
+### Key Components:
 
 *   **`solve_kepler_equation`**
-    *   **Inputs**: `mean_anomaly` (radians), `eccentricity`, `tolerance` (optional), `max_iterations` (optional).
-    *   **Outputs**: `eccentric_anomaly` (radians) by solving Kepler's equation using the Newton-Raphson method.
+    *   **Inputs**: `mean_anomaly` (radians), `eccentricity`, `tolerance`, `max_iterations`.
+    *   **Outputs**: The `eccentric_anomaly` (radians) by solving Kepler's Equation using Newton-Raphson.
 *   **`eccentric_to_true_anomaly`**
     *   **Inputs**: `eccentric_anomaly` (radians), `eccentricity`.
-    *   **Outputs**: `true_anomaly` (radians), representing the angle of the body from periapsis.
+    *   **Outputs**: The `true_anomaly` (radians) from the eccentric anomaly.
 *   **`calculate_orbital_distance`**
     *   **Inputs**: `body_name` (str), `time_since_periapsis` (seconds).
-    *   **Outputs**: The `orbital_distance` (float) in meters from the central body, or `None` if the celestial body data is not found. It relies on fetching data, solving Kepler's equation, and applying orbital geometry.
+    *   **Outputs**: The current `orbital_distance` (meters) of the body from its primary, or `None` if the body is not found.
+*   **`calculate_hohmann_delta_v`**
+    *   **Inputs**: `initial_body_name` (str), `final_body_name` (str), `central_body_name` (str).
+    *   **Outputs**: A dictionary containing `delta_v1`, `delta_v2`, and `total_delta_v` (m/s) for a Hohmann transfer maneuver.
 
-### Dependencies
-*   `math`: For common mathematical operations (e.g., `sin`, `cos`, `atan2`, `fmod`, `sqrt`, `pi`).
-*   `typing`: For type hints (`Dict`, `Any`, `Optional`).
-*   `..celestial_data`: A relative import to retrieve celestial body data (specifically `get_celestial_body_data` and `GRAVITATIONAL_CONSTANT`, though the constant is not directly used in the provided code).
+### Dependencies:
+
+*   `math` (Python standard library)
+*   `typing` (for type hints: `Dict`, `Any`, `Optional`)
+*   `..celestial_data` (relative import for `get_celestial_body_data` and `GRAVITATIONAL_CONSTANT`)
 
 ---
 
@@ -374,58 +375,42 @@ This file contains unit tests for physical constants defined in a `constants.py`
 
 ## `tests/test_orbital_calculations.py`
 
-This file contains unit tests for the `orbital_calculations` module, using `pytest`. It includes a mock implementation of the `orbital_calculations` module that is used if the real module cannot be imported, ensuring tests can always run. The tests cover the accuracy and error handling of functions for orbital calculations and celestial body distance estimations.
+```markdown
+## Analysis of `tests/test_orbital_calculations.py`
 
-### Key Components:
+### 1. Purpose
+This file serves as a comprehensive Pytest test suite for the `orbital_calculations` module, verifying its functions related to celestial mechanics calculations. It includes a robust mock implementation of `orbital_calculations` to ensure tests can run even if the actual module is not present, simulating expected behavior and error handling.
 
-*   **`MockOrbitalCalculations` class:**
-    *   **Purpose:** A fallback mock implementation of the `orbital_calculations` module.
-    *   **`solve_keplers_equation(self, mean_anomaly, eccentricity, tolerance, max_iterations)`:**
-        *   **Inputs:** `mean_anomaly` (float), `eccentricity` (float), optional `tolerance` (float), `max_iterations` (int).
-        *   **Outputs:** `float` (eccentric anomaly); raises `TypeError` or `ValueError` for invalid inputs.
-    *   **`calculate_instantaneous_position_magnitude(self, body_name, time_since_epoch, reference_body_name)`:**
-        *   **Inputs:** `body_name` (str), `time_since_epoch` (float), optional `reference_body_name` (str).
-        *   **Outputs:** `float` (scalar distance) or `None`; raises `TypeError` for invalid inputs.
-    *   **`calculate_distance_between_bodies(self, body1_name, body2_name, time_since_epoch)`:**
-        *   **Inputs:** `body1_name` (str), `body2_name` (str), `time_since_epoch` (float).
-        *   **Outputs:** `float` (distance) or `None`; raises `TypeError` for invalid inputs.
-*   **`TestOrbitalCalculations` class:**
-    *   **Purpose:** Contains parameterized and specific test methods for the `orbital_calculations` functions.
-    *   **`test_solve_keplers_equation_accuracy(...)`:**
-        *   **Inputs:** Mean anomaly, eccentricity, expected eccentric anomaly.
-        *   **Outputs:** Asserts the calculated eccentric anomaly matches the expected value within tolerance.
-    *   **`test_solve_keplers_equation_invalid_inputs(...)`:**
-        *   **Inputs:** Invalid mean anomaly or eccentricity, expected error type and message part.
-        *   **Outputs:** Asserts the correct `TypeError` or `ValueError` is raised.
-    *   **`test_calculate_instantaneous_position_magnitude_valid_inputs(...)`:**
-        *   **Inputs:** Body name, time since epoch, expected minimum distance.
-        *   **Outputs:** Asserts a float is returned and it's a non-negative distance.
-    *   **`test_calculate_instantaneous_position_magnitude_invalid_inputs(...)`:**
-        *   **Inputs:** Invalid body name, time, or reference body name, expected error type and message part.
-        *   **Outputs:** Asserts the correct `TypeError` is raised.
-    *   **`test_calculate_instantaneous_position_magnitude_non_existent_body()`:**
-        *   **Inputs:** A non-existent body name.
-        *   **Outputs:** Asserts `None` is returned.
-    *   **`test_calculate_distance_between_same_bodies()`:**
-        *   **Inputs:** Same body names, time.
-        *   **Outputs:** Asserts a distance of 0.0 is returned.
-    *   **`test_calculate_distance_between_bodies_known_pairs(...)`:**
-        *   **Inputs:** Two body names, time, expected rough distance.
-        *   **Outputs:** Asserts a float is returned and is close to the expected value.
-    *   **`test_calculate_distance_between_bodies_invalid_inputs(...)`:**
-        *   **Inputs:** Invalid body names or time, expected error type and message part.
-        *   **Outputs:** Asserts the correct `TypeError` is raised.
-    *   **`test_calculate_distance_between_bodies_non_existent_pair()`:**
-        *   **Inputs:** A pair of bodies not covered by mock logic.
-        *   **Outputs:** Asserts `None` is returned.
+### 2. Key Components
 
-### Dependencies:
+*   **`MockOrbitalCalculations` class**:
+    *   **Purpose**: A mock class that replicates the interface and basic functionality of the `orbital_calculations` module. It contains simplified implementations for testing scenarios, including input validation and basic return values.
+    *   **`solve_keplers_equation(mean_anomaly: float, eccentricity: float, tolerance: float = 1e-9, max_iterations: int = 100) -> float`**:
+        *   **Inputs**: Mean anomaly, eccentricity, an optional tolerance for convergence, and maximum iterations.
+        *   **Outputs**: The eccentric anomaly as a float. Raises `TypeError` for non-numeric inputs or `ValueError` for out-of-range eccentricity `[0, 1)`.
+    *   **`calculate_instantaneous_position_magnitude(body_name: str, time_since_epoch: float, reference_body_name: str = 'Sun') -> float | None`**:
+        *   **Inputs**: Name of the celestial body, time elapsed since epoch, and an optional reference body name.
+        *   **Outputs**: The scalar distance magnitude as a float, or `None` if the body is unknown or calculation fails. Raises `TypeError` for invalid input types.
+    *   **`calculate_distance_between_bodies(body1_name: str, body2_name: str, time_since_epoch: float) -> float | None`**:
+        *   **Inputs**: Names of two celestial bodies, and time since epoch.
+        *   **Outputs**: The distance between the bodies as a float, or `None` if the pair is unknown. Returns `0.0` if `body1_name` and `body2_name` are the same. Raises `TypeError` for invalid input types.
+    *   **`calculate_hohmann_delta_v(source_body_name: str, target_body_name: str) -> float | None`**:
+        *   **Inputs**: Names of the source and target celestial bodies for a Hohmann transfer.
+        *   **Outputs**: The total delta-v required as a float, or `None` if bodies are unknown, data is missing/invalid, or the transfer is not applicable. Returns `0.0` if source and target are the same. Raises `TypeError` for invalid input types.
 
-*   `pytest`
-*   `math`
-*   `unittest.mock.patch`, `unittest.mock.MagicMock`
-*   `src.astrophysics.orbital_calculations` (dynamically imported or mocked)
-*   `celestial_data` (specifically `get_celestial_body_data`, `GRAVITATIONAL_CONSTANT`)
-*   `constants` (specifically `G_GRAVITATIONAL`)
+*   **`TestOrbitalCalculations` class**:
+    *   **Purpose**: Contains multiple Pytest methods to thoroughly test the `orbital_calculations` module's functions for accuracy, edge cases, and error handling.
+    *   **Test Methods (e.g., `test_solve_keplers_equation_accuracy`, `test_calculate_instantaneous_position_magnitude_invalid_inputs`, `test_calculate_hohmann_delta_v_non_existent_body`)**:
+        *   **Inputs**: Varied inputs, often parametrized with `@pytest.mark.parametrize`, covering valid values, known-accurate results, invalid types, and non-existent entities.
+        *   **Outputs/Side Effects**: Assertions using `pytest.approx` or `math.isclose` for numerical accuracy, `pytest.raises` for expected error types and messages, and checks for `None` returns in error/unknown scenarios.
+
+### 3. Dependencies
+*   `pytest`: For test discovery, execution, and parametrization.
+*   `math`: For mathematical operations (e.g., `sin`, `cos`, `fabs`, `isclose`).
+*   `unittest.mock.patch`, `unittest.mock.MagicMock`: For advanced mocking capabilities, though `MockOrbitalCalculations` is a custom mock.
+*   `src.astrophysics.orbital_calculations`: The actual module being tested (attempted import, falls back to mock if not found).
+*   `celestial_data`: Used to import `get_celestial_body_data` and `GRAVITATIONAL_CONSTANT` for test data and potential comparisons.
+*   `constants`: Used to import `G_GRAVITATIONAL` (for potential comparisons).
+```
 
 ---
