@@ -97,6 +97,63 @@ except ImportError:
             # If celestial_data itself cannot provide base data, or unknown pair
             return None # Indicate not found or not calculable by this mock
 
+        def calculate_hohmann_delta_v(self, source_body_name: str, target_body_name: str) -> float | None:
+            """
+            Mock for calculating the total delta-v for a Hohmann transfer between two bodies.
+            Assumes circular, coplanar orbits.
+            """
+            if not isinstance(source_body_name, str) or not isinstance(target_body_name, str):
+                raise TypeError("Source and target body names must be strings.")
+
+            source_name_lower = source_body_name.lower()
+            target_name_lower = target_body_name.lower()
+
+            if source_name_lower == target_name_lower:
+                return 0.0
+
+            # Internal mock data mirroring celestial_data for Hohmann calculations
+            _mock_celestial_data_for_hohmann = {
+                "sun": {"semi_major_axis": 0.0, "gravitational_parameter_mu": 1.32712440018e20},
+                "earth": {"semi_major_axis": 1.49597870700e11, "gravitational_parameter_mu": 3.986004418e14},
+                "mars": {"semi_major_axis": 2.27939200000e11, "gravitational_parameter_mu": 4.282837e13},
+                "moon": {"semi_major_axis": 3.84400e8, "gravitational_parameter_mu": 4.9048695e12}
+            }
+            
+            source_data = _mock_celestial_data_for_hohmann.get(source_name_lower)
+            target_data = _mock_celestial_data_for_hohmann.get(target_name_lower)
+
+            if not source_data or not target_data:
+                return None # One or both bodies not found in mock data
+
+            r1 = source_data.get("semi_major_axis")
+            r2 = target_data.get("semi_major_axis")
+
+            # Determine the central body's gravitational parameter (mu) for the transfer
+            # Assuming Sun is primary for interplanetary, Earth for Earth-Moon system
+            if source_name_lower == "moon" or target_name_lower == "moon":
+                central_body_mu = _mock_celestial_data_for_hohmann["earth"]["gravitational_parameter_mu"]
+            else: # Assume Sun is central body for planetary transfers
+                central_body_mu = _mock_celestial_data_for_hohmann["sun"]["gravitational_parameter_mu"]
+
+            if central_body_mu is None or r1 is None or r2 is None or r1 <= 0 or r2 <= 0:
+                # Hohmann transfer not applicable if radius is zero (e.g., the Sun itself)
+                # or if data is missing/invalid.
+                return None
+
+            # Hohmann Transfer Calculations
+            v_circ1 = math.sqrt(central_body_mu / r1)
+            v_circ2 = math.sqrt(central_body_mu / r2)
+
+            a_transfer = (r1 + r2) / 2.0
+
+            v_periapsis_transfer = math.sqrt(central_body_mu * (2/r1 - 1/a_transfer))
+            v_apoapsis_transfer = math.sqrt(central_body_mu * (2/r2 - 1/a_transfer))
+
+            delta_v1 = abs(v_periapsis_transfer - v_circ1)
+            delta_v2 = abs(v_circ2 - v_apoapsis_transfer)
+
+            return delta_v1 + delta_v2
+
     orbital_calculations = MockOrbitalCalculations()
 
 # Import celestial_data and constants for test data and comparisons
@@ -248,3 +305,62 @@ class TestOrbitalCalculations:
         """
         distance = orbital_calculations.calculate_distance_between_bodies("Saturn", "Jupiter", 1000.0)
         assert distance is None
+
+    # --- Tests for Hohmann Transfer Delta-V (calculate_hohmann_delta_v) ---
+
+    @pytest.mark.parametrize("source, target, expected_delta_v, tolerance", [
+        ("Earth", "Mars", 5591.791, 1e-3), # Calculated using celestial_data values for SMA and Sun's mu
+        ("Mars", "Earth", 5591.791, 1e-3), # Magnitude should be the same for return trip
+    ])
+    def test_calculate_hohmann_delta_v_accuracy(self, source: str, target: str, expected_delta_v: float, tolerance: float):
+        """
+        Tests the accuracy of Hohmann transfer delta-v calculations for known planetary pairs.
+        """
+        delta_v = orbital_calculations.calculate_hohmann_delta_v(source, target)
+        assert isinstance(delta_v, float)
+        assert math.isclose(delta_v, expected_delta_v, rel_tol=tolerance, abs_tol=tolerance), \
+            f"For {source} to {target}: Expected {expected_delta_v}, got {delta_v}"
+
+    def test_calculate_hohmann_delta_v_same_body(self):
+        """
+        Tests that calculating Hohmann delta-v between the same body returns 0.0.
+        """
+        delta_v = orbital_calculations.calculate_hohmann_delta_v("Earth", "Earth")
+        assert math.isclose(delta_v, 0.0, abs_tol=1e-9)
+
+    @pytest.mark.parametrize("source, target, error_type, error_msg_part", [
+        (123, "Mars", TypeError, "Source and target body names must be strings."),
+        ("Earth", None, TypeError, "Source and target body names must be strings."),
+    ])
+    def test_calculate_hohmann_delta_v_invalid_input_types(self, source, target, error_type, error_msg_part):
+        """
+        Tests that `calculate_hohmann_delta_v` raises appropriate errors for invalid input types.
+        """
+        with pytest.raises(error_type) as excinfo:
+            orbital_calculations.calculate_hohmann_delta_v(source, target)
+        assert error_msg_part in str(excinfo.value)
+
+    @pytest.mark.parametrize("source, target", [
+        ("NonExistent", "Mars"),
+        ("Earth", "UnknownPlanet"),
+        ("NonExistent", "UnknownPlanet"),
+    ])
+    def test_calculate_hohmann_delta_v_non_existent_body(self, source: str, target: str):
+        """
+        Tests that `calculate_hohmann_delta_v` returns None for non-existent celestial bodies.
+        """
+        delta_v = orbital_calculations.calculate_hohmann_delta_v(source, target)
+        assert delta_v is None
+
+    @pytest.mark.parametrize("source, target", [
+        ("Sun", "Mars"), # Transfer to/from central body itself (r=0) is not a Hohmann between orbits
+        ("Earth", "Sun"),
+    ])
+    def test_calculate_hohmann_delta_v_primary_as_source_or_target(self, source: str, target: str):
+        """
+        Tests scenarios where the source or target body is the primary (e.g., Sun),
+        which is not a valid start/end for a Hohmann transfer between orbits around that primary.
+        Should return None as per mock implementation for r <= 0.
+        """
+        delta_v = orbital_calculations.calculate_hohmann_delta_v(source, target)
+        assert delta_v is None
