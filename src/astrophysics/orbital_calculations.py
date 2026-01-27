@@ -212,3 +212,128 @@ def calculate_orbital_distance(
     orbital_distance = semi_major_axis * (1 - eccentricity * math.cos(eccentric_anomaly))
 
     return orbital_distance
+
+
+def calculate_hohmann_delta_v(
+    initial_body_name: str, final_body_name: str, central_body_name: str
+) -> Dict[str, float]:
+    """
+    Calculates the two delta-v impulses and the total delta-v required for a
+    Hohmann transfer maneuver between two circular (or near-circular) orbits
+    around a central body.
+
+    A Hohmann transfer is an elliptical orbit used to transfer between two
+    circular orbits. It involves two impulsive burns: one to enter the
+    transfer ellipse (delta_v1) and another to circularize the orbit at the
+    destination (delta_v2).
+
+    Assumptions:
+    - Initial and final orbits are circular or approximated as such by their semi-major axes.
+    - Orbits are coplanar.
+    - Impulsive burns.
+
+    Args:
+        initial_body_name (str): The name of the celestial body in the initial orbit.
+        final_body_name (str): The name of the celestial body in the final (target) orbit.
+        central_body_name (str): The name of the central celestial body around which
+                                 the transfer occurs (e.g., "Sun").
+
+    Returns:
+        Dict[str, float]: A dictionary containing:
+            - 'delta_v1': The magnitude of the first delta-v impulse (m/s).
+            - 'delta_v2': The magnitude of the second delta-v impulse (m/s).
+            - 'total_delta_v': The sum of delta_v1 and delta_v2 (m/s).
+
+    Raises:
+        TypeError: If any input `body_name` is not a string.
+        ValueError: If:
+            - Any of the specified celestial bodies are not found in the data.
+            - Required orbital parameters (semi-major axis, gravitational parameter)
+              are missing or invalid for the specified bodies.
+            - The initial or final body is the same as the central body.
+            - Semi-major axes or central body gravitational parameter are non-positive.
+            - Division by zero occurs in intermediate calculations (e.g., due to invalid semi-major axis).
+    """
+    if not all(isinstance(arg, str) for arg in [initial_body_name, final_body_name, central_body_name]):
+        raise TypeError("All body names must be strings.")
+
+    # If initial and final bodies are the same, no transfer is needed, delta-v is zero.
+    if initial_body_name.lower() == final_body_name.lower():
+        return {"delta_v1": 0.0, "delta_v2": 0.0, "total_delta_v": 0.0}
+
+    # Fetch data for all three bodies
+    initial_body_data = get_celestial_body_data(initial_body_name)
+    final_body_data = get_celestial_body_data(final_body_name)
+    central_body_data = get_celestial_body_data(central_body_name)
+
+    if initial_body_data is None:
+        raise ValueError(f"Celestial body data not found for initial body: {initial_body_name}")
+    if final_body_data is None:
+        raise ValueError(f"Celestial body data not found for final body: {final_body_name}")
+    if central_body_data is None:
+        raise ValueError(f"Celestial body data not found for central body: {central_body_name}")
+
+    # Ensure initial and final bodies are not the central body
+    if initial_body_data.get('name', '').lower() == central_body_name.lower():
+        raise ValueError(f"Initial body '{initial_body_name}' cannot be the central body '{central_body_name}'.")
+    if final_body_data.get('name', '').lower() == central_body_name.lower():
+        raise ValueError(f"Final body '{final_body_name}' cannot be the central body '{central_body_name}'.")
+
+    # Extract gravitational parameter of the central body (mu = G * M_central)
+    mu_central = central_body_data.get('gravitational_parameter_mu')
+    if mu_central is None or not isinstance(mu_central, (int, float)) or mu_central <= 0:
+        raise ValueError(
+            f"Missing or invalid 'gravitational_parameter_mu' for central body {central_body_name}. "
+            "Cannot calculate Hohmann transfer (must be positive)."
+        )
+
+    # Extract semi-major axes for initial and final orbits.
+    # For Hohmann transfer, these are treated as radii of the initial/final circular orbits.
+    r1 = initial_body_data.get('semi_major_axis_m')
+    r2 = final_body_data.get('semi_major_axis_m')
+
+    if r1 is None or not isinstance(r1, (int, float)) or r1 <= 0:
+        raise ValueError(
+            f"Missing or invalid 'semi_major_axis_m' for initial body {initial_body_name}. "
+            "Cannot calculate Hohmann transfer (r1 must be positive)."
+        )
+    if r2 is None or not isinstance(r2, (int, float)) or r2 <= 0:
+        raise ValueError(
+            f"Missing or invalid 'semi_major_axis_m' for final body {final_body_name}. "
+            "Cannot calculate Hohmann transfer (r2 must be positive)."
+        )
+
+    # Calculate velocities for circular orbits (v = sqrt(mu/r))
+    v1_circular = math.sqrt(mu_central / r1)
+    v2_circular = math.sqrt(mu_central / r2)
+
+    # Calculate the semi-major axis of the transfer ellipse (a_transfer = (r1 + r2) / 2)
+    a_transfer = (r1 + r2) / 2
+
+    if a_transfer <= 0:  # This check ensures validity for the vis-viva equation
+        raise ValueError("Calculated semi-major axis of transfer ellipse is non-positive, indicating invalid orbital radii.")
+
+    # Calculate velocities at periapsis (r1) and apoapsis (r2) of the transfer ellipse
+    # using the Vis-Viva equation: v = sqrt(mu * ((2/r) - (1/a)))
+    try:
+        v_periapsis_transfer = math.sqrt(mu_central * ((2 / r1) - (1 / a_transfer)))
+        v_apoapsis_transfer = math.sqrt(mu_central * ((2 / r2) - (1 / a_transfer)))
+    except ValueError: # math.sqrt raises ValueError for negative input
+        raise ValueError(
+            "Orbital parameters lead to physically impossible velocities "
+            "(e.g., negative value under square root). Check input radii."
+        )
+
+    # Calculate the delta-v impulses
+    # delta_v1: difference between transfer ellipse periapsis velocity and initial circular orbit velocity
+    delta_v1 = abs(v_periapsis_transfer - v1_circular)
+    # delta_v2: difference between final circular orbit velocity and transfer ellipse apoapsis velocity
+    delta_v2 = abs(v2_circular - v_apoapsis_transfer)
+
+    total_delta_v = delta_v1 + delta_v2
+
+    return {
+        "delta_v1": delta_v1,
+        "delta_v2": delta_v2,
+        "total_delta_v": total_delta_v
+    }
