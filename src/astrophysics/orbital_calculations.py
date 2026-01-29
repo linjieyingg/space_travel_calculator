@@ -172,8 +172,7 @@ def calculate_orbital_distance(
     for key in required_keys:
         if key not in body_data or not isinstance(body_data[key], (int, float)):
             raise ValueError(
-                f"Missing or invalid orbital data '{key}' for {body_name}. "
-                "Cannot calculate orbital distance."
+                f"Missing or invalid orbital data '{key}' for {body_name}. Cannot calculate orbital distance."
             )
 
     semi_major_axis = body_data['semi_major_axis_m']
@@ -212,6 +211,202 @@ def calculate_orbital_distance(
     orbital_distance = semi_major_axis * (1 - eccentricity * math.cos(eccentric_anomaly))
 
     return orbital_distance
+
+
+def calculate_orbital_velocity(
+    body_name: str, distance: float, central_body_name: str = 'Sun'
+) -> float:
+    """
+    Calculates the instantaneous orbital velocity of a celestial body at a given
+    distance from its central body, using the Vis-Viva equation.
+
+    Args:
+        body_name (str): The case-insensitive name of the orbiting celestial body.
+        distance (float): The current radial distance from the central body in meters.
+        central_body_name (str, optional): The case-insensitive name of the central
+                                           celestial body. Defaults to 'Sun'.
+
+    Returns:
+        float: The orbital velocity in meters per second (m/s).
+
+    Raises:
+        TypeError: If any input is not of the expected type.
+        ValueError: If:
+            - Any of the specified celestial bodies are not found in the data.
+            - Required orbital parameters (semi-major axis, gravitational parameter)
+              are missing or invalid for the specified bodies.
+            - Distance is non-positive.
+            - Division by zero or negative value under square root occurs.
+    """
+    if not isinstance(body_name, str) or not isinstance(central_body_name, str):
+        raise TypeError("Body names must be strings.")
+    if not isinstance(distance, (int, float)):
+        raise TypeError("Distance must be a numeric type.")
+
+    if distance <= 0:
+        raise ValueError("Distance must be positive.")
+
+    orbiting_body_data = get_celestial_body_data(body_name)
+    central_body_data = get_celestial_body_data(central_body_name)
+
+    if orbiting_body_data is None:
+        raise ValueError(f"Celestial body data not found for orbiting body: {body_name}")
+    if central_body_data is None:
+        raise ValueError(f"Celestial body data not found for central body: {central_body_name}")
+
+    # Gravitational parameter of the central body (mu = G * M_central)
+    mu_central = central_body_data.get('gravitational_parameter_mu')
+    if mu_central is None or not isinstance(mu_central, (int, float)) or mu_central <= 0:
+        raise ValueError(
+            f"Missing or invalid 'gravitational_parameter_mu' for central body {central_body_name}. Cannot calculate orbital velocity (must be positive)."
+        )
+
+    # Semi-major axis of the orbiting body's orbit
+    semi_major_axis = orbiting_body_data.get('semi_major_axis_m')
+    if semi_major_axis is None or not isinstance(semi_major_axis, (int, float)) or semi_major_axis <= 0:
+        raise ValueError(
+            f"Missing or invalid 'semi_major_axis_m' for orbiting body {body_name}. Cannot calculate orbital velocity (must be positive)."
+        )
+
+    # Vis-Viva equation: v = sqrt(mu * ((2/r) - (1/a)))
+    try:
+        orbital_velocity = math.sqrt(mu_central * ((2 / distance) - (1 / semi_major_axis)))
+    except ValueError: # math.sqrt raises ValueError for negative input
+        raise ValueError(
+            "Orbital parameters lead to physically impossible velocity (e.g., negative value under square root). Check distance and semi-major axis."
+        )
+    except ZeroDivisionError:
+        raise ValueError(
+            "Division by zero encountered. Check if distance or semi-major axis are zero."
+        )
+
+    return orbital_velocity
+
+
+def calculate_escape_velocity(
+    body_name: str, distance: float
+) -> float:
+    """
+    Calculates the escape velocity from a celestial body at a given distance
+    from its center.
+
+    Escape velocity is the minimum speed needed for a free, non-propelled object
+    to escape from the gravitational influence of a massive body,
+    without further propulsion.
+
+    Args:
+        body_name (str): The case-insensitive name of the celestial body to escape from.
+        distance (float): The radial distance from the center of the `body_name`
+                          in meters, at which the escape velocity is calculated.
+
+    Returns:
+        float: The escape velocity in meters per second (m/s).
+
+    Raises:
+        TypeError: If any input is not of the expected type.
+        ValueError: If:
+            - The specified celestial body is not found in the data.
+            - Required gravitational parameter is missing or invalid for the body.
+            - Distance is non-positive.
+            - Division by zero or negative value under square root occurs.
+    """
+    if not isinstance(body_name, str):
+        raise TypeError("Body name must be a string.")
+    if not isinstance(distance, (int, float)):
+        raise TypeError("Distance must be a numeric type.")
+
+    if distance <= 0:
+        raise ValueError("Distance must be positive.")
+
+    body_data = get_celestial_body_data(body_name)
+
+    if body_data is None:
+        raise ValueError(f"Celestial body data not found for: {body_name}")
+
+    # Gravitational parameter of the body to escape from (mu = G * M_body)
+    mu_body = body_data.get('gravitational_parameter_mu')
+    if mu_body is None or not isinstance(mu_body, (int, float)) or mu_body <= 0:
+        raise ValueError(
+            f"Missing or invalid 'gravitational_parameter_mu' for {body_name}. Cannot calculate escape velocity (must be positive)."
+        )
+
+    # Escape velocity formula: v_e = sqrt(2 * mu / r)
+    try:
+        escape_velocity = math.sqrt(2 * mu_body / distance)
+    except ValueError: # math.sqrt raises ValueError for negative input
+        raise ValueError(
+            "Orbital parameters lead to physically impossible escape velocity (e.g., negative value under square root). Check distance."
+        )
+    except ZeroDivisionError:
+        raise ValueError(
+            "Division by zero encountered. Check if distance is zero."
+        )
+
+    return escape_velocity
+
+
+def calculate_orbital_period(
+    body_name: str, central_body_name: str = 'Sun'
+) -> float:
+    """
+    Calculates the orbital period of a celestial body around a central body
+    using Kepler's Third Law.
+
+    Args:
+        body_name (str): The case-insensitive name of the orbiting celestial body.
+        central_body_name (str, optional): The case-insensitive name of the central
+                                           celestial body. Defaults to 'Sun'.
+
+    Returns:
+        float: The orbital period in seconds.
+
+    Raises:
+        TypeError: If any input is not of the expected type.
+        ValueError: If:
+            - Any of the specified celestial bodies are not found in the data.
+            - Required orbital parameters (semi-major axis, gravitational parameter)
+              are missing or invalid for the specified bodies.
+            - Semi-major axis or central body gravitational parameter are non-positive.
+            - Division by zero or negative value under square root occurs.
+    """
+    if not isinstance(body_name, str) or not isinstance(central_body_name, str):
+        raise TypeError("Body names must be strings.")
+
+    orbiting_body_data = get_celestial_body_data(body_name)
+    central_body_data = get_celestial_body_data(central_body_name)
+
+    if orbiting_body_data is None:
+        raise ValueError(f"Celestial body data not found for orbiting body: {body_name}")
+    if central_body_data is None:
+        raise ValueError(f"Celestial body data not found for central body: {central_body_name}")
+
+    # Gravitational parameter of the central body (mu = G * M_central)
+    mu_central = central_body_data.get('gravitational_parameter_mu')
+    if mu_central is None or not isinstance(mu_central, (int, float)) or mu_central <= 0:
+        raise ValueError(
+            f"Missing or invalid 'gravitational_parameter_mu' for central body {central_body_name}. Cannot calculate orbital period (must be positive)."
+        )
+
+    # Semi-major axis of the orbiting body's orbit
+    semi_major_axis = orbiting_body_data.get('semi_major_axis_m')
+    if semi_major_axis is None or not isinstance(semi_major_axis, (int, float)) or semi_major_axis <= 0:
+        raise ValueError(
+            f"Missing or invalid 'semi_major_axis_m' for orbiting body {body_name}. Cannot calculate orbital period (must be positive)."
+        )
+
+    # Kepler's Third Law: T = 2 * pi * sqrt(a^3 / mu)
+    try:
+        orbital_period = 2 * math.pi * math.sqrt(semi_major_axis**3 / mu_central)
+    except ValueError: # math.sqrt raises ValueError for negative input
+        raise ValueError(
+            "Orbital parameters lead to physically impossible orbital period (e.g., negative value under square root). Check semi-major axis and central body mu."
+        )
+    except ZeroDivisionError:
+        raise ValueError(
+            "Division by zero encountered. Check if central body gravitational parameter is zero."
+        )
+
+    return orbital_period
 
 
 def calculate_hohmann_delta_v(
@@ -283,8 +478,7 @@ def calculate_hohmann_delta_v(
     mu_central = central_body_data.get('gravitational_parameter_mu')
     if mu_central is None or not isinstance(mu_central, (int, float)) or mu_central <= 0:
         raise ValueError(
-            f"Missing or invalid 'gravitational_parameter_mu' for central body {central_body_name}. "
-            "Cannot calculate Hohmann transfer (must be positive)."
+            f"Missing or invalid 'gravitational_parameter_mu' for central body {central_body_name}. Cannot calculate Hohmann transfer (must be positive)."
         )
 
     # Extract semi-major axes for initial and final orbits.
@@ -294,13 +488,11 @@ def calculate_hohmann_delta_v(
 
     if r1 is None or not isinstance(r1, (int, float)) or r1 <= 0:
         raise ValueError(
-            f"Missing or invalid 'semi_major_axis_m' for initial body {initial_body_name}. "
-            "Cannot calculate Hohmann transfer (r1 must be positive)."
+            f"Missing or invalid 'semi_major_axis_m' for initial body {initial_body_name}. Cannot calculate Hohmann transfer (r1 must be positive)."
         )
     if r2 is None or not isinstance(r2, (int, float)) or r2 <= 0:
         raise ValueError(
-            f"Missing or invalid 'semi_major_axis_m' for final body {final_body_name}. "
-            "Cannot calculate Hohmann transfer (r2 must be positive)."
+            f"Missing or invalid 'semi_major_axis_m' for final body {final_body_name}. Cannot calculate Hohmann transfer (r2 must be positive)."
         )
 
     # Calculate velocities for circular orbits (v = sqrt(mu/r))
@@ -320,8 +512,7 @@ def calculate_hohmann_delta_v(
         v_apoapsis_transfer = math.sqrt(mu_central * ((2 / r2) - (1 / a_transfer)))
     except ValueError: # math.sqrt raises ValueError for negative input
         raise ValueError(
-            "Orbital parameters lead to physically impossible velocities "
-            "(e.g., negative value under square root). Check input radii."
+            "Orbital parameters lead to physically impossible velocities (e.g., negative value under square root). Check input radii."
         )
 
     # Calculate the delta-v impulses
