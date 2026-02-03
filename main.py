@@ -34,14 +34,53 @@ Academic Integrity Statement:
     submitting is my own original work.
 """
 
+from src.user_management.auth import register_user, login_user
+
+def display_auth_menu():
+    """
+    Displays the authentication menu (register/login) and handles user choice.
+    Returns True if a user successfully logs in, False otherwise.
+    """
+    while True:
+        print("\n--- Authentication Menu ---")
+        print("1. Register")
+        print("2. Login")
+        print("3. Exit")
+        choice = input("Enter your choice: ").strip()
+
+        if choice == '1':
+            if register_user():
+                print("Registration successful! Please log in.")
+            else:
+                print("Registration failed. Please try again.")
+        elif choice == '2':
+            if login_user():
+                print("Login successful!")
+                return True
+            else:
+                print("Login failed. Please try again.")
+        elif choice == '3':
+            print("Exiting application. Goodbye!")
+            return False
+        else:
+            print("Invalid choice. Please enter 1, 2, or 3.")
+
 def main():
     """
-    Placeholder for the main application entry point.
-    All core space travel calculation logic has been moved to other modules.
+    Primary entry point for the Space Travel Calculator application.
+    Handles user authentication before proceeding to the main application logic.
     """
     print("Welcome to the Space Travel Calculator!")
-    print("Application logic will be orchestrated from other modules.")
-    print("This file currently serves as a placeholder for the main application entry.")
+
+    if display_auth_menu():
+        # User has successfully logged in, proceed to main application logic
+        print("\n--- Main Application Placeholder ---")
+        print("Application logic for space travel calculations will be orchestrated from other modules.")
+        print("This message confirms successful authentication and entry into the main application.")
+        # Here, you would typically call a function to start the main calculator interface
+        # For example: start_space_calculator_interface()
+    else:
+        print("Authentication not completed. Application will exit.")
 
 
 if __name__ == "__main__":
