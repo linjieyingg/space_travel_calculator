@@ -35,6 +35,7 @@ Academic Integrity Statement:
 """
 
 from src.user_management.auth import register_user, login_user
+from src.trip_planning.space_trip_planner import interactive_trip_planner
 
 def display_auth_menu():
     """
@@ -73,12 +74,22 @@ def main():
     print("Welcome to the Space Travel Calculator!")
 
     if display_auth_menu():
-        # User has successfully logged in, proceed to main application logic
-        print("\n--- Main Application Placeholder ---")
-        print("Application logic for space travel calculations will be orchestrated from other modules.")
-        print("This message confirms successful authentication and entry into the main application.")
-        # Here, you would typically call a function to start the main calculator interface
-        # For example: start_space_calculator_interface()
+        print("\nLogin successful! Welcome to the Space Travel Calculator.")
+        while True:
+            print("\n--- Space Travel Calculator Menu ---")
+            print("1. Plan a Space Trip")
+            # Add other main application features here as they are developed
+            print("2. Exit Application")
+            
+            main_app_choice = input("Please choose an option: ").strip()
+
+            if main_app_choice == '1':
+                interactive_trip_planner()
+            elif main_app_choice == '2':
+                print("Exiting application. Goodbye!")
+                break # Exit the while loop, which will then exit the main function
+            else:
+                print("Invalid option. Please try again.")
     else:
         print("Authentication not completed. Application will exit.")
 
