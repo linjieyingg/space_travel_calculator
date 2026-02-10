@@ -7,9 +7,9 @@
 
 **Branch:** main
 
-**Files Analyzed:** 18
+**Files Analyzed:** 21
 
-**Last Updated:** 2026-01-27 17:01:56
+**Last Updated:** 2026-02-10 16:29:19
 
 ---
 
@@ -219,21 +219,25 @@ This Python file implements a command-line based Four-in-a-Row (also known as Co
 
 ## `main.py`
 
-This file, `main.py`, serves as the primary entry point for a space travel calculator application. It acts as a placeholder or orchestrator, as the core application logic has been refactored into other modules.
+This file serves as the main entry point for a space travel calculator application, handling initial user authentication before presenting the main application features.
 
 ### Key Components
 
-*   **`main()` function**:
+*   **`display_auth_menu()`**
+    *   **Inputs**: None (takes user input via `input()`).
+    *   **Outputs/Side Effects**: Prints an authentication menu, prompts the user for choice, calls `register_user` or `login_user`, and returns `True` if a user successfully logs in, `False` otherwise. It continuously loops until a valid action (login or exit) is chosen.
+*   **`main()`**
+    *   **Inputs**: None (orchestrates application flow and takes user input via `input()`).
+    *   **Outputs/Side Effects**: Prints welcome messages, calls `display_auth_menu`, and if authentication is successful, displays a main application menu allowing the user to `Plan a Space Trip` (by calling `interactive_trip_planner`) or exit. It controls the primary execution flow of the application.
+*   **`if __name__ == "__main__":` block**
     *   **Inputs**: None.
-    *   **Outputs/Side Effects**: Prints welcome messages to the console, indicating that the main application logic resides elsewhere.
-*   **`if __name__ == "__main__":` block**:
-    *   **Inputs**: None (executed when the script is run directly).
-    *   **Outputs/Side Effects**: Calls the `main()` function to start the application.
-*   **File Header/Docstring**: Contains course information, assignment details (Individual Project, Fall 2024, Author: Jieying Lin), contributor section, and an Academic Integrity Statement.
+    *   **Outputs/Side Effects**: Calls the `main()` function, initiating the application when the script is run directly.
 
 ### Dependencies
 
-*   None. This file does not contain any explicit `import` statements or rely on external libraries.
+*   `src.user_management.auth.register_user`
+*   `src.user_management.auth.login_user`
+*   `src.trip_planning.space_trip_planner.interactive_trip_planner`
 
 ---
 
@@ -254,28 +258,37 @@ This file, `main.py`, serves as the primary entry point for a space travel calcu
 
 ## `src/astrophysics/orbital_calculations.py`
 
-This file, `orbital_calculations.py`, provides functions for fundamental astrodynamics calculations, specifically for determining the position of celestial bodies in elliptical orbits and planning orbital transfers. It uses mathematical models and orbital parameters to calculate eccentric anomaly, true anomaly, orbital distance, and the delta-v required for Hohmann transfers.
+This Python file provides a collection of functions for performing fundamental orbital calculations and astrodynamics maneuvers. It enables the determination of celestial body positions, velocities, escape velocities, orbital periods, and Hohmann transfer costs based on orbital mechanics principles and data retrieved from a separate celestial data module.
 
 ### Key Components:
 
 *   **`solve_kepler_equation`**
-    *   **Inputs**: `mean_anomaly` (radians), `eccentricity`, `tolerance`, `max_iterations`.
-    *   **Outputs**: The `eccentric_anomaly` (radians) by solving Kepler's Equation using Newton-Raphson.
+    *   **Inputs**: Mean anomaly (`float`), eccentricity (`float`), optional tolerance (`float`), and max iterations (`int`).
+    *   **Outputs**: The eccentric anomaly (`float`) in radians.
 *   **`eccentric_to_true_anomaly`**
-    *   **Inputs**: `eccentric_anomaly` (radians), `eccentricity`.
-    *   **Outputs**: The `true_anomaly` (radians) from the eccentric anomaly.
+    *   **Inputs**: Eccentric anomaly (`float`), eccentricity (`float`).
+    *   **Outputs**: The true anomaly (`float`) in radians.
 *   **`calculate_orbital_distance`**
-    *   **Inputs**: `body_name` (str), `time_since_periapsis` (seconds).
-    *   **Outputs**: The current `orbital_distance` (meters) of the body from its primary, or `None` if the body is not found.
+    *   **Inputs**: Celestial body name (`str`), time since periapsis (`float`).
+    *   **Outputs**: The orbital distance (`Optional[float]`) from the central body in meters, or `None` if the body is not found.
+*   **`calculate_orbital_velocity`**
+    *   **Inputs**: Orbiting body name (`str`), current radial distance (`float`), optional central body name (`str`).
+    *   **Outputs**: The instantaneous orbital velocity (`float`) in meters per second.
+*   **`calculate_escape_velocity`**
+    *   **Inputs**: Celestial body name (`str`), radial distance from its center (`float`).
+    *   **Outputs**: The escape velocity (`float`) in meters per second.
+*   **`calculate_orbital_period`**
+    *   **Inputs**: Orbiting body name (`str`), optional central body name (`str`).
+    *   **Outputs**: The orbital period (`float`) in seconds.
 *   **`calculate_hohmann_delta_v`**
-    *   **Inputs**: `initial_body_name` (str), `final_body_name` (str), `central_body_name` (str).
-    *   **Outputs**: A dictionary containing `delta_v1`, `delta_v2`, and `total_delta_v` (m/s) for a Hohmann transfer maneuver.
+    *   **Inputs**: Initial body name (`str`), final body name (`str`), central body name (`str`).
+    *   **Outputs**: A dictionary containing the magnitudes of the first delta-v impulse ('delta_v1'), the second delta-v impulse ('delta_v2'), and the total delta-v ('total_delta_v') for a Hohmann transfer, all in m/s.
 
 ### Dependencies:
 
-*   `math` (Python standard library)
-*   `typing` (for type hints: `Dict`, `Any`, `Optional`)
-*   `..celestial_data` (relative import for `get_celestial_body_data` and `GRAVITATIONAL_CONSTANT`)
+*   `math`: For mathematical operations (e.g., `sin`, `cos`, `sqrt`, `atan2`, `fmod`, `pi`).
+*   `typing`: Specifically `Dict`, `Any`, `Optional` for type hinting.
+*   `..celestial_data`: A relative import for `get_celestial_body_data` and `GRAVITATIONAL_CONSTANT`, used to retrieve properties of celestial bodies.
 
 ---
 
@@ -290,6 +303,104 @@ This file, `orbital_calculations.py`, provides functions for fundamental astrody
 ## `src/propulsion/__init__.py`
 
 *Empty file*
+
+---
+
+
+## `src/trip_planning/space_trip_planner.py`
+
+## Summary of `space_trip_planner.py`
+
+### Purpose
+This file implements the `SpaceTripPlanner` class, providing core logic for planning Hohmann transfer space trips, calculating required delta-V and transfer times, and offering an interactive command-line interface for users to plan journeys between celestial bodies.
+
+### Key Components
+*   **Class `SpaceTripPlanner`**:
+    *   **Inputs**: None on instantiation, but relies on global constants and functions from `celestial_data.py`.
+    *   **Outputs/Side Effects**: Initializes the planner by loading the Sun's gravitational parameter, raising a `ValueError` if critical data is missing.
+
+*   **`__init__(self)`**:
+    *   **Inputs**: `self`.
+    *   **Outputs/Side Effects**: Sets `_celestial_body_raw_data` and extracts `_mu_sun`. Raises `ValueError` if Sun's gravitational parameter is not found.
+
+*   **`_get_body_orbital_radius_meters(self, body_name: str) -> Optional[float]`**:
+    *   **Inputs**: `body_name` (string) - The name of a celestial body.
+    *   **Outputs**: The semi-major axis (orbital radius) of the body in meters as a float, or `None` if data is not found.
+
+*   **`_calculate_hohmann_transfer_time(self, r1: float, r2: float, mu_central: float) -> float`**:
+    *   **Inputs**: `r1` (float) - Initial orbital radius; `r2` (float) - Final orbital radius; `mu_central` (float) - Gravitational parameter of the central body (e.g., Sun). All in meters/SI units.
+    *   **Outputs**: The transfer time in seconds as a float. Raises `ValueError` for non-positive input values.
+
+*   **`plan_trip(self, source_body_name: str, target_body_name: str) -> Optional[Dict[str, Any]]`**:
+    *   **Inputs**: `source_body_name` (string) - Name of the departure body; `target_body_name` (string) - Name of the destination body.
+    *   **Outputs**: A dictionary containing trip details (`delta_v1`, `delta_v2`, `total_delta_v`, `transfer_time_seconds/days/years`) or `None` if planning fails due to invalid inputs or data retrieval issues. Prints error messages to console.
+
+*   **`display_trip_summary(self, trip_data: Dict[str, Any])`**:
+    *   **Inputs**: `trip_data` (dictionary) - A dictionary containing trip details, typically from `plan_trip`.
+    *   **Outputs/Side Effects**: Prints a formatted summary of the planned trip (Delta-V values, transfer time in hours, days, and years) to the console.
+
+*   **`run_interactive_planner(self)`**:
+    *   **Inputs**: None (interacts with the user via `input()`).
+    *   **Outputs/Side Effects**: Provides a continuous command-line interface for planning trips, prompting for source and target bodies. Calls `plan_trip` and `display_trip_summary`. Prints welcome/farewell messages and error prompts.
+
+*   **`_list_available_bodies(self)`**:
+    *   **Inputs**: None.
+    *   **Outputs/Side Effects**: Prints a sorted list of all celestial bodies present in the loaded `_celestial_body_raw_data`.
+
+*   **Main execution block (`if __name__ == "__main__":`)**:
+    *   **Inputs**: None.
+    *   **Outputs/Side Effects**: Instantiates `SpaceTripPlanner` and starts the interactive planner. Catches `ValueError` during initialization.
+
+### Dependencies
+*   `math`
+*   `typing.Optional`, `typing.Dict`, `typing.Any`
+*   `src.astrophysics.orbital_calculations.calculate_hohmann_delta_v` (relative import)
+*   `celestial_data.get_celestial_body_data` (relative import)
+*   `celestial_data.AU_TO_METERS` (relative import)
+*   `celestial_data.CELESTIAL_BODIES_DATA` (relative import)
+
+---
+
+
+## `src/user_management/auth.py`
+
+This Python file provides a basic user authentication system that allows for user registration and login using local file storage. It securely stores user credentials by hashing passwords with unique salts.
+
+### Key Components:
+
+*   **`_DATA_DIR`, `_USERS_FILE_PATH`**: Constants defining the location for the `users.json` data file.
+*   **`_ensure_data_dir_exists()`**: Ensures the data directory exists.
+    *   **Inputs**: None
+    *   **Outputs/Side Effects**: Creates the directory if it doesn't exist.
+*   **`_load_users()`**: Loads user data from `users.json`.
+    *   **Inputs**: None
+    *   **Outputs**: A dictionary of user data (`Dict[str, Any]`), or an empty dictionary on error/file not found.
+*   **`_save_users(users)`**: Saves user data to `users.json`.
+    *   **Inputs**: `users` (A dictionary of user data `Dict[str, Any]`).
+    *   **Outputs/Side Effects**: Writes the provided user data to `users.json`.
+*   **`_generate_salt()`**: Generates a random hexadecimal salt.
+    *   **Inputs**: None
+    *   **Outputs**: A `str` representing the salt.
+*   **`_hash_password(password, salt)`**: Hashes a given password with a salt using SHA256.
+    *   **Inputs**: `password` (str), `salt` (str).
+    *   **Outputs**: A `str` representing the SHA256 hash.
+*   **`register_user(username, password)`**: Registers a new user.
+    *   **Inputs**: `username` (str), `password` (str).
+    *   **Outputs**: `bool` (`True` for successful registration, `False` if username exists or inputs are invalid).
+    *   **Side Effects**: Adds new user data (username, password hash, salt) to `users.json`.
+*   **`login_user(username, password)`**: Authenticates a user.
+    *   **Inputs**: `username` (str), `password` (str).
+    *   **Outputs**: `bool` (`True` for successful login, `False` otherwise).
+*   **`if __name__ == "__main__":`**: Contains a test suite to demonstrate and verify the functionality of user registration and login.
+    *   **Inputs**: None
+    *   **Outputs/Side Effects**: Prints test results to console, creates/removes `users.json` for testing.
+
+### Dependencies:
+
+*   `json`: For reading and writing user data in JSON format.
+*   `hashlib`: For password hashing (SHA256).
+*   `os`: For file path manipulation and directory creation/checking.
+*   `typing`: For type hints (`Dict`, `Any`).
 
 ---
 
@@ -369,6 +480,40 @@ This file contains unit tests for physical constants defined in a `constants.py`
 *   `pytest`
 *   `constants` (specifically `G_GRAVITATIONAL`, `C_LIGHT_MPS`)
 *   `sys` (used for module manipulation in `test_no_deprecated_gravitational_constant_alias`)
+
+---
+
+
+## `tests/test_new_orbital_mechanics.py`
+
+This file contains a comprehensive suite of unit tests for orbital mechanics calculations, specifically `calculate_orbital_velocity`, `calculate_escape_velocity`, and `calculate_orbital_period`. It uses `pytest` for testing and `unittest.mock` for patching dependencies, ensuring the functions handle valid inputs, invalid types, and various error conditions correctly.
+
+### Key Components:
+
+*   **`mock_get_celestial_body_data` function**:
+    *   **Inputs**: `body_name` (string).
+    *   **Outputs**: Returns celestial data (dictionary) for the given body from `CELESTIAL_BODIES_DATA` or `None` if not found.
+*   **`TestOrbitalVelocity` class**:
+    *   Tests the `calculate_orbital_velocity` function.
+    *   **Inputs**: `body_name`, `distance`, `central_body_name`, `expected_velocity_m_s`, `tolerance` for valid cases; various invalid types or values for error cases.
+    *   **Outputs**: Asserts the calculated velocity matches the expected value within a tolerance for valid inputs, or asserts `TypeError` / `ValueError` with specific messages for invalid inputs/data.
+*   **`TestEscapeVelocity` class**:
+    *   Tests the `calculate_escape_velocity` function.
+    *   **Inputs**: `body_name`, `distance`, `expected_velocity_m_s`, `tolerance` for valid cases; various invalid types or values for error cases.
+    *   **Outputs**: Asserts the calculated velocity matches the expected value within a tolerance for valid inputs, or asserts `TypeError` / `ValueError` with specific messages for invalid inputs/data.
+*   **`TestOrbitalPeriod` class**:
+    *   Tests the `calculate_orbital_period` function.
+    *   **Inputs**: `body_name`, `central_body_name`, `expected_period_s`, `tolerance` for valid cases; various invalid types or values for error cases.
+    *   **Outputs**: Asserts the calculated period matches the expected value within a tolerance for valid inputs, or asserts `TypeError` / `ValueError` with specific messages for invalid inputs/data.
+
+### Dependencies:
+
+*   `pytest`: Framework for writing tests.
+*   `math`: For mathematical operations like `sqrt` and `isclose`.
+*   `unittest.mock`: For patching `get_celestial_body_data` and modifying dictionaries during tests.
+*   `typing`: For type hints (`Optional`, `Dict`, `Any`).
+*   `src.astrophysics.orbital_calculations`: Imports `calculate_orbital_velocity`, `calculate_escape_velocity`, `calculate_orbital_period` (the functions under test).
+*   `src.celestial_data.CELESTIAL_BODIES_DATA`: Provides real-world celestial body data used for test setup and mocking.
 
 ---
 
