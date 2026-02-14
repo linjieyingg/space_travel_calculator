@@ -7,9 +7,9 @@
 
 **Branch:** main
 
-**Files Analyzed:** 21
+**Files Analyzed:** 23
 
-**Last Updated:** 2026-02-10 16:44:08
+**Last Updated:** 2026-02-14 18:05:24
 
 ---
 
@@ -258,37 +258,54 @@ This file serves as the main entry point for a space travel calculator applicati
 
 ## `src/astrophysics/orbital_calculations.py`
 
-This Python file provides a collection of functions for performing fundamental orbital calculations and astrodynamics maneuvers. It enables the determination of celestial body positions, velocities, escape velocities, orbital periods, and Hohmann transfer costs based on orbital mechanics principles and data retrieved from a separate celestial data module.
+```markdown
+## File Summary: `src/astrophysics/orbital_calculations.py`
 
-### Key Components:
+### 1. Purpose
+This file provides a collection of functions for performing fundamental orbital mechanics calculations, such as determining a celestial body's position, velocity, escape velocity, and orbital period, as well as calculating delta-v for Hohmann transfer maneuvers. It integrates astronomical data to compute these parameters based on various orbital elements.
+
+### 2. Key Components
 
 *   **`solve_kepler_equation`**
-    *   **Inputs**: Mean anomaly (`float`), eccentricity (`float`), optional tolerance (`float`), and max iterations (`int`).
-    *   **Outputs**: The eccentric anomaly (`float`) in radians.
+    *   **Inputs**: `mean_anomaly` (float), `eccentricity` (float), `tolerance` (float, optional), `max_iterations` (int, optional)
+    *   **Outputs**: `eccentric_anomaly` (float)
+    *   **Description**: Solves Kepler's Equation for the eccentric anomaly using the Newton-Raphson method.
+
 *   **`eccentric_to_true_anomaly`**
-    *   **Inputs**: Eccentric anomaly (`float`), eccentricity (`float`).
-    *   **Outputs**: The true anomaly (`float`) in radians.
+    *   **Inputs**: `eccentric_anomaly` (float), `eccentricity` (float)
+    *   **Outputs**: `true_anomaly` (float)
+    *   **Description**: Converts eccentric anomaly to true anomaly.
+
 *   **`calculate_orbital_distance`**
-    *   **Inputs**: Celestial body name (`str`), time since periapsis (`float`).
-    *   **Outputs**: The orbital distance (`Optional[float]`) from the central body in meters, or `None` if the body is not found.
+    *   **Inputs**: `body_name` (str), `time_since_periapsis` (float)
+    *   **Outputs**: `orbital_distance` (float) in meters, or `None` if the body is not found.
+    *   **Description**: Calculates the current radial distance of an orbiting body from its primary at a given time since periapsis.
+
 *   **`calculate_orbital_velocity`**
-    *   **Inputs**: Orbiting body name (`str`), current radial distance (`float`), optional central body name (`str`).
-    *   **Outputs**: The instantaneous orbital velocity (`float`) in meters per second.
+    *   **Inputs**: `body_name` (str), `distance` (float), `central_body_name` (str, optional)
+    *   **Outputs**: `orbital_velocity` (float) in meters per second.
+    *   **Description**: Calculates the instantaneous orbital velocity using the Vis-Viva equation.
+
 *   **`calculate_escape_velocity`**
-    *   **Inputs**: Celestial body name (`str`), radial distance from its center (`float`).
-    *   **Outputs**: The escape velocity (`float`) in meters per second.
+    *   **Inputs**: `body_name` (str), `distance` (float)
+    *   **Outputs**: `escape_velocity` (float) in meters per second.
+    *   **Description**: Calculates the escape velocity from a celestial body at a specified distance from its center.
+
 *   **`calculate_orbital_period`**
-    *   **Inputs**: Orbiting body name (`str`), optional central body name (`str`).
-    *   **Outputs**: The orbital period (`float`) in seconds.
+    *   **Inputs**: `body_name` (str), `central_body_name` (str, optional)
+    *   **Outputs**: `orbital_period` (float) in seconds.
+    *   **Description**: Calculates the orbital period of a body around a central body using Kepler's Third Law.
+
 *   **`calculate_hohmann_delta_v`**
-    *   **Inputs**: Initial body name (`str`), final body name (`str`), central body name (`str`).
-    *   **Outputs**: A dictionary containing the magnitudes of the first delta-v impulse ('delta_v1'), the second delta-v impulse ('delta_v2'), and the total delta-v ('total_delta_v') for a Hohmann transfer, all in m/s.
+    *   **Inputs**: `initial_body_name` (str), `final_body_name` (str), `central_body_name` (str)
+    *   **Outputs**: `Dict[str, float]` containing `delta_v1`, `delta_v2`, `total_delta_v`, `initial_orbital_velocity`, and `final_orbital_velocity`.
+    *   **Description**: Calculates the delta-v impulses required for a Hohmann transfer maneuver between two (assumed circular) orbits around a central body.
 
-### Dependencies:
-
-*   `math`: For mathematical operations (e.g., `sin`, `cos`, `sqrt`, `atan2`, `fmod`, `pi`).
-*   `typing`: Specifically `Dict`, `Any`, `Optional` for type hinting.
-*   `..celestial_data`: A relative import for `get_celestial_body_data` and `GRAVITATIONAL_CONSTANT`, used to retrieve properties of celestial bodies.
+### 3. Dependencies
+*   `math` (Python's standard math module)
+*   `typing` (for type hints: `Dict`, `Any`, `Optional`)
+*   `celestial_data` (a relative import from `..celestial_data` within the same repository, specifically `get_celestial_body_data` function and `GRAVITATIONAL_CONSTANT`).
+```
 
 ---
 
@@ -309,55 +326,42 @@ This Python file provides a collection of functions for performing fundamental o
 
 ## `src/trip_planning/space_trip_planner.py`
 
-## Summary of `space_trip_planner.py`
+```markdown
+### File: src/trip_planning/space_trip_planner.py
 
-### Purpose
-This file implements the `SpaceTripPlanner` class, providing core logic for planning Hohmann transfer space trips, calculating required delta-V and transfer times, and offering an interactive command-line interface for users to plan journeys between celestial bodies.
+#### Purpose
+This file implements a `SpaceTripPlanner` class responsible for calculating and displaying Hohmann transfer orbits between celestial bodies within a solar system, providing an interactive command-line interface for users to plan trips.
 
-### Key Components
-*   **Class `SpaceTripPlanner`**:
-    *   **Inputs**: None on instantiation, but relies on global constants and functions from `celestial_data.py`.
-    *   **Outputs/Side Effects**: Initializes the planner by loading the Sun's gravitational parameter, raising a `ValueError` if critical data is missing.
+#### Key Components
+*   **Class: `SpaceTripPlanner`**
+    *   **`__init__(self)`**:
+        *   **Inputs**: None explicitly, but relies on `celestial_data.CELESTIAL_BODIES_DATA`.
+        *   **Outputs/Side Effects**: Initializes the planner by loading celestial body raw data and the Sun's gravitational parameter (`_mu_sun`). Raises `ValueError` if Sun's data is missing.
+    *   **`_get_body_orbital_radius_meters(self, body_name: str)`**:
+        *   **Inputs**: `body_name` (string) - name of the celestial body.
+        *   **Outputs**: Orbital radius in meters (float) or `None` if data isn't found.
+    *   **`_calculate_hohmann_transfer_time(self, r1: float, r2: float, mu_central: float)`**:
+        *   **Inputs**: `r1` (float) - initial radius, `r2` (float) - final radius, `mu_central` (float) - central body's gravitational parameter.
+        *   **Outputs**: Transfer time in seconds (float). Raises `ValueError` for non-positive inputs.
+    *   **`plan_trip(self, source_body_name: str, target_body_name: str)`**:
+        *   **Inputs**: `source_body_name` (string), `target_body_name` (string).
+        *   **Outputs**: A dictionary with trip details (delta-v, transfer time in various units, orbital velocities) or `None` if planning fails.
+    *   **`display_trip_summary(self, trip_data: Dict[str, Any])`**:
+        *   **Inputs**: `trip_data` (dictionary) - trip details returned by `plan_trip`.
+        *   **Outputs/Side Effects**: Prints a formatted summary of the space trip to the console.
+    *   **`run_interactive_planner(self)`**:
+        *   **Inputs**: User input via the command line.
+        *   **Outputs/Side Effects**: Runs an interactive loop, prompting the user for source/target bodies, planning the trip, displaying the summary, or listing available bodies.
+    *   **`_list_available_bodies(self)`**:
+        *   **Inputs**: None explicitly.
+        *   **Outputs/Side Effects**: Prints a sorted list of all celestial bodies available in the loaded data.
 
-*   **`__init__(self)`**:
-    *   **Inputs**: `self`.
-    *   **Outputs/Side Effects**: Sets `_celestial_body_raw_data` and extracts `_mu_sun`. Raises `ValueError` if Sun's gravitational parameter is not found.
-
-*   **`_get_body_orbital_radius_meters(self, body_name: str) -> Optional[float]`**:
-    *   **Inputs**: `body_name` (string) - The name of a celestial body.
-    *   **Outputs**: The semi-major axis (orbital radius) of the body in meters as a float, or `None` if data is not found.
-
-*   **`_calculate_hohmann_transfer_time(self, r1: float, r2: float, mu_central: float) -> float`**:
-    *   **Inputs**: `r1` (float) - Initial orbital radius; `r2` (float) - Final orbital radius; `mu_central` (float) - Gravitational parameter of the central body (e.g., Sun). All in meters/SI units.
-    *   **Outputs**: The transfer time in seconds as a float. Raises `ValueError` for non-positive input values.
-
-*   **`plan_trip(self, source_body_name: str, target_body_name: str) -> Optional[Dict[str, Any]]`**:
-    *   **Inputs**: `source_body_name` (string) - Name of the departure body; `target_body_name` (string) - Name of the destination body.
-    *   **Outputs**: A dictionary containing trip details (`delta_v1`, `delta_v2`, `total_delta_v`, `transfer_time_seconds/days/years`) or `None` if planning fails due to invalid inputs or data retrieval issues. Prints error messages to console.
-
-*   **`display_trip_summary(self, trip_data: Dict[str, Any])`**:
-    *   **Inputs**: `trip_data` (dictionary) - A dictionary containing trip details, typically from `plan_trip`.
-    *   **Outputs/Side Effects**: Prints a formatted summary of the planned trip (Delta-V values, transfer time in hours, days, and years) to the console.
-
-*   **`run_interactive_planner(self)`**:
-    *   **Inputs**: None (interacts with the user via `input()`).
-    *   **Outputs/Side Effects**: Provides a continuous command-line interface for planning trips, prompting for source and target bodies. Calls `plan_trip` and `display_trip_summary`. Prints welcome/farewell messages and error prompts.
-
-*   **`_list_available_bodies(self)`**:
-    *   **Inputs**: None.
-    *   **Outputs/Side Effects**: Prints a sorted list of all celestial bodies present in the loaded `_celestial_body_raw_data`.
-
-*   **Main execution block (`if __name__ == "__main__":`)**:
-    *   **Inputs**: None.
-    *   **Outputs/Side Effects**: Instantiates `SpaceTripPlanner` and starts the interactive planner. Catches `ValueError` during initialization.
-
-### Dependencies
-*   `math`
-*   `typing.Optional`, `typing.Dict`, `typing.Any`
-*   `src.astrophysics.orbital_calculations.calculate_hohmann_delta_v` (relative import)
-*   `celestial_data.get_celestial_body_data` (relative import)
-*   `celestial_data.AU_TO_METERS` (relative import)
-*   `celestial_data.CELESTIAL_BODIES_DATA` (relative import)
+#### Dependencies
+*   **Standard Library**: `math`, `typing.Optional`, `typing.Dict`, `typing.Any`
+*   **Local Project**:
+    *   `src.astrophysics.orbital_calculations`: `calculate_hohmann_delta_v`
+    *   `celestial_data`: `get_celestial_body_data`, `AU_TO_METERS`, `CELESTIAL_BODIES_DATA`
+```
 
 ---
 
@@ -407,7 +411,41 @@ This Python file provides a basic user authentication system that allows for use
 
 ## `src/utils/__init__.py`
 
-*Empty file*
+```markdown
+## src/utils/__init__.py
+
+**1. Purpose**:
+This file serves as the package initializer for the `utils` directory, making it a Python package. Its primary role is to expose the `add_numbers` function from the `basic_math` submodule directly under the `utils` package namespace for easier access.
+
+**2. Key Components**:
+*   **Module Exposure**:
+    *   **Description**: This file imports and re-exports the `add_numbers` function, allowing it to be accessed directly via `utils.add_numbers` after importing the `utils` package.
+    *   **Inputs (for `add_numbers`)**: (Implicitly) Two numerical arguments.
+    *   **Outputs (for `add_numbers`)**: (Implicitly) A single numerical result representing the sum of its inputs.
+
+**3. Dependencies**:
+*   **Relative Import**: `add_numbers` from `.basic_math` (a submodule within the same package).
+```
+
+---
+
+
+## `src/utils/basic_math.py`
+
+```markdown
+This file provides basic mathematical utility functions. It currently contains a single function for summing two numbers.
+
+### Key Components:
+
+*   **`add_numbers(a, b)` function:**
+    *   **Inputs:** `a` (an integer or float), `b` (an integer or float).
+    *   **Outputs:** Returns the sum of `a` and `b` (an integer or float).
+    *   **Side Effects:** None.
+
+### Dependencies:
+
+*   None. This file uses only built-in Python types and operators.
+```
 
 ---
 
@@ -415,6 +453,45 @@ This Python file provides a basic user authentication system that allows for use
 ## `tests/__init__.py`
 
 *Empty file*
+
+---
+
+
+## `tests/test_basic_math.py`
+
+This file contains unit tests for the `add_numbers` function from `src.utils.basic_math`, ensuring its correctness across various numerical scenarios and error handling for invalid inputs.
+
+### Key Components:
+
+*   **`test_add_two_positive_integers()`**:
+    *   **Inputs**: Two positive integers.
+    *   **Outputs/Side Effects**: Asserts that `add_numbers` returns the correct sum.
+*   **`test_add_positive_and_negative_integer()`**:
+    *   **Inputs**: A positive and a negative integer.
+    *   **Outputs/Side Effects**: Asserts that `add_numbers` returns the correct sum.
+*   **`test_add_two_negative_integers()`**:
+    *   **Inputs**: Two negative integers.
+    *   **Outputs/Side Effects**: Asserts that `add_numbers` returns the correct sum.
+*   **`test_add_zero_to_number()`**:
+    *   **Inputs**: Integers with zero, or two zeros.
+    *   **Outputs/Side Effects**: Asserts that `add_numbers` returns the correct sum when zero is involved.
+*   **`test_add_two_floats()`**:
+    *   **Inputs**: Two floating-point numbers.
+    *   **Outputs/Side Effects**: Asserts that `add_numbers` returns the correct sum, using `pytest.approx` for precision.
+*   **`test_add_integer_and_float()`**:
+    *   **Inputs**: An integer and a float.
+    *   **Outputs/Side Effects**: Asserts that `add_numbers` returns the correct sum for mixed types.
+*   **`test_add_large_numbers()`**:
+    *   **Inputs**: Large integer values.
+    *   **Outputs/Side Effects**: Asserts that `add_numbers` correctly handles large number addition.
+*   **`test_add_non_numeric_inputs_raises_type_error()`**:
+    *   **Inputs**: Non-numeric types (e.g., strings, lists) as arguments to `add_numbers`.
+    *   **Outputs/Side Effects**: Asserts that `add_numbers` raises a `TypeError` for invalid input types.
+
+### Dependencies:
+
+*   **`pytest`**: Used as the testing framework for test discovery, assertions (`assert`, `pytest.raises`, `pytest.approx`).
+*   **`src.utils.basic_math.add_numbers`**: The function under test, which performs the addition operation.
 
 ---
 
