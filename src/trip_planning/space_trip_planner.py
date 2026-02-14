@@ -1,4 +1,3 @@
-```python
 import math
 from typing import Optional, Dict, Any
 
@@ -80,7 +79,7 @@ class SpaceTripPlanner:
 
         Returns:
             Optional[Dict[str, Any]]: A dictionary containing trip details
-            (delta_v, transfer time) or None if planning fails.
+            (delta_v, transfer time, initial/final orbital velocities) or None if planning fails.
         """
         if source_body_name.lower() == target_body_name.lower():
             print(f"Cannot plan a trip from {source_body_name} to itself. Please choose different bodies.")
@@ -106,8 +105,14 @@ class SpaceTripPlanner:
             return None
 
         total_delta_v = hohmann_dv_results.get("total_delta_v")
-        if total_delta_v is None:
-            print("Error: Total Delta-V was not found in Hohmann transfer results.")
+        delta_v1 = hohmann_dv_results.get("delta_v1")
+        delta_v2 = hohmann_dv_results.get("delta_v2")
+        initial_orbital_velocity_mps = hohmann_dv_results.get("initial_orbital_velocity_mps")
+        final_orbital_velocity_mps = hohmann_dv_results.get("final_orbital_velocity_mps")
+
+        if (total_delta_v is None or delta_v1 is None or delta_v2 is None or
+                initial_orbital_velocity_mps is None or final_orbital_velocity_mps is None):
+            print("Error: Missing one or more critical Delta-V or orbital velocity results from Hohmann transfer calculation.")
             return None
 
         # Calculate transfer time
@@ -125,9 +130,11 @@ class SpaceTripPlanner:
         return {
             "source": source_body_name,
             "target": target_body_name,
-            "delta_v1": hohmann_dv_results.get("delta_v1"), # Delta-V at departure
-            "delta_v2": hohmann_dv_results.get("delta_v2"), # Delta-V at arrival
+            "delta_v1": delta_v1, # Delta-V at departure
+            "delta_v2": delta_v2, # Delta-V at arrival
             "total_delta_v": total_delta_v,
+            "initial_orbital_velocity_mps": initial_orbital_velocity_mps,
+            "final_orbital_velocity_mps": final_orbital_velocity_mps,
             "transfer_time_seconds": transfer_time_seconds,
             "transfer_time_days": transfer_time_days,
             "transfer_time_years": transfer_time_years,
@@ -146,6 +153,9 @@ class SpaceTripPlanner:
         print(f"  Delta-V at Departure (Δv₁): {trip_data['delta_v1']:.2f} m/s")
         print(f"  Delta-V at Arrival (Δv₂):   {trip_data['delta_v2']:.2f} m/s")
         print(f"  Total Delta-V Required:    {trip_data['total_delta_v']:.2f} m/s")
+        print("-" * 50)
+        print(f"  Initial Orbital Velocity:  {trip_data['initial_orbital_velocity_mps'] / 1000:.2f} km/s (at {trip_data['source']})")
+        print(f"  Final Orbital Velocity:    {trip_data['final_orbital_velocity_mps'] / 1000:.2f} km/s (at {trip_data['target']})")
         print("-" * 50)
         print(f"  Hohmann Transfer Time of Flight:")
         print(f"    {trip_data['transfer_time_seconds'] / 3600:.2f} hours")
@@ -236,5 +246,3 @@ if __name__ == "__main__":
     except ValueError as e:
         print(f"Initialization Error: {e}")
         print("Please ensure celestial_data.py is correctly configured.")
-
-```
