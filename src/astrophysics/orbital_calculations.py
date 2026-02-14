@@ -438,6 +438,8 @@ def calculate_hohmann_delta_v(
             - 'delta_v1': The magnitude of the first delta-v impulse (m/s).
             - 'delta_v2': The magnitude of the second delta-v impulse (m/s).
             - 'total_delta_v': The sum of delta_v1 and delta_v2 (m/s).
+            - 'initial_orbital_velocity': The velocity of the initial circular orbit (m/s).
+            - 'final_orbital_velocity': The velocity of the final circular orbit (m/s).
 
     Raises:
         TypeError: If any input `body_name` is not a string.
@@ -454,7 +456,14 @@ def calculate_hohmann_delta_v(
 
     # If initial and final bodies are the same, no transfer is needed, delta-v is zero.
     if initial_body_name.lower() == final_body_name.lower():
-        return {"delta_v1": 0.0, "delta_v2": 0.0, "total_delta_v": 0.0}
+        return {
+            "delta_v1": 0.0,
+            "delta_v2": 0.0,
+            "total_delta_v": 0.0,
+            "initial_orbital_velocity": 0.0, # Or the velocity of the body in place
+            "final_orbital_velocity": 0.0    # For same body, velocity is constant
+        }
+
 
     # Fetch data for all three bodies
     initial_body_data = get_celestial_body_data(initial_body_name)
@@ -526,5 +535,7 @@ def calculate_hohmann_delta_v(
     return {
         "delta_v1": delta_v1,
         "delta_v2": delta_v2,
-        "total_delta_v": total_delta_v
+        "total_delta_v": total_delta_v,
+        "initial_orbital_velocity": v1_circular, # Added
+        "final_orbital_velocity": v2_circular   # Added
     }
